@@ -37,12 +37,8 @@ jspm_packages
 .node_repl_history
 .next
 
-.vscode
-
 .DS_Store
 
 out
-
-.vscode
 
 junit.xml
