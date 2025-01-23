@@ -118,79 +118,7 @@ export function SignInForm() {
             </Button>
           ))}
         </Stack>
-        <Divider>or</Divider>
-        <Stack spacing={2}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Stack spacing={2}>
-              <Controller
-                control={control}
-                name="email"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.email)}>
-                    <InputLabel>Email address</InputLabel>
-                    <OutlinedInput {...field} type="email" />
-                    {errors.email ? <FormHelperText>{errors.email.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-              <Controller
-                control={control}
-                name="password"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.password)}>
-                    <InputLabel>Password</InputLabel>
-                    <OutlinedInput
-                      {...field}
-                      endAdornment={
-                        showPassword ? (
-                          <EyeIcon
-                            cursor="pointer"
-                            fontSize="var(--icon-fontSize-md)"
-                            onClick={() => {
-                              setShowPassword(false);
-                            }}
-                          />
-                        ) : (
-                          <EyeSlashIcon
-                            cursor="pointer"
-                            fontSize="var(--icon-fontSize-md)"
-                            onClick={() => {
-                              setShowPassword(true);
-                            }}
-                          />
-                        )
-                      }
-                      type={showPassword ? 'text' : 'password'}
-                    />
-                    {errors.password ? <FormHelperText>{errors.password.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-              {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
-              <Button disabled={isPending} type="submit" variant="contained">
-                Sign in
-              </Button>
-            </Stack>
-          </form>
-          <div>
-            <Link component={RouterLink} href={paths.auth.custom.resetPassword} variant="subtitle2">
-              Forgot password?
-            </Link>
-          </div>
-        </Stack>
       </Stack>
-      <Alert color="warning">
-        Use{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          sofia@devias.io
-        </Typography>{' '}
-        with password{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          Secret1
-        </Typography>
-        <br />
-        Or Sign In with Google
-      </Alert>
     </Stack>
   );
 }
