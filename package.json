@@ -43,7 +43,7 @@
     "@react-pdf/renderer": "4.0.0",
     "@testing-library/dom": "10.4.0",
     "@tiptap/extension-link": "2.8.0",
-    "@tiptap/extension-placeholder": "2.8.0",
+    "@tiptap/extension-placeholder": "2.11.3",
     "@tiptap/react": "2.8.0",
     "@tiptap/starter-kit": "2.8.0",
     "dayjs": "1.11.13",
