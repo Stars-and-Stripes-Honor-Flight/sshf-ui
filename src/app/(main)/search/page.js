@@ -66,6 +66,7 @@ export default function Page() {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ alignItems: 'flex-start' }}>
               <Box sx={{ flex: '1 1 auto' }}>
                 <Typography variant="h4">Search Veterans & Guardians</Typography>
+                <iframe src="https://sshf-api-330507742215.us-central1.run.app/msg" width="600" height="70" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
               </Box>
             </Stack>
             <Card>
