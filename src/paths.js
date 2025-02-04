@@ -1,6 +1,9 @@
 export const paths = {
   home: '/',
   auth: {
+    domain: {
+      signIn: '/auth/domain/sign-in'
+    },
     custom: {
       signIn: '/auth/custom/sign-in'
     }

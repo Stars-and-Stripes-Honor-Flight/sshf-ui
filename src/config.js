@@ -16,4 +16,9 @@ export const config = {
   auth: { strategy: AuthStrategy.CUSTOM },
   mapbox: { apiKey: process.env.NEXT_PUBLIC_MAPBOX_API_KEY },
   gtm: { id: process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID },
+
+
+
+
+
 };
