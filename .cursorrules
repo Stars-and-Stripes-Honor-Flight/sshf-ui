@@ -1,0 +1,5 @@
+This Web App will be hosted on Google Cloud using Cloud Run.
+It will provide user authentication using Google domain accounts and then interact with a backend API that is also running on Cloud Run.
+The backend API will validate requests based on the token received from the authentication process.
+The UI will receive requests with JSON payload and respond with JSON.
+Always use ES module style JavaScript syntax.

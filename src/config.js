@@ -13,7 +13,7 @@ export const config = {
     version: process.env.NEXT_PUBLIC_SITE_VERSION || '0.0.0',
   },
   logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL || LogLevel.ALL,
-  auth: { strategy: AuthStrategy.CUSTOM },
+  auth: { strategy: AuthStrategy.DOMAIN },
   mapbox: { apiKey: process.env.NEXT_PUBLIC_MAPBOX_API_KEY },
   gtm: { id: process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID },
 
