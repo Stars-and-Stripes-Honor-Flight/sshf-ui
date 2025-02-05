@@ -1,3 +1,4 @@
 export const AuthStrategy = {
-  CUSTOM: 'CUSTOM'
+  CUSTOM: 'CUSTOM',
+  DOMAIN: 'DOMAIN'
 };

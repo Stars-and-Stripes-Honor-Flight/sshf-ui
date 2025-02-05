@@ -33,6 +33,10 @@ export function AuthGuard({ children }) {
           router.replace(paths.auth.custom.signIn);
           return;
         }
+        case AuthStrategy.DOMAIN: {
+          router.replace(paths.auth.domain.signIn);
+          return;
+        }
         default: {
           logger.error('[AuthGuard]: Unknown auth strategy');
           return;

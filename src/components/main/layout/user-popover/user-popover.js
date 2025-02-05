@@ -14,14 +14,14 @@ import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 
 import { paths } from '@/paths';
+import { authClient } from '@/lib/auth/domain/client';
 
 export function UserPopover({ user = {}, anchorEl, onClose, open }) {
-  const logout = React.useCallback(() => {
-    localStorage.clear();
-    localStorage.setItem('mui-mode', 'light');
+  const logout = React.useCallback(async () => {
+    await authClient.signOut();
     onClose();
-    window.location.reload();
-  });
+    window.location.href = paths.auth.domain.signIn;
+  }, [onClose]);
 
 
   return (
@@ -53,7 +53,7 @@ export function UserPopover({ user = {}, anchorEl, onClose, open }) {
           </ListItemIcon>
           Security
         </MenuItem>
-        <MenuItem component={RouterLink} href={paths.auth.custom.signIn}  onClick={logout}>
+        <MenuItem onClick={logout}>
           <ListItemIcon>
             <SignOutIcon />
           </ListItemIcon>

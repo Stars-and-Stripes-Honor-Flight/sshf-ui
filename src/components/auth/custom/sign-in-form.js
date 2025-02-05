@@ -27,7 +27,7 @@ import { DynamicLogo } from '@/components/core/logo';
 import { toast } from '@/components/core/toaster';
 
 const oAuthProviders = [
-  { id: 'google', name: 'Google', logo: '/assets/logo-google.svg' }
+  { id: 'google', name: '(fake) Google', logo: '/assets/logo-google.svg' }
 ];
 
 const schema = zod.object({
