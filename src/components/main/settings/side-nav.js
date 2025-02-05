@@ -25,22 +25,6 @@ const navItems = [
     title: 'Personal',
     items: [
       { key: 'account', title: 'Account', href: paths.main.settings.account, icon: 'user-circle' },
-      { key: 'notifications', title: 'Notifications', href: paths.main.settings.notifications, icon: 'bell' },
-      { key: 'security', title: 'Security', href: paths.main.settings.security, icon: 'lock-key' },
-    ],
-  },
-  {
-    key: 'organization',
-    title: 'Organization',
-    items: [
-      { key: 'billing', title: 'Billing & plans', href: paths.main.settings.billing, icon: 'credit-card' },
-      { key: 'team', title: 'Team', href: paths.main.settings.team, icon: 'users-three' },
-      {
-        key: 'integrations',
-        title: 'Integrations',
-        href: paths.main.settings.integrations,
-        icon: 'plugs-connected',
-      },
     ],
   },
 ];
@@ -86,15 +70,6 @@ export function SideNav() {
               </Stack>
             </Stack>
           ))}
-        </Stack>
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-          <Avatar src="/assets/avatar.png">AV</Avatar>
-          <div>
-            <Typography variant="subtitle1">Sofia Rivers</Typography>
-            <Typography color="text.secondary" variant="caption">
-              sofia@devias.io
-            </Typography>
-          </div>
         </Stack>
       </Stack>
     </div>
