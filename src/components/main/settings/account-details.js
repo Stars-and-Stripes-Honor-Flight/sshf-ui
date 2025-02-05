@@ -23,116 +23,52 @@ import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { Option } from '@/components/core/option';
 
 export function AccountDetails() {
+  const [userData, setUserData] = React.useState(null);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user-data');
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+  }, []);
+
+  if (!userData) {
+    return null;
+  }
+
   return (
     <Card>
       <CardHeader
         avatar={
-          <Avatar>
+          <Avatar 
+            src={userData.avatar} 
+            sx={{ '--Avatar-size': '40px' }}
+          >
             <UserIcon fontSize="var(--Icon-fontSize)" />
           </Avatar>
         }
-        title="Basic details"
+        title="Account Details"
       />
       <CardContent>
         <Stack spacing={3}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Box
-              sx={{
-                border: '1px dashed var(--mui-palette-divider)',
-                borderRadius: '50%',
-                display: 'inline-flex',
-                p: '4px',
-              }}
-            >
-              <Box sx={{ borderRadius: 'inherit', position: 'relative' }}>
-                <Box
-                  sx={{
-                    alignItems: 'center',
-                    bgcolor: 'rgba(0, 0, 0, 0.5)',
-                    borderRadius: 'inherit',
-                    bottom: 0,
-                    color: 'var(--mui-palette-common-white)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    left: 0,
-                    opacity: 0,
-                    position: 'absolute',
-                    right: 0,
-                    top: 0,
-                    zIndex: 1,
-                    '&:hover': { opacity: 1 },
-                  }}
-                >
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <CameraIcon fontSize="var(--icon-fontSize-md)" />
-                    <Typography color="inherit" variant="subtitle2">
-                      Select
-                    </Typography>
-                  </Stack>
-                </Box>
-                <Avatar src="/assets/avatar.png" sx={{ '--Avatar-size': '100px' }} />
-              </Box>
-            </Box>
-            <Button color="secondary" size="small">
-              Remove
-            </Button>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Full Name
+            </Typography>
+            <Typography variant="body1">
+              {`${userData.firstName} ${userData.lastName}`}
+            </Typography>
           </Stack>
-          <Stack spacing={2}>
-            <FormControl>
-              <InputLabel>Full name</InputLabel>
-              <OutlinedInput defaultValue="Sofia Rivers" name="fullName" />
-            </FormControl>
-            <FormControl disabled>
-              <InputLabel>Email address</InputLabel>
-              <OutlinedInput name="email" type="email" value="sofia@devias.io" />
-              <FormHelperText>
-                Please <Link variant="inherit">contact us</Link> to change your email
-              </FormHelperText>
-            </FormControl>
-            <Stack direction="row" spacing={2}>
-              <FormControl sx={{ width: '160px' }}>
-                <InputLabel>Dial code</InputLabel>
-                <Select
-                  name="countryCode"
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <Box
-                        alt="Spain"
-                        component="img"
-                        src="/assets/flag-es.svg"
-                        sx={{ display: 'block', height: '20px', width: 'auto' }}
-                      />
-                    </InputAdornment>
-                  }
-                  value="+34"
-                >
-                  <Option value="+1">United States</Option>
-                  <Option value="+49">Germany</Option>
-                  <Option value="+34">Spain</Option>
-                </Select>
-              </FormControl>
-              <FormControl sx={{ flex: '1 1 auto' }}>
-                <InputLabel>Phone number</InputLabel>
-                <OutlinedInput defaultValue="965 245 7623" name="phone" />
-              </FormControl>
-            </Stack>
-            <FormControl>
-              <InputLabel>Title</InputLabel>
-              <OutlinedInput name="title" placeholder="e.g Golang Developer" />
-            </FormControl>
-            <FormControl>
-              <InputLabel>Biography (optional)</InputLabel>
-              <OutlinedInput name="bio" placeholder="Describe yourself..." />
-              <FormHelperText>0/200 characters</FormHelperText>
-            </FormControl>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Email Address
+            </Typography>
+            <Typography variant="body1">
+              {userData.email}
+            </Typography>
           </Stack>
         </Stack>
       </CardContent>
-      <CardActions sx={{ justifyContent: 'flex-end' }}>
-        <Button color="secondary">Cancel</Button>
-        <Button variant="contained">Save changes</Button>
-      </CardActions>
     </Card>
   );
 }
