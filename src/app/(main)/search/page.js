@@ -14,8 +14,18 @@ import { config } from '@/config';
 import { ApiTable } from '@/components/core/table/api-table';
 
 import { searchColumns } from '@/components/main/search/search-columns';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export default function Page() {
+
+  // TODO: Look at adding to a higher level component or page to protect all pages.
+  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
+  const { hasRole, isInGroup } = usePermissions();
+
+
+  if (!isInGroup(ROLE_FULL_ACCESS)) {
+    return <div>Access Denied</div>;
+  }
 
   const today = new Date();
   let todayText = today.toISOString();

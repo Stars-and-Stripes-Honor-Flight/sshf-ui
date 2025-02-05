@@ -2,7 +2,6 @@
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URI;
 
 function generateToken() {
   const arr = new Uint8Array(12);
@@ -19,7 +18,6 @@ class AuthClient {
   async initializeGoogleAuth() {
     if (typeof window === 'undefined' || this.googleAuthInitialized) return;
     
-    // Load Google's OAuth2 library
     await new Promise((resolve) => {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
@@ -27,14 +25,13 @@ class AuthClient {
       document.head.appendChild(script);
     });
 
-    // Initialize Google client only once
+    // Initialize Google client with additional scopes for groups
     this.tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'email profile',
+      scope: 'email profile https://www.googleapis.com/auth/admin.directory.group.readonly',
       callback: (response) => {
         if (response.access_token) {
           localStorage.setItem('google-access-token', response.access_token);
-          // Instead of reloading, we'll let the component handle the success
           if (this.authCallback) {
             this.authCallback();
           }
@@ -45,6 +42,31 @@ class AuthClient {
     this.googleAuthInitialized = true;
   }
 
+  async getGroupMemberships(token, userData) {
+    try {
+      // Fetch user's groups from Google Workspace Directory API
+      const response = await fetch(
+        `https://admin.googleapis.com/admin/directory/v1/groups?userKey=${userData.sub}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch group memberships');
+      }
+
+      const data = await response.json();
+      return data.groups || [];
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      return [];
+    }
+  }
 
   async signInWithOAuth({ provider }) {
     if (provider !== 'google') {
@@ -78,26 +100,39 @@ class AuthClient {
     }
 
     try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      // Fetch basic user info
+      const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
+      if (!userResponse.ok) {
         throw new Error('Failed to fetch user info');
       }
 
-      const userData = await response.json();
+      const userData = await userResponse.json();
+
+      // Fetch group memberships
+      const groups = await this.getGroupMemberships(token, userData);
+
+      // Map groups to roles (customize this based on your needs)
+      const roles = groups.map(group => ({
+        id: group.id,
+        name: group.name,
+        email: group.email
+      }));
+
       const user = {
         id: userData.sub,
         email: userData.email,
         firstName: userData.given_name,
         lastName: userData.family_name,
         avatar: userData.picture,
+        roles: roles // Add roles to user data
       };
 
-      // Store the user data in localStorage for immediate access
+      // Store the complete user data
       localStorage.setItem('user-data', JSON.stringify(user));
 
       return { data: user };
