@@ -10,14 +10,6 @@ function generateToken() {
   return Array.from(arr, (v) => v.toString(16).padStart(2, '0')).join('');
 }
 
-const user = {
-  id: 'USR-000',
-  avatar: '/assets/avatar.png',
-  firstName: 'Sofia',
-  lastName: 'Rivers',
-  email: 'sofia@devias.io',
-};
-
 class AuthClient {
   constructor() {
     this.googleAuthInitialized = false;
@@ -53,15 +45,6 @@ class AuthClient {
     this.googleAuthInitialized = true;
   }
 
-  async signUp(_) {
-    // Make API request
-
-    // We do not handle the API, so we'll just generate a token and store it in localStorage.
-    const token = generateToken();
-    localStorage.setItem('custom-auth-token', token);
-
-    return {};
-  }
 
   async signInWithOAuth({ provider }) {
     if (provider !== 'google') {
@@ -85,30 +68,6 @@ class AuthClient {
       console.error('Google Auth Error:', error);
       return { error: 'Failed to authenticate with Google' };
     }
-  }
-
-  async signInWithPassword(params) {
-    const { email, password } = params;
-
-    // Make API request
-
-    // We do not handle the API, so we'll check if the credentials match with the hardcoded ones.
-    if (email !== 'sofia@devias.io' || password !== 'Secret1') {
-      return { error: 'Invalid credentials' };
-    }
-
-    const token = generateToken();
-    localStorage.setItem('custom-auth-token', token);
-
-    return {};
-  }
-
-  async resetPassword(_) {
-    return { error: 'Password reset not implemented' };
-  }
-
-  async updatePassword(_) {
-    return { error: 'Update reset not implemented' };
   }
 
   async getUser() {
