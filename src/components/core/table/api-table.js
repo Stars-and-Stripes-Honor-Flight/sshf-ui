@@ -30,8 +30,7 @@ import { ComboFilterButton } from '@/components/core/table/combo-filter';
 import getResponse from '@/lib/response';
 import getFilterResponse from '@/lib/filter-response';
 
-// import { api } from '@/lib/api';
-
+import { api } from '@/lib/api';
 
 let LoadingOrEmptyMessage = ({ rows, entityFriendlyName, columns, tablePageData, isLoading }) => {
     if (isLoading) {
@@ -284,54 +283,54 @@ export function ApiTable({
                 urlParams = urlParams + "&";
             }
 
-            // api({ 
-            //     entity: entity,
-            //     urlParams: `${urlParams}$count=true&$top=${tablePageData.rowsPerPage}&skip=${tablePageData.page * tablePageData.rowsPerPage}${filterString}`
-            // })
-            // .then((response) => {
-            //     if (response.status == "200") {
-            //         response.json().then(json => {
-            //             let results = json.value;
-            //             let mappedData = customMapping ? results.map(customMapping) : results;
+            console.log(`${urlParams}$count=true&$top=${tablePageData.rowsPerPage}&skip=${tablePageData.page * tablePageData.rowsPerPage}${filterString}`);
 
-            //             let count = json["@odata.count"];
-            //             let tempPageData = { ...tablePageData };
-            //             tempPageData.count = count;
-            //             setTablePageData(tempPageData);
-            //             setRows(mappedData);
-            //         });
-            //     } else {
-            //         toast.error(`Something went wrong! Or we could not find this ${entityFriendlyName} Record`);
-            //     }
-            //     setIsLoading(false);
-            // })
+            api({ 
+                entity: entity,
+                urlParams: `${urlParams}$count=true&$top=${tablePageData.rowsPerPage}&skip=${tablePageData.page * tablePageData.rowsPerPage}${filterString}`
+            })
+            .then((response) => {
+                if (response.status == "200") {
+                    response.json().then(json => {
+                        let results = json.value;
+                        let mappedData = customMapping ? results.map(customMapping) : results;
 
-            setTimeout(() => {
-                if (filterString) {
-                    let filterResponse = getFilterResponse();
-                    let results = filterResponse.rows.map(row => {
-                        return {
-                            ...row.value,
-                            id: row.id
-                        }
+                        let count = json["@odata.count"];
+                        let tempPageData = { ...tablePageData };
+                        tempPageData.count = count;
+                        setTablePageData(tempPageData);
+                        setRows(mappedData);
                     });
-
-                    let tempPageData = { ...tablePageData };
-                    tempPageData.count = filterResponse.total_rows;
-                    setTablePageData(tempPageData);
-                    setRows(results);
                 } else {
-                    let response = getResponse();
-                    let results = response.rows.map(row => row.value);
-
-                    let tempPageData = { ...tablePageData };
-                    tempPageData.count = response.total_rows;
-                    setTablePageData(tempPageData);
-                    setRows(results);
+                    toast.error(`Something went wrong! Or we could not find this ${entityFriendlyName} Record`);
                 }
-
                 setIsLoading(false);
-            }, 1000);
+            })
+
+            if (filterString) {
+                let filterResponse = getFilterResponse();
+                let results = filterResponse.rows.map(row => {
+                    return {
+                        ...row.value,
+                        id: row.id
+                    }
+                });
+
+                let tempPageData = { ...tablePageData };
+                tempPageData.count = filterResponse.total_rows;
+                setTablePageData(tempPageData);
+                setRows(results);
+            } else {
+                let response = getResponse();
+                let results = response.rows.map(row => row.value);
+
+                let tempPageData = { ...tablePageData };
+                tempPageData.count = response.total_rows;
+                setTablePageData(tempPageData);
+                setRows(results);
+            }
+
+            setIsLoading(false);
         } catch (error) {
             console.log(error);
         }
