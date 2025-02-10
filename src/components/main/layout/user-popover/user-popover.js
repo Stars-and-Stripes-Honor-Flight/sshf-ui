@@ -36,7 +36,7 @@ export function UserPopover({ user = {}, anchorEl, onClose, open }) {
       <Box sx={{ p: 2 }}>
         <Typography>{user?.name}</Typography>
         <Typography color="text.secondary" variant="body2">
-          {user?.email}
+          {user?.firstName} {user?.lastName}
         </Typography>
       </Box>
       <Divider />
@@ -46,12 +46,6 @@ export function UserPopover({ user = {}, anchorEl, onClose, open }) {
             <UserIcon />
           </ListItemIcon>
           Account
-        </MenuItem>
-        <MenuItem component={RouterLink} href={paths.main.settings.security} onClick={onClose}>
-          <ListItemIcon>
-            <LockKeyIcon />
-          </ListItemIcon>
-          Security
         </MenuItem>
         <MenuItem onClick={logout}>
           <ListItemIcon>
