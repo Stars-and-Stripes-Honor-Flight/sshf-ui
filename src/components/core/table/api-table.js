@@ -331,7 +331,7 @@ export function ApiTable({
                 }
 
                 setIsLoading(false);
-            }, 1000);
+            }, 100);
         } catch (error) {
             console.log(error);
         }
