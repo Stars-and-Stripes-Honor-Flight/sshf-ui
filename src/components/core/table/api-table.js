@@ -321,7 +321,8 @@ export function ApiTable({
                     setTablePageData(tempPageData);
                     setRows(results);
                 } else {
-                    let response = getResponse();
+                    let searchRequest = { 'limit': tablePageData.rowsPerPage, 'startkey': ['Active', 'Schmechel'], 'endkey': ['Active', 'Z'] };
+                    let response = getResponse(searchRequest);
                     let results = response.rows.map(row => row.value);
 
                     let tempPageData = { ...tablePageData };
