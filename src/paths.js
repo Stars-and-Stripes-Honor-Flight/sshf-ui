@@ -3,9 +3,6 @@ export const paths = {
   auth: {
     domain: {
       signIn: '/auth/domain/sign-in'
-    },
-    custom: {
-      signIn: '/auth/custom/sign-in'
     }
   },
   main: {

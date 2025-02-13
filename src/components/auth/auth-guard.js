@@ -29,10 +29,6 @@ export function AuthGuard({ children }) {
       logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
 
       switch (config.auth.strategy) {
-        case AuthStrategy.CUSTOM: {
-          router.replace(paths.auth.custom.signIn);
-          return;
-        }
         case AuthStrategy.DOMAIN: {
           router.replace(paths.auth.domain.signIn);
           return;

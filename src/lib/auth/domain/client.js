@@ -113,15 +113,32 @@ class AuthClient {
 
       const userData = await userResponse.json();
 
-      // Fetch group memberships
-      const groups = await this.getGroupMemberships(token, userData);
+      const roles = [];
 
-      // Map groups to roles (customize this based on your needs)
-      const roles = groups.map(group => ({
-        id: group.id,
-        name: group.name,
-        email: group.email
-      }));
+      // Check group memberships (preload roles)
+      const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
+      //const ROLE_READ_ACCESS = "TBD";
+      const possibleRoles = [ROLE_FULL_ACCESS];
+
+      for (const role of possibleRoles) {
+        // Call user/hasgroup endpoint on api to check authorization.
+        const hasGroupResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/hasgroup?groupEmail=${role}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!hasGroupResponse.ok) {
+          continue;
+        }
+
+        const hasGroupData = await hasGroupResponse.json();
+        if (hasGroupData.hasgroup) {
+          roles.push({name: role, email: role});
+        }
+      }
+
+
 
       const user = {
         id: userData.sub,
