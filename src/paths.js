@@ -21,7 +21,8 @@ export const paths = {
     veterans: {
       list: '/veterans/',
       create: '/veterans/create/',
-      details: (veteranId) => `/veterans/details?id=${veteranId}`
+      details: (veteranId) => `/veterans/details?id=${veteranId}`,
+      preview: (veteranId) => `/veterans/preview?id=${veteranId}`
     },
     guardians: {
       list: '/guardians/',
