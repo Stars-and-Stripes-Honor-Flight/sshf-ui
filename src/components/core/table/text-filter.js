@@ -49,7 +49,7 @@ function TextFilterPopover ({ label = '' }) {
             }}
             value={value}
           />
-          <Typography variant="caption">*Filter is Case Sensitive</Typography>
+          <Typography variant="caption">*Filter is Case Insensitive</Typography>
         </FormControl>
         <Button
           onClick={() => {
