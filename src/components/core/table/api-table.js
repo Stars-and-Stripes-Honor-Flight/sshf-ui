@@ -27,10 +27,7 @@ import { DataTable } from '@/components/core/data-table';
 import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
 
-import getResponse from '@/lib/response';
-import getFilterResponse from '@/lib/filter-response';
-
-// import { api } from '@/lib/api';
+import { api } from '@/lib/api';
 
 
 let LoadingOrEmptyMessage = ({ rows, entityFriendlyName, columns, tablePageData, isLoading }) => {
@@ -236,130 +233,93 @@ export function ApiTable({
         showLoading();
         try {    
             const hasFilters = filters.some(f => f.value != undefined);
-            let filterString = '';
-            let userFilterString = '';
-            if (tabFilter || hasFilters) {
-                filterString = `&$filter=`;
-
-                filters.forEach(f => {
-                    if (f.value != undefined) {
-
-                        if (userFilterString.length > 0) {
-                            userFilterString = userFilterString + " and ";
-                        }
-
-                        switch (f.filterType) {
-                            case "text":
-                                userFilterString = `contains(${f.property}, '${f.value}')`;
-                                break;
-                            case "combo":
-                                if (f.filterProperty) {
-                                    let filterValue = "";
-                                    f.options.forEach(option => {
-                                        if (option.props.value == f.value) {
-                                            filterValue = option.props.id;
-                                        }
-                                    })
-                                    userFilterString = `${f.filterProperty} eq ${filterValue}`;
-                                } else {
-                                    userFilterString = `${f.property} eq '${f.value}'`;
-                                }
-                                
-                        }
-
-                        
-                    }
-                });
+            let filterParams = {};
+            
+            // Set default status filter to 'Active' if not specified
+            filterParams.status = 'Active';
+            
+            // Handle tab filter (assuming tab.value corresponds to status)
+            if (currentTab) {
+                filterParams.status = currentTab;
             }
             
-            if (tabFilter && hasFilters) {
-                filterString = `${filterString}${tabFilter} and ${userFilterString}`;
-            } else if (tabFilter) {
-                filterString = `${filterString}${tabFilter}`;
-            } else if (hasFilters) {
-                filterString = `${filterString}${userFilterString}`;
-            }
-
-            if (urlParams) {
-                urlParams = urlParams + "&";
-            }
-
-            // api({ 
-            //     entity: entity,
-            //     urlParams: `${urlParams}$count=true&$top=${tablePageData.rowsPerPage}&skip=${tablePageData.page * tablePageData.rowsPerPage}${filterString}`
-            // })
-            // .then((response) => {
-            //     if (response.status == "200") {
-            //         response.json().then(json => {
-            //             let results = json.value;
-            //             let mappedData = customMapping ? results.map(customMapping) : results;
-
-            //             let count = json["@odata.count"];
-            //             let tempPageData = { ...tablePageData };
-            //             tempPageData.count = count;
-            //             setTablePageData(tempPageData);
-            //             setRows(mappedData);
-            //         });
-            //     } else {
-            //         toast.error(`Something went wrong! Or we could not find this ${entityFriendlyName} Record`);
-            //     }
-            //     setIsLoading(false);
-            // })
-
-            setTimeout(() => {
-                if (filterString) {
-                    let filterResponse = getFilterResponse();
-                    let results = filterResponse.rows.map(row => {
-                        return {
-                            ...row.value,
-                            id: row.id
-                        }
-                    });
-
-                    let tempPageData = { ...tablePageData };
-                    tempPageData.count = filterResponse.total_rows;
-                    setTablePageData(tempPageData);
-                    setRows(results);
-                } else {
-                    let response = getResponse();
-                    let results = response.rows.map(row => row.value);
-
-                    let tempPageData = { ...tablePageData };
-                    tempPageData.count = response.total_rows;
-                    setTablePageData(tempPageData);
-                    setRows(results);
+            // Handle text filters
+            filters.forEach(f => {
+                if (f.value != undefined) {
+                    // Handle lastname filter specifically
+                    if (f.property === 'lastName') {
+                        filterParams.lastname = f.value;
+                    }
+                    // Handle flight filter
+                    else if (f.property === 'flight') {
+                        filterParams.flight = f.value;
+                    }
                 }
-
-                setIsLoading(false);
-            }, 100);
+            });
+            
+            // Set pagination
+            filterParams.limit = tablePageData.rowsPerPage;
+            
+            // Call the API
+            const response = await api.search(filterParams);
+            
+            if (response) {
+                // Map the API response to the expected format
+                const results = response.rows.map(row => {
+                    return {
+                        ...row.value,
+                        id: row.id
+                    }
+                });
+                
+                // Apply custom mapping if provided
+                const mappedData = customMapping ? results.map(customMapping) : results;
+                
+                let tempPageData = { ...tablePageData };
+                tempPageData.count = response.total_rows;
+                setTablePageData(tempPageData);
+                setRows(mappedData);
+            } else {
+                toast.error(`Something went wrong! Or we could not find this ${entityFriendlyName} Record`);
+            }
+            
+            setIsLoading(false);
         } catch (error) {
-            console.log(error);
+            console.error('Error fetching data:', error);
+            toast.error(`Error fetching data: ${error.message}`);
+            setIsLoading(false);
         }
     };
 
     const fetchTabCounts = async () => {
         try {
-            let tempTabs = tableTabs;
-            for(let t of tempTabs) {
-                let filterString = '';
-                if (t.filter) {
-                    filterString = `&$filter=${t.filter}`;
-                }
-                await api({ 
-                    entity: entity,
-                    urlParams: `$count=true&$top=0${filterString}`
-                })
-                .then((response) => {
-                    if (response.status == "200") {
-                        response.json().then(json => {
-                            t.count = json["@odata.count"];
-                        });
-                    }
-                })
+            let tempTabs = [...tableTabs];
+            
+            // Skip if no tabs or using mock data
+            if (tempTabs.length === 0 || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+                return;
             }
+            
+            // Fetch counts for each tab (status)
+            for (let t of tempTabs) {
+                try {
+                    const response = await api.search({
+                        limit: 0,
+                        status: t.value
+                    });
+                    
+                    if (response) {
+                        t.count = response.total_rows;
+                    }
+                } catch (error) {
+                    console.error(`Error fetching count for tab ${t.value}:`, error);
+                    // Keep the existing count if there's an error
+                }
+            }
+            
             setTableTabs(tempTabs);
         } catch (error) {
-            console.log(error);
+            console.error('Error fetching tab counts:', error);
         }
     }
 
