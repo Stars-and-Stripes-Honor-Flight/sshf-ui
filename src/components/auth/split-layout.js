@@ -27,15 +27,31 @@ export function SplitLayout({ children }) {
             <Link href="https://www.starsandstripeshonorflight.org/veteran-application/">Veteran Application Link</Link>
           </Stack>
           <Stack
-            direction="row"
+            direction={{ xs: 'column', sm: 'row' }}
             spacing={3}
-            sx={{ alignItems: 'center', color: 'var(--mui-palette-neutral-500)', flexWrap: 'wrap' }}
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 3,
+              '& > *': {
+                minWidth: '140px',
+                display: 'flex',
+                justifyContent: 'center',
+              },
+              '@media (min-width: 600px) and (max-width: 959px)': {
+                '& > *:nth-of-type(n+4)': {
+                  marginLeft: 'auto',
+                  marginRight: 'auto',
+                },
+              }
+            }}
           >
-            <Image height={140} width={140} src="/assets/AirForce.png" />
-            <Image height={140} width={140} src="/assets/Army.png" />
-            <Image height={140} width={140} src="/assets/CoastGuard.png" />
-            <Image height={140} width={140} src="/assets/Marines.png" />
-            <Image height={140} width={140} src="/assets/Navy.png" />
+            <Image height={140} width={140} src="/assets/AirForce.png" alt="Air Force Logo" />
+            <Image height={140} width={140} src="/assets/Army.png" alt="Army Logo" />
+            <Image height={140} width={140} src="/assets/CoastGuard.png" alt="Coast Guard Logo" />
+            <Image height={140} width={140} src="/assets/Marines.png" alt="Marines Logo" />
+            <Image height={140} width={140} src="/assets/Navy.png" alt="Navy Logo" />
           </Stack>
         </Stack>
       </Box>

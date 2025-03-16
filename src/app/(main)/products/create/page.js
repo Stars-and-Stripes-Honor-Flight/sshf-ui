@@ -8,7 +8,7 @@ import { ArrowLeft as ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/Arrow
 
 import { config } from '@/config';
 import { paths } from '@/paths';
-import { ProductCreateForm } from '@/components/main/product/product-create-form';
+import { ProductCreateForm } from '@/components/dashboard/product/product-create-form';
 
 export const metadata = { title: `Create | Products | Dashboard | ${config.site.name}` };
 
@@ -28,7 +28,7 @@ export default function Page() {
             <Link
               color="text.primary"
               component={RouterLink}
-              href={paths.main.products.list}
+              href={paths.dashboard.products.list}
               sx={{ alignItems: 'center', display: 'inline-flex', gap: 1 }}
               variant="subtitle2"
             >

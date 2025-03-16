@@ -11,10 +11,10 @@ import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { config } from '@/config';
 import { paths } from '@/paths';
 import { dayjs } from '@/lib/dayjs';
-import { ProductModal } from '@/components/main/product/product-modal';
-import { ProductsFilters } from '@/components/main/product/products-filters';
-import { ProductsPagination } from '@/components/main/product/products-pagination';
-import { ProductsTable } from '@/components/main/product/products-table';
+import { ProductModal } from '@/components/dashboard/product/product-modal';
+import { ProductsFilters } from '@/components/dashboard/product/products-filters';
+import { ProductsPagination } from '@/components/dashboard/product/products-pagination';
+import { ProductsTable } from '@/components/dashboard/product/products-table';
 
 export const metadata = { title: `List | Products | Dashboard | ${config.site.name}` };
 
@@ -110,7 +110,7 @@ export default function Page({ searchParams }) {
             <div>
               <Button
                 component={RouterLink}
-                href={paths.main.products.create}
+                href={paths.dashboard.products.create}
                 startIcon={<PlusIcon />}
                 variant="contained"
               >

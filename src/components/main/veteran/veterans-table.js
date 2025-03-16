@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
 import { Clock as ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
 import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { paths } from '@/paths';
 import { DataTable } from '@/components/core/data-table';
@@ -23,7 +24,7 @@ const columns = [
           <Link
             color="text.primary"
             component={RouterLink}
-            href={paths.main.veterans.preview(row.id)}
+            href={`${paths.main.veterans.details(row.id)}`}
             sx={{ whiteSpace: 'nowrap' }}
             variant="subtitle2"
           >
@@ -81,11 +82,23 @@ const columns = [
     width: '150px',
   },
   {
-    formatter: (row) => (
-      <IconButton component={RouterLink} href={paths.main.veterans.preview(row.id)}>
-        <EyeIcon />
-      </IconButton>
-    ),
+    formatter: (row) => {
+      const router = useRouter();
+      const pathname = usePathname();
+      const searchParams = useSearchParams();
+
+      const handlePreview = () => {
+        const params = new URLSearchParams(searchParams);
+        params.set('previewId', row.id);
+        router.push(`${pathname}?${params.toString()}`);
+      };
+
+      return (
+        <IconButton onClick={handlePreview}>
+          <EyeIcon />
+        </IconButton>
+      );
+    },
     name: 'Actions',
     hideName: true,
     width: '100px',
