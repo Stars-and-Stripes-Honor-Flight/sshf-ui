@@ -23,6 +23,17 @@ import Typography from '@mui/material/Typography';
 import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
+import { 
+  User, 
+  Medal,
+  Airplane,
+  Phone,
+  UsersFour,
+  EnvelopeSimple,
+  TShirt,
+  Camera,
+  Bed
+} from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
@@ -52,6 +63,40 @@ const getStatusColor = (status) => {
   };
   return colors[status] || 'default';
 };
+
+// Add new component for section headers
+const SectionHeader = ({ icon: Icon, title }) => (
+  <Stack 
+    direction="row" 
+    alignItems="center" 
+    spacing={2}
+    sx={{ mb: 3 }}
+  >
+    <Box
+      sx={{
+        backgroundColor: 'primary.main',
+        width: 4,
+        height: 24,
+        borderRadius: 1
+      }}
+    />
+    <Stack direction="row" spacing={1} alignItems="center">
+      {Icon && (
+        <Icon 
+          size={24}
+          weight="bold" 
+          color="var(--mui-palette-primary-main)"
+        />
+      )}
+      <Typography 
+        variant="h6"
+        sx={{ fontWeight: 'bold' }}
+      >
+        {title}
+      </Typography>
+    </Stack>
+  </Stack>
+);
 
 export function VeteranEditForm({ veteran }) {
   const router = useRouter();
@@ -87,10 +132,21 @@ export function VeteranEditForm({ veteran }) {
   const watchStatus = watch('flight.status');
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form 
+      onSubmit={handleSubmit(onSubmit)}
+      style={{ paddingBottom: '80px' }}
+    >
       <Grid container spacing={4}>
         <Grid xs={12} md={4}>
-          <Card>
+          <Card 
+            id="veteran-info"
+            sx={{
+              position: 'sticky',
+              top: 24,
+              backgroundColor: 'background.neutral',
+              boxShadow: (theme) => theme.shadows[8]
+            }}
+          >
             <CardContent>
               <Stack spacing={3}>
                 {watchBranch ? (
@@ -99,8 +155,13 @@ export function VeteranEditForm({ veteran }) {
                       position: 'relative',
                       height: '200px',
                       width: '100%',
-                      borderRadius: 1,
-                      overflow: 'hidden'
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      boxShadow: (theme) => theme.shadows[4],
+                      transition: 'transform 0.3s ease-in-out',
+                      '&:hover': {
+                        transform: 'scale(1.02)'
+                      }
                     }}
                   >
                     <Image
@@ -134,30 +195,51 @@ export function VeteranEditForm({ veteran }) {
                     alignItems="center" 
                     justifyContent="space-between"
                   >
-                    <Typography variant="h4">
+                    <Typography 
+                      variant="h4"
+                      sx={{
+                        fontWeight: 'bold',
+                        color: 'text.primary'
+                      }}
+                    >
                       {veteran.name.first} {veteran.name.last}
                     </Typography>
                     <Chip
                       label={watchStatus || 'No Status'}
                       color={getStatusColor(watchStatus)}
                       size="small"
+                      sx={{
+                        borderRadius: 1,
+                        fontWeight: 'medium'
+                      }}
                     />
                   </Stack>
-                  <Stack spacing={1}>
-                    <Stack spacing={1}>
-                      <Typography variant="h6">
-                        {watchBranch || 'Branch Not Specified'}
-                      </Typography>
-                      <Typography variant="h6">
-                        {watchRank || 'Rank Not Specified'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {watchDates || 'Service Dates Not Specified'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {watchVetType} Era
-                      </Typography>
-                    </Stack>
+                  <Divider />
+                  <Stack spacing={2}>
+                    <Typography 
+                      variant="h6"
+                      sx={{ 
+                        color: 'primary.main',
+                        fontWeight: 'medium' 
+                      }}
+                    >
+                      {watchBranch || 'Branch Not Specified'}
+                    </Typography>
+                    <Typography variant="subtitle1">
+                      {watchRank || 'Rank Not Specified'}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {watchDates || 'Service Dates Not Specified'}
+                    </Typography>
+                    <Chip
+                      label={`${watchVetType} Era`}
+                      variant="outlined"
+                      size="small"
+                      sx={{ alignSelf: 'flex-start' }}
+                    />
                   </Stack>
                 </Stack>
               </Stack>
@@ -165,11 +247,35 @@ export function VeteranEditForm({ veteran }) {
           </Card>
         </Grid>
         <Grid xs={12} md={8}>
-          <Stack divider={<Divider />} spacing={4}>
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Personal Information</Typography>
+          <Stack spacing={4}>
+            {/* Essential Information Group */}
+            <Stack spacing={3}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: 'primary.main',
+                  px: 2 
+                }}
+              >
+                Essential Information
+              </Typography>
+              
+              {/* Personal Information Card */}
+              <Card
+                elevation={2}
+                sx={{
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <CardContent>
+                  <SectionHeader 
+                    icon={User} 
+                    title="Personal Information" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={4}>
                       <Controller
@@ -240,14 +346,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Service Information</Typography>
+              {/* Service Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Medal} 
+                    title="Service Information" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -317,14 +425,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Flight Information</Typography>
+              {/* Flight Status Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Airplane} 
+                    title="Flight Status" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -385,14 +495,31 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Stack>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Emergency Contact Information</Typography>
+            {/* Contact Information Group */}
+            <Stack spacing={3}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: 'primary.main',
+                  px: 2,
+                  pt: 2 
+                }}
+              >
+                Contact Information
+              </Typography>
+
+              {/* Emergency Contact Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Phone} 
+                    title="Emergency Contact" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -447,14 +574,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Guardian Information</Typography>
+              {/* Guardian Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={UsersFour} 
+                    title="Guardian Information" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -509,14 +638,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Mail Call Information</Typography>
+              {/* Mail Call Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={EnvelopeSimple} 
+                    title="Mail Call Information" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -558,14 +689,31 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Stack>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Apparel Information</Typography>
+            {/* Additional Details Group */}
+            <Stack spacing={3}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: 'primary.main',
+                  px: 2,
+                  pt: 2 
+                }}
+              >
+                Additional Details
+              </Typography>
+
+              {/* Apparel Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={TShirt} 
+                    title="Apparel Information" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={4}>
                       <Controller
@@ -625,14 +773,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Media Permissions</Typography>
+              {/* Media Permissions Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Camera} 
+                    title="Media Permissions" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -667,14 +817,16 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardContent>
-                <Stack spacing={3}>
-                  <Typography variant="h6">Accommodations</Typography>
+              {/* Accommodations Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Bed} 
+                    title="Accommodations" 
+                  />
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -742,20 +894,52 @@ export function VeteranEditForm({ veteran }) {
                       />
                     </Grid>
                   </Grid>
-                </Stack>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Stack>
           </Stack>
-          <CardActions sx={{ justifyContent: 'flex-end' }}>
-            <Button color="secondary" component={RouterLink} href={paths.main.veterans.list}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="contained">
-              Save Changes
-            </Button>
-          </CardActions>
         </Grid>
       </Grid>
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 2,
+          backgroundColor: 'background.paper',
+          borderTop: 1,
+          borderColor: 'divider',
+          zIndex: 1200,
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 2
+        }}
+      >
+        <Button 
+          color="inherit" 
+          component={RouterLink} 
+          href={paths.main.veterans.list}
+          sx={{
+            borderRadius: 2,
+            fontWeight: 'medium'
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          variant="contained"
+          sx={{
+            borderRadius: 2,
+            fontWeight: 'medium',
+            boxShadow: (theme) => theme.shadows[4]
+          }}
+        >
+          Save Changes
+        </Button>
+      </Box>
     </form>
   );
 }
