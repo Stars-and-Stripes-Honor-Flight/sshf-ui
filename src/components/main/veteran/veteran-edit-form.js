@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
@@ -39,7 +38,7 @@ import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
-import { veteranSchema } from '@/schemas/veteran';
+import { api } from '@/lib/api';
 
 const getBranchImage = (branch) => {
   const images = {
@@ -100,6 +99,30 @@ const SectionHeader = ({ icon: Icon, title }) => (
 
 export function VeteranEditForm({ veteran }) {
   const router = useRouter();
+  const [saving, setSaving] = React.useState(false);
+
+  // Default values based on API structure
+  const defaultValues = React.useMemo(() => ({
+    _id: veteran._id || '',
+    name: veteran.name || { first: '', middle: '', last: '', nickname: '' },
+    address: veteran.address || { street: '', city: '', state: '', zip: '', phone_day: '', phone_mbl: '', email: '' },
+    service: veteran.service || { branch: '', rank: '', dates: '', activity: '' },
+    vet_type: veteran.vet_type || '',
+    birth_date: veteran.birth_date || '',
+    gender: veteran.gender || '',
+    weight: veteran.weight || '',
+    app_date: veteran.app_date || '',
+    medical: veteran.medical || { level: '', food_restriction: 'None', usesCane: false, usesWheelchair: false },
+    flight: veteran.flight || { status: 'Active', group: '', bus: '', seat: '', waiver: false },
+    emerg_contact: veteran.emerg_contact || { name: '', relation: '', address: { phone: '', email: '' } },
+    guardian: veteran.guardian || { name: '', id: '', pref_notes: '' },
+    mail_call: veteran.mail_call || { name: '', relation: '', notes: '', received: false },
+    shirt: veteran.shirt || { size: '' },
+    apparel: veteran.apparel || { jacket_size: '', delivery: 'None' },
+    media_newspaper_ok: veteran.media_newspaper_ok || 'No',
+    media_interview_ok: veteran.media_interview_ok || 'No',
+    accommodations: veteran.accommodations || { hotel_name: '', room_type: 'None', arrival_date: '', departure_date: '', notes: '' }
+  }), [veteran]);
 
   const {
     control,
@@ -107,19 +130,23 @@ export function VeteranEditForm({ veteran }) {
     formState: { errors },
     watch,
   } = useForm({
-    defaultValues: veteran,
-    resolver: zodResolver(veteranSchema)
+    defaultValues,
+    // Removed zodResolver for simplicity
   });
 
   const onSubmit = React.useCallback(
     async (data) => {
       try {
-        // Make API request
-        toast.success('Veteran updated');
-        router.push(paths.main.veterans.list);
+        setSaving(true);
+        // Call the API to update the veteran
+        await api.updateVeteran(data._id, data);
+        toast.success('Veteran updated successfully');
+        router.push(paths.main.search.list);
       } catch (err) {
         logger.error(err);
-        toast.error('Something went wrong!');
+        toast.error('Failed to update veteran: ' + (err.message || 'Unknown error'));
+      } finally {
+        setSaving(false);
       }
     },
     [router]
@@ -202,7 +229,7 @@ export function VeteranEditForm({ veteran }) {
                         color: 'text.primary'
                       }}
                     >
-                      {veteran.name.first} {veteran.name.last}
+                      {veteran.name?.first} {veteran.name?.last}
                     </Typography>
                     <Chip
                       label={watchStatus || 'No Status'}
@@ -235,7 +262,7 @@ export function VeteranEditForm({ veteran }) {
                       {watchDates || 'Service Dates Not Specified'}
                     </Typography>
                     <Chip
-                      label={`${watchVetType} Era`}
+                      label={`${watchVetType || 'Unknown'} Era`}
                       variant="outlined"
                       size="small"
                       sx={{ alignSelf: 'flex-start' }}
@@ -459,12 +486,12 @@ export function VeteranEditForm({ veteran }) {
                     <Grid xs={12} md={6}>
                       <Controller
                         control={control}
-                        name="flight.group"
+                        name="flight.id"
                         render={({ field }) => (
-                          <FormControl error={Boolean(errors.flight?.group)} fullWidth>
-                            <InputLabel>Flight Group</InputLabel>
+                          <FormControl error={Boolean(errors.flight?.id)} fullWidth>
+                            <InputLabel>Flight ID</InputLabel>
                             <OutlinedInput {...field} />
-                            {errors.flight?.group ? <FormHelperText>{errors.flight.group.message}</FormHelperText> : null}
+                            {errors.flight?.id ? <FormHelperText>{errors.flight.id.message}</FormHelperText> : null}
                           </FormControl>
                         )}
                       />
@@ -598,32 +625,6 @@ export function VeteranEditForm({ veteran }) {
                         )}
                       />
                     </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="guardian.pref_phone"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.guardian?.pref_phone)} fullWidth>
-                            <InputLabel>Guardian Phone</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.guardian?.pref_phone && <FormHelperText>{errors.guardian.pref_phone.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="guardian.pref_email"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.guardian?.pref_email)} fullWidth>
-                            <InputLabel>Guardian Email</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.guardian?.pref_email && <FormHelperText>{errors.guardian.pref_email.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
                     <Grid xs={12}>
                       <Controller
                         control={control}
@@ -685,6 +686,18 @@ export function VeteranEditForm({ veteran }) {
                             <OutlinedInput {...field} multiline rows={2} />
                             {errors.mail_call?.notes && <FormHelperText>{errors.mail_call.notes.message}</FormHelperText>}
                           </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="mail_call.received"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Checkbox {...field} checked={field.value} />}
+                            label="Mail Call Received"
+                          />
                         )}
                       />
                     </Grid>
@@ -767,6 +780,7 @@ export function VeteranEditForm({ veteran }) {
                               <Option value="None">None</Option>
                               <Option value="Delivered">Delivered</Option>
                               <Option value="Pending">Pending</Option>
+                              <Option value="Mailed">Mailed</Option>
                             </Select>
                           </FormControl>
                         )}
@@ -920,7 +934,7 @@ export function VeteranEditForm({ veteran }) {
         <Button 
           color="inherit" 
           component={RouterLink} 
-          href={paths.main.veterans.list}
+          href={paths.main.search.list}
           sx={{
             borderRadius: 2,
             fontWeight: 'medium'
@@ -931,13 +945,14 @@ export function VeteranEditForm({ veteran }) {
         <Button 
           type="submit" 
           variant="contained"
+          disabled={saving}
           sx={{
             borderRadius: 2,
             fontWeight: 'medium',
             boxShadow: (theme) => theme.shadows[4]
           }}
         >
-          Save Changes
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </Box>
     </form>
