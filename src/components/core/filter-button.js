@@ -37,8 +37,11 @@ export function FilterButton({ displayValue, label, onFilterApply, onFilterDelet
   const { anchorRef, handleOpen, handleClose, open } = usePopover();
 
   const handleApply = React.useCallback(
-    (newValue) => {
-      handleClose();
+    (newValue, options = {}) => {
+      // Only close the popover if keepOpen is not true
+      if (!options.keepOpen) {
+        handleClose();
+      }
       onFilterApply?.(newValue);
     },
     [handleClose, onFilterApply]
