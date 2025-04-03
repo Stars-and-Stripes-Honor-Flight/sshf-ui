@@ -250,6 +250,10 @@ export function ApiTable({
                     if (f.property === 'lastName') {
                         filterParams.lastname = f.value;
                     }
+                    // Handle status filter
+                    else if (f.property === 'status') {
+                        filterParams.status = f.value;
+                    }
                     // Handle flight filter
                     else if (f.property === 'flight') {
                         filterParams.flight = f.value;
