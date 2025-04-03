@@ -36,7 +36,7 @@ export const searchColumns = [
 
             return (
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                    <Box
+                    <Box 
                         sx={{
                         bgcolor: 'var(--mui-palette-background-level1)',
                         borderRadius: 1.5,
@@ -45,6 +45,7 @@ export const searchColumns = [
                         textAlign: 'center',
                         width: 125
                         }}
+                        component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
                     >
                         {icon} {label}
                     </Box>
@@ -58,7 +59,11 @@ export const searchColumns = [
         width: '250px',
         formatter: (row) => 
         {
-            return <Typography variant='body1' >{row.name}</Typography>;
+            return <Typography variant='body1' 
+                component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
+            >
+                {row.name}
+            </Typography>;
         }
     },
     { field: 'city', name: 'City', width: '150px', },
@@ -119,7 +124,7 @@ export const searchColumns = [
     },
     {
         formatter: (row) => (
-        <IconButton component={RouterLink} href={paths.main.veterans.details(row.id)}>
+            <IconButton component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}>
             <EyeIcon />
         </IconButton>
         ),
