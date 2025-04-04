@@ -12,6 +12,7 @@ import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { paths } from '@/paths';
 import { config } from '@/config';
 import { ApiTable } from '@/components/core/table/api-table';
+import { Option } from '@/components/core/option';
 
 import { searchColumns } from '@/components/main/search/search-columns';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -32,11 +33,19 @@ export default function Page() {
   
   const [searchFilters, setSearchFilters] = React.useState([
     { property: "lastName", propertyFriendlyName: "Last Name", filterType: "text" },
-    { property: "firstName", propertyFriendlyName: "First Name", filterType: "text" },
-    { property: "city", propertyFriendlyName: "City", filterType: "text" },
-    { property: "phone", propertyFriendlyName: "Phone Number", filterType: "text" },
-    { property: "branch", propertyFriendlyName: "Military Branch", filterType: "text" },
-    { property: "guardian", propertyFriendlyName: "Is Guardian", filterType: "text" }
+    { property: "status", propertyFriendlyName: "Status", 
+      filterType: "combo", options: [
+        <Option key="All" value="All">All</Option>,
+        <Option key="Active" value="Active">Active</Option>,
+        <Option key="Flown" value="Flown">Flown</Option>,
+        <Option key="Deceased" value="Deceased">Deceased</Option>,
+        <Option key="Removed" value="Removed">Removed</Option>,
+        <Option key="Future-Spring" value="Future-Spring">Future-Spring</Option>,
+        <Option key="Future-Fall" value="Future-Fall">Future-Fall</Option>,
+        <Option key="Future-PostRestriction" value="Future-PostRestriction">Future-PostRestriction</Option>,
+        <Option key="Copied" value="Copied">Copied</Option>
+      ]
+    }
   ]);
 
   const updatesearchFilters = (newsearchFilter) => {

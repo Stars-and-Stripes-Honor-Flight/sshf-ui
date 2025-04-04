@@ -15,6 +15,11 @@ import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr/MedalMilitary';
+import { FlowerLotus } from '@phosphor-icons/react/dist/ssr/FlowerLotus';
+import { Flower } from '@phosphor-icons/react/dist/ssr/Flower';
+import { Leaf } from '@phosphor-icons/react/dist/ssr/Leaf';
+import { HourglassHigh } from '@phosphor-icons/react/dist/ssr/HourglassHigh';
+import { Copy } from '@phosphor-icons/react/dist/ssr/Copy';
 
 export const searchColumns = [
 
@@ -33,7 +38,7 @@ export const searchColumns = [
 
             return (
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                    <Box
+                    <Box 
                         sx={{
                         bgcolor: 'var(--mui-palette-background-level1)',
                         borderRadius: 1.5,
@@ -42,6 +47,7 @@ export const searchColumns = [
                         textAlign: 'center',
                         width: 125
                         }}
+                        component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
                     >
                         {icon} {label}
                     </Box>
@@ -55,7 +61,11 @@ export const searchColumns = [
         width: '250px',
         formatter: (row) => 
         {
-            return <Typography variant='body1' >{row.name}</Typography>;
+            return <Typography variant='body1' 
+                component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
+            >
+                {row.name}
+            </Typography>;
         }
     },
     { field: 'city', name: 'City', width: '150px', },
@@ -82,9 +92,14 @@ export const searchColumns = [
         formatter: (row) => 
         {
             const status = {
-                'In Progress': { label: 'In Progress', icon: <ClockIcon color="var(--mui-palette-primary-main)" weight="fill" /> },
+                'Flown': { label: 'Flown', icon: <ClockIcon color="var(--mui-palette-primary-main)" weight="fill" /> },
                 'Active': { label: 'Active', icon: <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" />,},
-                'Inactive': { label: 'Inactive', icon: <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" /> },
+                'Removed': { label: 'Removed', icon: <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" /> },
+                'Deceased': { label: 'Deceased', icon: <FlowerLotus color="var(--mui-palette-grey-500)" weight="fill" /> },
+                'Future-Spring': { label: 'Future-Spring', icon: <Flower color="var(--mui-palette-success-light)" weight="fill" /> },
+                'Future-Fall': { label: 'Future-Fall', icon: <Leaf color="var(--mui-palette-warning-light)" weight="fill" /> },
+                'Future-PostRestriction': { label: 'Future-PostRestriction', icon: <HourglassHigh color="var(--mui-palette-info-main)" weight="fill" /> },
+                'Copied': { label: 'Copied', icon: <Copy color="var(--mui-palette-info-light)" weight="fill" /> },
             };
             const { label, icon } = status[row.status] ?? { label: 'Unknown', icon: null };
         
