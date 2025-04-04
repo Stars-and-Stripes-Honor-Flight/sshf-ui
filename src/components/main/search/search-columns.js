@@ -1,6 +1,3 @@
-
-
-
 import Box from '@mui/material/Box';
 import RouterLink from 'next/link';
 import Typography from '@mui/material/Typography';
@@ -119,7 +116,7 @@ export const searchColumns = [
     },
     {
         formatter: (row) => (
-        <IconButton component={RouterLink} href={paths.main.veterans.details(row.id)}>
+            <IconButton component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}>
             <EyeIcon />
         </IconButton>
         ),

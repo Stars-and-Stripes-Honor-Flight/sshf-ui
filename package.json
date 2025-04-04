@@ -3,6 +3,7 @@
   "author": "Devias IO",
   "version": "7.2.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -46,6 +47,8 @@
     "@tiptap/extension-placeholder": "2.8.0",
     "@tiptap/react": "2.8.0",
     "@tiptap/starter-kit": "2.8.0",
+    "axios": "^1.8.3",
+    "cheerio": "^1.0.0",
     "dayjs": "1.11.13",
     "embla-carousel": "8.3.0",
     "embla-carousel-react": "8.3.0",
@@ -89,6 +92,5 @@
     "jest-environment-jsdom": "29.7.0",
     "prettier": "3.3.3",
     "typescript": "5.6.3"
-    
   }
 }
