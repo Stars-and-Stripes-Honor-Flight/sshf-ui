@@ -38,7 +38,7 @@ export const layoutConfig = {
           title: 'Settings',
           href: paths.main.settings.account,
           icon: 'gear',
-          matcher: { type: 'startsWith', href: '/dashboard/settings' },
+          matcher: { type: 'startsWith', href: '/main/settings' },
         },
       ],
     },

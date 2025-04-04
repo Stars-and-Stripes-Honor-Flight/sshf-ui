@@ -8,4 +8,4 @@ export async function middleware(req) {
   return res;
 }
 
-export const config = { matcher: ['/auth/:path*', '/dashboard/:path*'] };
+export const config = { matcher: ['/auth/:path*', '/main/:path*'] };
