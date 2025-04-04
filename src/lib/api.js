@@ -130,6 +130,60 @@ class ApiClient {
       throw error;
     }
   }
+
+  // Get a guardian by ID
+  async getGuardian(id) {
+    try {
+      const response = await this.request(`/guardians/${id}`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch guardian: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Create a new guardian
+  async createGuardian(data) {
+    try {
+      const response = await this.request('/guardians', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to create guardian: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Update a guardian
+  async updateGuardian(id, data) {
+    try {
+      const response = await this.request(`/guardians/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update guardian: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Delete a guardian
+  async deleteGuardian(id) {
+    try {
+      const response = await this.request(`/guardians/${id}`, {
+        method: 'DELETE',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to delete guardian: ${error.message}`);
+      throw error;
+    }
+  }
 }
 
 export const api = new ApiClient(); 

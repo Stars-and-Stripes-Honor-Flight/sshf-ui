@@ -19,18 +19,17 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
 import { 
   User, 
-  Medal,
+  Person,
   Airplane,
   Phone,
   UsersFour,
   EnvelopeSimple,
   TShirt,
-  Camera,
+  FirstAid,
   Bed
 } from '@phosphor-icons/react';
 
@@ -39,17 +38,7 @@ import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
-
-const getBranchImage = (branch) => {
-  const images = {
-    'Air Force': '/assets/AirForce.png',
-    'Army': '/assets/Army.png',
-    'Coast Guard': '/assets/CoastGuard.png',
-    'Marines': '/assets/Marines.png',
-    'Navy': '/assets/Navy.png'
-  };
-  return images[branch] || '';
-};
+import { guardianSchema } from '@/schemas/guardian';
 
 const getStatusColor = (status) => {
   const colors = {
@@ -63,7 +52,7 @@ const getStatusColor = (status) => {
   return colors[status] || 'default';
 };
 
-// Add new component for section headers
+// Component for section headers
 const SectionHeader = ({ icon: Icon, title }) => (
   <Stack 
     direction="row" 
@@ -97,33 +86,80 @@ const SectionHeader = ({ icon: Icon, title }) => (
   </Stack>
 );
 
-export function VeteranEditForm({ veteran }) {
+export function GuardianEditForm({ guardian }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
-    _id: veteran._id || '',
-    name: veteran.name || { first: '', middle: '', last: '', nickname: '' },
-    address: veteran.address || { street: '', city: '', state: '', zip: '', phone_day: '', phone_mbl: '', email: '' },
-    service: veteran.service || { branch: '', rank: '', dates: '', activity: '' },
-    vet_type: veteran.vet_type || '',
-    birth_date: veteran.birth_date || '',
-    gender: veteran.gender || '',
-    weight: veteran.weight || '',
-    app_date: veteran.app_date || '',
-    medical: veteran.medical || { level: '', food_restriction: 'None', usesCane: false, usesWheelchair: false },
-    flight: veteran.flight || { status: 'Active', group: '', bus: '', seat: '', waiver: false },
-    emerg_contact: veteran.emerg_contact || { name: '', relation: '', address: { phone: '', email: '' } },
-    alt_contact: veteran.alt_contact || { name: '', relation: '', address: { phone: '', email: '' } },
-    guardian: veteran.guardian || { name: '', id: '', pref_notes: '' },
-    mail_call: veteran.mail_call || { name: '', relation: '', notes: '', received: false },
-    shirt: veteran.shirt || { size: '' },
-    apparel: veteran.apparel || { jacket_size: '', delivery: 'None' },
-    media_newspaper_ok: veteran.media_newspaper_ok || 'No',
-    media_interview_ok: veteran.media_interview_ok || 'No',
-    accommodations: veteran.accommodations || { hotel_name: '', room_type: 'None', arrival_date: '', departure_date: '', notes: '' }
-  }), [veteran]);
+    _id: guardian._id || '',
+    name: guardian.name || { first: '', middle: '', last: '', nickname: '' },
+    address: guardian.address || { 
+      street: '', 
+      city: '', 
+      county: '', 
+      state: '', 
+      zip: '', 
+      phone_day: '', 
+      phone_eve: '', 
+      phone_mbl: '', 
+      email: '' 
+    },
+    birth_date: guardian.birth_date || '',
+    gender: guardian.gender || '',
+    weight: guardian.weight || '',
+    occupation: guardian.occupation || '',
+    app_date: guardian.app_date || '',
+    notes: guardian.notes || { service: 'N', other: '' },
+    medical: guardian.medical || { 
+      level: '', 
+      food_restriction: 'None', 
+      can_push: false, 
+      can_lift: false,
+      limitations: '',
+      experience: ''
+    },
+    flight: guardian.flight || { 
+      status: 'Active', 
+      id: '', 
+      group: '', 
+      bus: '', 
+      seat: '', 
+      waiver: false, 
+      vaccinated: false,
+      training: 'None',
+      training_complete: false,
+      training_see_doc: false,
+      paid: false,
+      exempt: false
+    },
+    emerg_contact: guardian.emerg_contact || { 
+      name: '', 
+      relation: '', 
+      address: { 
+        phone: '', 
+        email: '' 
+      } 
+    },
+    veteran: guardian.veteran || { 
+      pref_notes: '',
+      pairings: []
+    },
+    shirt: guardian.shirt || { size: 'None' },
+    apparel: guardian.apparel || { 
+      item: 'None',
+      jacket_size: 'None', 
+      shirt_size: 'None',
+      delivery: 'None' 
+    },
+    accommodations: guardian.accommodations || { 
+      hotel_name: '', 
+      room_type: 'None', 
+      arrival_date: '', 
+      departure_date: '', 
+      notes: '' 
+    }
+  }), [guardian]);
 
   const {
     control,
@@ -132,20 +168,20 @@ export function VeteranEditForm({ veteran }) {
     watch,
   } = useForm({
     defaultValues,
-    // Removed zodResolver for simplicity
+    resolver: zodResolver(guardianSchema)
   });
 
   const onSubmit = React.useCallback(
     async (data) => {
       try {
         setSaving(true);
-        // Call the API to update the veteran
+        // TODO: Update this to use the guardian API endpoint when available
         await api.updateVeteran(data._id, data);
-        toast.success('Veteran updated successfully');
+        toast.success('Guardian updated successfully');
         router.push(paths.main.search.list);
       } catch (err) {
         logger.error(err);
-        toast.error('Failed to update veteran: ' + (err.message || 'Unknown error'));
+        toast.error('Failed to update guardian: ' + (err.message || 'Unknown error'));
       } finally {
         setSaving(false);
       }
@@ -153,11 +189,8 @@ export function VeteranEditForm({ veteran }) {
     [router]
   );
 
-  const watchBranch = watch('service.branch');
-  const watchRank = watch('service.rank');
-  const watchDates = watch('service.dates');
-  const watchVetType = watch('vet_type');
   const watchStatus = watch('flight.status');
+  const watchTraining = watch('flight.training');
 
   return (
     <form 
@@ -167,7 +200,7 @@ export function VeteranEditForm({ veteran }) {
       <Grid container spacing={4}>
         <Grid xs={12} md={4}>
           <Card 
-            id="veteran-info"
+            id="guardian-info"
             sx={{
               position: 'sticky',
               top: 24,
@@ -177,45 +210,25 @@ export function VeteranEditForm({ veteran }) {
           >
             <CardContent>
               <Stack spacing={3}>
-                {watchBranch ? (
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      height: '200px',
-                      width: '100%',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      boxShadow: (theme) => theme.shadows[4],
-                      transition: 'transform 0.3s ease-in-out',
-                      '&:hover': {
-                        transform: 'scale(1.02)'
-                      }
-                    }}
-                  >
-                    <Image
-                      src={getBranchImage(watchBranch)}
-                      alt={watchBranch}
-                      fill
-                      style={{ objectFit: 'contain' }}
-                    />
-                  </Box>
-                ) : (
-                  <Box
-                    sx={{
-                      height: '200px',
-                      width: '100%',
-                      backgroundColor: 'var(--mui-palette-background-level2)',
-                      borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Typography color="text.secondary">
-                      Select a branch of service
-                    </Typography>
-                  </Box>
-                )}
+                <Box
+                  sx={{
+                    height: '200px',
+                    width: '100%',
+                    backgroundColor: 'primary.lighter',
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    boxShadow: (theme) => theme.shadows[4]
+                  }}
+                >
+                  <Person 
+                    size={120}
+                    weight="duotone"
+                    color="var(--mui-palette-primary-main)"
+                  />
+                </Box>
                 <Stack spacing={2}>
                   <Stack 
                     direction="row" 
@@ -230,7 +243,7 @@ export function VeteranEditForm({ veteran }) {
                         color: 'text.primary'
                       }}
                     >
-                      {veteran.name?.first} {veteran.name?.last}
+                      {guardian.name?.first} {guardian.name?.last}
                     </Typography>
                     <Chip
                       label={watchStatus || 'No Status'}
@@ -244,30 +257,27 @@ export function VeteranEditForm({ veteran }) {
                   </Stack>
                   <Divider />
                   <Stack spacing={2}>
-                    <Typography 
+                    <Typography
                       variant="h6"
-                      sx={{ 
+                      sx={{
                         color: 'primary.main',
-                        fontWeight: 'medium' 
+                        fontWeight: 'medium'
                       }}
                     >
-                      {watchBranch || 'Branch Not Specified'}
+                      Guardian
                     </Typography>
-                    <Typography variant="subtitle1">
-                      {watchRank || 'Rank Not Specified'}
+                    <Typography variant="body2">
+                      {watchTraining ? `Training: ${watchTraining}` : 'No Training Completed'}
                     </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ color: 'text.secondary' }}
-                    >
-                      {watchDates || 'Service Dates Not Specified'}
-                    </Typography>
-                    <Chip
-                      label={`${watchVetType || 'Unknown'} Era`}
-                      variant="outlined"
-                      size="small"
-                      sx={{ alignSelf: 'flex-start' }}
-                    />
+                    {guardian.veteran?.pairings?.length > 0 ? (
+                      <Typography variant="body2">
+                        Paired with: {guardian.veteran.pairings.map(p => p.name).join(', ')}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        Not paired with any veterans
+                      </Typography>
+                    )}
                   </Stack>
                 </Stack>
               </Stack>
@@ -377,85 +387,6 @@ export function VeteranEditForm({ veteran }) {
                 </CardContent>
               </Card>
 
-              {/* Service Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
-                <CardContent>
-                  <SectionHeader 
-                    icon={Medal} 
-                    title="Service Information" 
-                  />
-                  <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="service.branch"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.service?.branch)} fullWidth>
-                            <InputLabel required>Branch</InputLabel>
-                            <Select {...field}>
-                              <Option value="">Select a branch</Option>
-                              <Option value="Army">Army</Option>
-                              <Option value="Air Force">Air Force</Option>
-                              <Option value="Navy">Navy</Option>
-                              <Option value="Marines">Marines</Option>
-                              <Option value="Coast Guard">Coast Guard</Option>
-                            </Select>
-                            {errors.service?.branch ? <FormHelperText>{errors.service.branch.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="service.rank"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.service?.rank)} fullWidth>
-                            <InputLabel required>Rank</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.service?.rank ? <FormHelperText>{errors.service.rank.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="service.dates"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.service?.dates)} fullWidth>
-                            <InputLabel required>Service Dates</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.service?.dates ? <FormHelperText>{errors.service.dates.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="vet_type"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.vet_type)} fullWidth>
-                            <InputLabel required>War Era</InputLabel>
-                            <Select {...field}>
-                              <Option value="">Select war era</Option>
-                              <Option value="WWII">WWII</Option>
-                              <Option value="Korea">Korea</Option>
-                              <Option value="Vietnam">Vietnam</Option>
-                              <Option value="Afghanistan">Afghanistan</Option>
-                              <Option value="Iraq">Iraq</Option>
-                              <Option value="Other">Other</Option>
-                            </Select>
-                            {errors.vet_type ? <FormHelperText>{errors.vet_type.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
               {/* Flight Status Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
@@ -478,6 +409,8 @@ export function VeteranEditForm({ veteran }) {
                               <Option value="Removed">Removed</Option>
                               <Option value="Future-Spring">Future-Spring</Option>
                               <Option value="Future-Fall">Future-Fall</Option>
+                              <Option value="Future-PostRestriction">Future-PostRestriction</Option>
+                              <Option value="Copied">Copied</Option>
                             </Select>
                             {errors.flight?.status ? <FormHelperText>{errors.flight.status.message}</FormHelperText> : null}
                           </FormControl>
@@ -504,7 +437,19 @@ export function VeteranEditForm({ veteran }) {
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.flight?.bus)} fullWidth>
                             <InputLabel>Bus Assignment</InputLabel>
-                            <OutlinedInput {...field} />
+                            <Select {...field}>
+                              <Option value="None">None</Option>
+                              <Option value="Alpha1">Alpha1</Option>
+                              <Option value="Alpha2">Alpha2</Option>
+                              <Option value="Alpha3">Alpha3</Option>
+                              <Option value="Alpha4">Alpha4</Option>
+                              <Option value="Alpha5">Alpha5</Option>
+                              <Option value="Bravo1">Bravo1</Option>
+                              <Option value="Bravo2">Bravo2</Option>
+                              <Option value="Bravo3">Bravo3</Option>
+                              <Option value="Bravo4">Bravo4</Option>
+                              <Option value="Bravo5">Bravo5</Option>
+                            </Select>
                             {errors.flight?.bus ? <FormHelperText>{errors.flight.bus.message}</FormHelperText> : null}
                           </FormControl>
                         )}
@@ -513,11 +458,48 @@ export function VeteranEditForm({ veteran }) {
                     <Grid xs={12} md={6}>
                       <Controller
                         control={control}
+                        name="flight.seat"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.seat)} fullWidth>
+                            <InputLabel>Seat Assignment</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.flight?.seat ? <FormHelperText>{errors.flight.seat.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
                         name="flight.waiver"
                         render={({ field }) => (
                           <FormControlLabel
                             control={<Checkbox {...field} checked={field.value} />}
                             label="Waiver Received"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
+                        name="flight.vaccinated"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Checkbox {...field} checked={field.value} />}
+                            label="Vaccinated"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
+                        name="flight.paid"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Checkbox {...field} checked={field.value} />}
+                            label="Paid"
                           />
                         )}
                       />
@@ -630,6 +612,19 @@ export function VeteranEditForm({ veteran }) {
                     <Grid xs={12} md={4}>
                       <Controller
                         control={control}
+                        name="address.phone_eve"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.address?.phone_eve)} fullWidth>
+                            <InputLabel>Evening Phone</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.address?.phone_eve && <FormHelperText>{errors.address.phone_eve.message}</FormHelperText>}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
                         name="address.phone_mbl"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.address?.phone_mbl)} fullWidth>
@@ -640,7 +635,7 @@ export function VeteranEditForm({ veteran }) {
                         )}
                       />
                     </Grid>
-                    <Grid xs={12} md={4}>
+                    <Grid xs={12}>
                       <Controller
                         control={control}
                         name="address.email"
@@ -721,167 +716,43 @@ export function VeteranEditForm({ veteran }) {
                 </CardContent>
               </Card>
 
-              {/* Alternate Contact Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
-                <CardContent>
-                  <SectionHeader 
-                    icon={Phone} 
-                    title="Alternate Contact" 
-                  />
-                  <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="alt_contact.name"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.alt_contact?.name)} fullWidth>
-                            <InputLabel>Alternate Contact Name</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.alt_contact?.name && <FormHelperText>{errors.alt_contact.name.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="alt_contact.relation"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.alt_contact?.relation)} fullWidth>
-                            <InputLabel>Relationship</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.alt_contact?.relation && <FormHelperText>{errors.alt_contact.relation.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="alt_contact.address.phone"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.alt_contact?.address?.phone)} fullWidth>
-                            <InputLabel>Phone</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.alt_contact?.address?.phone && <FormHelperText>{errors.alt_contact.address.phone.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="alt_contact.address.email"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.alt_contact?.address?.email)} fullWidth>
-                            <InputLabel>Email</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.alt_contact?.address?.email && <FormHelperText>{errors.alt_contact.address.email.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
-              {/* Guardian Information Card */}
+              {/* Veteran Pairing Information Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={UsersFour} 
-                    title="Guardian Pairing Information" 
+                    title="Veteran Pairing Information" 
                   />
                   <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="guardian.name"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.guardian?.name)} fullWidth>
-                            <InputLabel>Guardian Name</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.guardian?.name && <FormHelperText>{errors.guardian.name.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
                     <Grid xs={12}>
                       <Controller
                         control={control}
-                        name="guardian.pref_notes"
+                        name="veteran.pref_notes"
                         render={({ field }) => (
-                          <FormControl error={Boolean(errors.guardian?.pref_notes)} fullWidth>
-                            <InputLabel>Guardian Notes</InputLabel>
+                          <FormControl error={Boolean(errors.veteran?.pref_notes)} fullWidth>
+                            <InputLabel>Veteran Preference Notes</InputLabel>
                             <OutlinedInput {...field} multiline rows={2} />
-                            {errors.guardian?.pref_notes && <FormHelperText>{errors.guardian.pref_notes.message}</FormHelperText>}
+                            {errors.veteran?.pref_notes && <FormHelperText>{errors.veteran.pref_notes.message}</FormHelperText>}
                           </FormControl>
                         )}
                       />
                     </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
-              {/* Mail Call Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
-                <CardContent>
-                  <SectionHeader 
-                    icon={EnvelopeSimple} 
-                    title="Mail Call Information" 
-                  />
-                  <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="mail_call.name"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.mail_call?.name)} fullWidth>
-                            <InputLabel>Contact Name</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.mail_call?.name && <FormHelperText>{errors.mail_call.name.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="mail_call.relation"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.mail_call?.relation)} fullWidth>
-                            <InputLabel>Relationship</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.mail_call?.relation && <FormHelperText>{errors.mail_call.relation.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12}>
-                      <Controller
-                        control={control}
-                        name="mail_call.notes"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.mail_call?.notes)} fullWidth>
-                            <InputLabel>Notes</InputLabel>
-                            <OutlinedInput {...field} multiline rows={2} />
-                            {errors.mail_call?.notes && <FormHelperText>{errors.mail_call.notes.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="mail_call.received"
-                        render={({ field }) => (
-                          <FormControlLabel
-                            control={<Checkbox {...field} checked={field.value} />}
-                            label="Mail Call Received"
-                          />
-                        )}
-                      />
-                    </Grid>
+                    {guardian.veteran?.pairings?.length > 0 && (
+                      <Grid xs={12}>
+                        <Typography variant="subtitle1">Currently Paired Veterans:</Typography>
+                        <Box sx={{ mt: 1 }}>
+                          {guardian.veteran.pairings.map((pairing, index) => (
+                            <Chip
+                              key={pairing.id || index}
+                              label={pairing.name}
+                              color="primary"
+                              variant="outlined"
+                              sx={{ mr: 1, mb: 1 }}
+                            />
+                          ))}
+                        </Box>
+                      </Grid>
+                    )}
                   </Grid>
                 </CardContent>
               </Card>
@@ -917,13 +788,15 @@ export function VeteranEditForm({ veteran }) {
                           <FormControl error={Boolean(errors.shirt?.size)} fullWidth>
                             <InputLabel>Shirt Size</InputLabel>
                             <Select {...field}>
-                              <Option value="">Select size</Option>
+                              <Option value="None">None</Option>
                               <Option value="S">Small</Option>
                               <Option value="M">Medium</Option>
                               <Option value="L">Large</Option>
                               <Option value="XL">X-Large</Option>
                               <Option value="2XL">2X-Large</Option>
                               <Option value="3XL">3X-Large</Option>
+                              <Option value="4XL">4X-Large</Option>
+                              <Option value="5XL">5X-Large</Option>
                             </Select>
                             {errors.shirt?.size && <FormHelperText>{errors.shirt.size.message}</FormHelperText>}
                           </FormControl>
@@ -939,13 +812,17 @@ export function VeteranEditForm({ veteran }) {
                             <InputLabel>Jacket Size</InputLabel>
                             <Select {...field}>
                               <Option value="None">None</Option>
+                              <Option value="XS">X-Small</Option>
                               <Option value="S">Small</Option>
                               <Option value="M">Medium</Option>
                               <Option value="L">Large</Option>
                               <Option value="XL">X-Large</Option>
                               <Option value="2XL">2X-Large</Option>
                               <Option value="3XL">3X-Large</Option>
+                              <Option value="4XL">4X-Large</Option>
+                              <Option value="5XL">5X-Large</Option>
                             </Select>
+                            {errors.apparel?.jacket_size && <FormHelperText>{errors.apparel.jacket_size.message}</FormHelperText>}
                           </FormControl>
                         )}
                       />
@@ -956,56 +833,29 @@ export function VeteranEditForm({ veteran }) {
                         name="apparel.delivery"
                         render={({ field }) => (
                           <FormControl fullWidth>
-                            <InputLabel>Delivery Status</InputLabel>
+                            <InputLabel>Delivery Method</InputLabel>
                             <Select {...field}>
                               <Option value="None">None</Option>
-                              <Option value="Delivered">Delivered</Option>
-                              <Option value="Pending">Pending</Option>
                               <Option value="Mailed">Mailed</Option>
+                              <Option value="Training">Training</Option>
+                              <Option value="Home">Home</Option>
                             </Select>
                           </FormControl>
                         )}
                       />
                     </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
-              {/* Media Permissions Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
-                <CardContent>
-                  <SectionHeader 
-                    icon={Camera} 
-                    title="Media Permissions" 
-                  />
-                  <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
+                    <Grid xs={12} md={4}>
                       <Controller
                         control={control}
-                        name="media_newspaper_ok"
+                        name="apparel.item"
                         render={({ field }) => (
                           <FormControl fullWidth>
-                            <InputLabel>Newspaper Permission</InputLabel>
+                            <InputLabel>Apparel Items</InputLabel>
                             <Select {...field}>
-                              <Option value="Unknown">Unknown</Option>
-                              <Option value="Yes">Yes</Option>
-                              <Option value="No">No</Option>
-                            </Select>
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="media_interview_ok"
-                        render={({ field }) => (
-                          <FormControl fullWidth>
-                            <InputLabel>Interview Permission</InputLabel>
-                            <Select {...field}>
-                              <Option value="Unknown">Unknown</Option>
-                              <Option value="Yes">Yes</Option>
-                              <Option value="No">No</Option>
+                              <Option value="None">None</Option>
+                              <Option value="Jacket">Jacket</Option>
+                              <Option value="Polo">Polo</Option>
+                              <Option value="Both">Both</Option>
                             </Select>
                           </FormControl>
                         )}
@@ -1061,4 +911,4 @@ export function VeteranEditForm({ veteran }) {
       </Box>
     </form>
   );
-}
+} 
