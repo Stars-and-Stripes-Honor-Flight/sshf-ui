@@ -15,6 +15,38 @@ class TokenManager {
     
     // Queue of functions waiting for token refresh
     this.refreshQueue = [];
+    
+    // Periodic refresh timer
+    this.refreshTimer = null;
+    
+    // Start periodic refresh checking
+    this.startPeriodicRefresh();
+  }
+
+  // Start periodic token refresh checking
+  startPeriodicRefresh() {
+    if (typeof window === 'undefined') return;
+    
+    // Check every minute
+    this.refreshTimer = setInterval(() => {
+      this.checkAndRefreshToken();
+    }, 60 * 1000);
+  }
+
+  // Stop periodic refresh checking
+  stopPeriodicRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+  }
+
+  // Check if token needs refresh and refresh if necessary
+  async checkAndRefreshToken() {
+    if (this.isTokenExpired() && this.getRefreshToken()) {
+      console.log('Token expired, refreshing...');
+      await this.refreshToken();
+    }
   }
 
   // Store token data including expiry time
@@ -30,6 +62,10 @@ class TokenManager {
     }
     
     localStorage.setItem(this.tokenExpiryKey, expiryTime.toString());
+    
+    // Restart periodic refresh when new tokens are stored
+    this.stopPeriodicRefresh();
+    this.startPeriodicRefresh();
   }
 
   // Get the current access token
@@ -67,6 +103,9 @@ class TokenManager {
     localStorage.removeItem(this.accessTokenKey);
     localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.tokenExpiryKey);
+    
+    // Stop periodic refresh when tokens are cleared
+    this.stopPeriodicRefresh();
   }
 
   // Get a valid token, refreshing if necessary
@@ -118,6 +157,7 @@ class TokenManager {
       this.refreshQueue.forEach(resolve => resolve(accessToken));
       this.refreshQueue = [];
       
+      console.log('Token refreshed successfully');
       return accessToken;
     } catch (error) {
       console.error('Failed to refresh token:', error);

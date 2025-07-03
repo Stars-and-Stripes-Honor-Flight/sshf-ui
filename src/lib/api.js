@@ -1,22 +1,23 @@
 // API client for interacting with the backend API
 import { toast } from '@/components/core/toaster';
+import { tokenManager } from '@/lib/auth/domain/tokenManager';
 
 class ApiClient {
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sshf-api-330507742215.us-central1.run.app';
   }
 
-  // Get the authentication token from local storage
-  getToken() {
+  // Get the authentication token using token manager
+  async getToken() {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('google-access-token');
+      return await tokenManager.getValidToken();
     }
     return null;
   }
 
   // Build headers with authentication
-  getHeaders() {
-    const token = this.getToken();
+  async getHeaders() {
+    const token = await this.getToken();
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -28,23 +29,43 @@ class ApiClient {
     return headers;
   }
 
-  // Generic request method
+  // Generic request method with token refresh handling
   async request(endpoint, options = {}) {
     const url = `${this.baseUrl}${endpoint}`;
-    const headers = this.getHeaders();
-
-    const config = {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-    };
-
+    
     try {
+      // Get headers with valid token
+      const headers = await this.getHeaders();
+      
+      const config = {
+        ...options,
+        headers: {
+          ...headers,
+          ...options.headers,
+        },
+      };
+
       const response = await fetch(url, config);
       
       if (!response.ok) {
+        // If unauthorized and we have a refresh token, try to refresh and retry
+        if (response.status === 401 && tokenManager.getRefreshToken()) {
+          const newToken = await tokenManager.refreshToken();
+          
+          // If token refresh successful, retry the request
+          if (newToken) {
+            config.headers['Authorization'] = `Bearer ${newToken}`;
+            const retryResponse = await fetch(url, config);
+            
+            if (!retryResponse.ok) {
+              const errorData = await retryResponse.json().catch(() => ({}));
+              throw new Error(errorData.message || `API request failed with status ${retryResponse.status}`);
+            }
+            
+            return retryResponse;
+          }
+        }
+        
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `API request failed with status ${response.status}`);
       }

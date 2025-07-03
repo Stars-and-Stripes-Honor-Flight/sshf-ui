@@ -30,7 +30,7 @@ class AuthClient {
     // Initialize Google client with additional scopes for groups
     this.tokenClient = window.google.accounts.oauth2.initCodeClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'email profile',
+      scope: 'email profile https://www.googleapis.com/auth/admin.directory.group.readonly',
       callback: (response) => {
         if (response.code) {
           this.exchangeCodeForTokens(response.code);

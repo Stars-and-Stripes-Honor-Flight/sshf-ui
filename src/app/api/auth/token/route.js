@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -16,12 +15,6 @@ export async function POST(request) {
       );
     }
 
-    // Get origin from headers for redirect_uri
-    const headersList = headers();
-    const host = headersList.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const origin = `${protocol}://${host}`;
-
     // Exchange authorization code for tokens
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -33,7 +26,7 @@ export async function POST(request) {
         client_secret: GOOGLE_CLIENT_SECRET,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: origin,
+        redirect_uri: 'postmessage', // For popup flows
       }),
     });
 
