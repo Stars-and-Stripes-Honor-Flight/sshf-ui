@@ -1,5 +1,7 @@
 'use client';
 
+import { tokenManager } from './tokenManager';
+
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -26,24 +28,62 @@ class AuthClient {
     });
 
     // Initialize Google client with additional scopes for groups
-    this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+    this.tokenClient = window.google.accounts.oauth2.initCodeClient({
       client_id: GOOGLE_CLIENT_ID,
       scope: 'email profile https://www.googleapis.com/auth/admin.directory.group.readonly',
       callback: (response) => {
-        if (response.access_token) {
-          localStorage.setItem('google-access-token', response.access_token);
-          if (this.authCallback) {
-            this.authCallback();
-          }
+        if (response.code) {
+          this.exchangeCodeForTokens(response.code);
         }
       },
+      ux_mode: 'popup',
+      access_type: 'offline',
+      prompt: 'consent',
     });
 
     this.googleAuthInitialized = true;
   }
 
-  async getGroupMemberships(token, userData) {
+  // Exchange authorization code for tokens
+  async exchangeCodeForTokens(code) {
     try {
+      const response = await fetch('/api/auth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to exchange code for tokens');
+      }
+
+      const { accessToken, refreshToken, expiresIn } = await response.json();
+      
+      // Store tokens using the token manager
+      tokenManager.storeTokenData(accessToken, refreshToken, expiresIn);
+      
+      if (this.authCallback) {
+        this.authCallback();
+      }
+    } catch (error) {
+      console.error('Token exchange error:', error);
+      if (this.authCallback) {
+        this.authCallback(error);
+      }
+    }
+  }
+
+  async getGroupMemberships(userData) {
+    try {
+      // Get a valid token using token manager
+      const token = await tokenManager.getValidToken();
+      
+      if (!token) {
+        throw new Error('No valid token available');
+      }
+      
       // Fetch user's groups from Google Workspace Directory API
       const response = await fetch(
         `https://admin.googleapis.com/admin/directory/v1/groups?userKey=${userData.sub}`,
@@ -53,8 +93,6 @@ class AuthClient {
           },
         }
       );
-
-
 
       if (!response.ok) {
         throw new Error('Failed to fetch group memberships');
@@ -77,13 +115,18 @@ class AuthClient {
       await this.initializeGoogleAuth();
 
       return new Promise((resolve) => {
-        this.authCallback = async () => {
+        this.authCallback = async (error) => {
+          if (error) {
+            resolve({ error: error.message });
+            return;
+          }
+          
           // Immediately fetch user info after getting token
           const { data } = await this.getUser();
           resolve({ data }); // Return the user data with the resolution
         };
         
-        this.tokenClient.requestAccessToken();
+        this.tokenClient.requestCode();
       });
 
     } catch (error) {
@@ -93,7 +136,8 @@ class AuthClient {
   }
 
   async getUser() {
-    const token = localStorage.getItem('google-access-token');
+    // Get a valid token using token manager
+    const token = await tokenManager.getValidToken();
 
     if (!token) {
       return { data: null };
@@ -138,8 +182,6 @@ class AuthClient {
         }
       }
 
-
-
       const user = {
         id: userData.sub,
         email: userData.email,
@@ -155,14 +197,14 @@ class AuthClient {
       return { data: user };
     } catch (error) {
       console.error('Error fetching user:', error);
-      localStorage.removeItem('google-access-token');
+      tokenManager.clearTokens();
       localStorage.removeItem('user-data');
       return { data: null };
     }
   }
 
   async signOut() {
-    localStorage.removeItem('google-access-token');
+    tokenManager.clearTokens();
     localStorage.removeItem('user-data');
     return {};
   }
