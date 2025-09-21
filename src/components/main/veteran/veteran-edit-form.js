@@ -31,7 +31,8 @@ import {
   EnvelopeSimple,
   TShirt,
   Camera,
-  Bed
+  Bed,
+  Calendar
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -270,6 +271,18 @@ export function VeteranEditForm({ veteran }) {
                     />
                   </Stack>
                 </Stack>
+                <Divider sx={{ my: 2 }} />
+                <Controller
+                  control={control}
+                  name="app_date"
+                  render={({ field }) => (
+                    <FormControl error={Boolean(errors.app_date)} fullWidth>
+                      <InputLabel>Application Date</InputLabel>
+                      <OutlinedInput {...field} type="date" />
+                      {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
+                    </FormControl>
+                  )}
+                />
               </Stack>
             </CardContent>
           </Card>
