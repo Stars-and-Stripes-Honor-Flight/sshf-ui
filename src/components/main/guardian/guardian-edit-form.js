@@ -30,7 +30,8 @@ import {
   EnvelopeSimple,
   TShirt,
   FirstAid,
-  Bed
+  Bed,
+  Calendar
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -198,7 +199,7 @@ export function GuardianEditForm({ guardian }) {
       style={{ paddingBottom: '80px' }}
     >
       <Grid container spacing={4}>
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={7}>
           <Card 
             id="guardian-info"
             sx={{
@@ -210,13 +211,14 @@ export function GuardianEditForm({ guardian }) {
           >
             <CardContent>
               <Stack spacing={3}>
+                {/* Mobile: Person icon at top */}
                 <Box
                   sx={{
                     height: '200px',
                     width: '100%',
                     backgroundColor: 'primary.lighter',
                     borderRadius: 2,
-                    display: 'flex',
+                    display: { xs: 'flex', md: 'none' },
                     alignItems: 'center',
                     justifyContent: 'center',
                     overflow: 'hidden',
@@ -256,7 +258,8 @@ export function GuardianEditForm({ guardian }) {
                     />
                   </Stack>
                   <Divider />
-                  <Stack spacing={2}>
+                  {/* Mobile: Single column info (below name) */}
+                  <Stack spacing={2} sx={{ display: { xs: 'block', md: 'none' } }}>
                     <Typography
                       variant="h6"
                       sx={{
@@ -279,12 +282,91 @@ export function GuardianEditForm({ guardian }) {
                       </Typography>
                     )}
                   </Stack>
+                  {/* Desktop/Tablet: Two-column layout (icon left, training info right) */}
+                  <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
+                    <Box sx={{ flex: '2 1 0%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          height: '200px',
+                          width: '200px',
+                          backgroundColor: 'primary.lighter',
+                          borderRadius: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          boxShadow: (theme) => theme.shadows[4]
+                        }}
+                      >
+                        <Person 
+                          size={120}
+                          weight="duotone"
+                          color="var(--mui-palette-primary-main)"
+                        />
+                      </Box>
+                      <Stack spacing={1} sx={{ mt: 2, alignItems: 'center', textAlign: 'center' }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: 'primary.main',
+                            fontWeight: 'medium'
+                          }}
+                        >
+                          Guardian
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ flex: '1 1 0%' }}>
+                      <Stack spacing={2}>
+                        <Typography variant="subtitle1">
+                          {watchTraining ? `Training: ${watchTraining}` : 'No Training Completed'}
+                        </Typography>
+                        {guardian.veteran?.pairings?.length > 0 ? (
+                          <Typography variant="body2">
+                            Paired with: {guardian.veteran.pairings.map(p => p.name).join(', ')}
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Not paired with any veterans
+                          </Typography>
+                        )}
+                        <Divider />
+                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                          <Controller
+                            control={control}
+                            name="app_date"
+                            render={({ field }) => (
+                              <FormControl error={Boolean(errors.app_date)} fullWidth>
+                                <InputLabel>Application Date</InputLabel>
+                                <OutlinedInput {...field} type="date" />
+                                {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
+                              </FormControl>
+                            )}
+                          />
+                        </Box>
+                      </Stack>
+                    </Box>
+                  </Box>
                 </Stack>
+                <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                  <Divider sx={{ my: 2 }} />
+                  <Controller
+                    control={control}
+                    name="app_date"
+                    render={({ field }) => (
+                      <FormControl error={Boolean(errors.app_date)} fullWidth>
+                        <InputLabel>Application Date</InputLabel>
+                        <OutlinedInput {...field} type="date" />
+                        {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
+                      </FormControl>
+                    )}
+                  />
+                </Box>
               </Stack>
             </CardContent>
           </Card>
         </Grid>
-        <Grid xs={12} md={8}>
+        <Grid xs={12} md={5}>
           <Stack spacing={4}>
             {/* Essential Information Group */}
             <Stack spacing={3}>
