@@ -31,7 +31,8 @@ import {
   EnvelopeSimple,
   TShirt,
   Camera,
-  Bed
+  Bed,
+  Calendar
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -165,7 +166,7 @@ export function VeteranEditForm({ veteran }) {
       style={{ paddingBottom: '80px' }}
     >
       <Grid container spacing={4}>
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={7}>
           <Card 
             id="veteran-info"
             sx={{
@@ -177,12 +178,14 @@ export function VeteranEditForm({ veteran }) {
           >
             <CardContent>
               <Stack spacing={3}>
+                {/* Mobile: Branch image at top */}
                 {watchBranch ? (
                   <Box
                     sx={{
                       position: 'relative',
                       height: '200px',
                       width: '100%',
+                      display: { xs: 'block', md: 'none' },
                       borderRadius: 2,
                       overflow: 'hidden',
                       boxShadow: (theme) => theme.shadows[4],
@@ -204,9 +207,9 @@ export function VeteranEditForm({ veteran }) {
                     sx={{
                       height: '200px',
                       width: '100%',
+                      display: { xs: 'flex', md: 'none' },
                       backgroundColor: 'var(--mui-palette-background-level2)',
                       borderRadius: 1,
-                      display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}
@@ -243,7 +246,8 @@ export function VeteranEditForm({ veteran }) {
                     />
                   </Stack>
                   <Divider />
-                  <Stack spacing={2}>
+                  {/* Mobile: Single column service info (below name) */}
+                  <Stack spacing={2} sx={{ display: { xs: 'block', md: 'none' } }}>
                     <Typography 
                       variant="h6"
                       sx={{ 
@@ -269,12 +273,114 @@ export function VeteranEditForm({ veteran }) {
                       sx={{ alignSelf: 'flex-start' }}
                     />
                   </Stack>
+                  {/* Desktop/Tablet: Two-column layout (image left, service info right) */}
+                  <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
+                    <Box sx={{ flex: '2 1 0%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      {watchBranch ? (
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            height: '200px',
+                            width: '200px',
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            boxShadow: (theme) => theme.shadows[4],
+                            transition: 'transform 0.3s ease-in-out',
+                            '&:hover': {
+                              transform: 'scale(1.02)'
+                            }
+                          }}
+                        >
+                          <Image
+                            src={getBranchImage(watchBranch)}
+                            alt={watchBranch}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </Box>
+                      ) : (
+                        <Box
+                          sx={{
+                            height: '200px',
+                            width: '100%',
+                            backgroundColor: 'var(--mui-palette-background-level2)',
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Typography color="text.secondary">
+                            Select a branch of service
+                          </Typography>
+                        </Box>
+                      )}
+                      <Stack spacing={1} sx={{ mt: 2, alignItems: 'center', textAlign: 'center' }}>
+                        <Typography 
+                          variant="h6"
+                          sx={{ 
+                            color: 'primary.main',
+                            fontWeight: 'medium' 
+                          }}
+                        >
+                          {watchBranch || 'Branch Not Specified'}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ flex: '1 1 0%' }}>
+                      <Stack spacing={2}>
+                        <Typography variant="subtitle1">
+                          {watchRank || 'Rank Not Specified'}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          {watchDates || 'Service Dates Not Specified'}
+                        </Typography>
+                        <Chip
+                          label={`${watchVetType || 'Unknown'} Era`}
+                          variant="outlined"
+                          size="small"
+                          sx={{ alignSelf: 'flex-start' }}
+                        />
+                        <Divider />
+                        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                          <Controller
+                            control={control}
+                            name="app_date"
+                            render={({ field }) => (
+                              <FormControl error={Boolean(errors.app_date)} fullWidth>
+                                <InputLabel>Application Date</InputLabel>
+                                <OutlinedInput {...field} type="date" />
+                                {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
+                              </FormControl>
+                            )}
+                          />
+                        </Box>
+                      </Stack>
+                    </Box>
+                  </Box>
                 </Stack>
+                <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                  <Divider sx={{ my: 2 }} />
+                  <Controller
+                    control={control}
+                    name="app_date"
+                    render={({ field }) => (
+                      <FormControl error={Boolean(errors.app_date)} fullWidth>
+                        <InputLabel>Application Date</InputLabel>
+                        <OutlinedInput {...field} type="date" />
+                        {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
+                      </FormControl>
+                    )}
+                  />
+                </Box>
               </Stack>
             </CardContent>
           </Card>
         </Grid>
-        <Grid xs={12} md={8}>
+        <Grid xs={12} md={5}>
           <Stack spacing={4}>
             {/* Essential Information Group */}
             <Stack spacing={3}>
