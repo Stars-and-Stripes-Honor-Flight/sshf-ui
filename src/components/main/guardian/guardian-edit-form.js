@@ -31,7 +31,9 @@ import {
   TShirt,
   FirstAid,
   Bed,
-  Calendar
+  Calendar,
+  Headset,
+  Clock
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -118,7 +120,9 @@ export function GuardianEditForm({ guardian }) {
       can_push: false, 
       can_lift: false,
       limitations: '',
-      experience: ''
+      experience: '',
+      release: false,
+      form: false
     },
     flight: guardian.flight || { 
       status: 'Active', 
@@ -131,8 +135,22 @@ export function GuardianEditForm({ guardian }) {
       training: 'None',
       training_complete: false,
       training_see_doc: false,
+      training_notes: '',
+      status_note: '',
+      mediaWaiver: false,
+      infection_test: false,
+      nofly: false,
+      booksOrdered: 0,
+      confirmed_date: '',
+      confirmed_by: '',
       paid: false,
       exempt: false
+    },
+    call: guardian.call || {
+      assigned_to: '',
+      notes: '',
+      fm_number: '',
+      email_sent: false
     },
     emerg_contact: guardian.emerg_contact || { 
       name: '', 
@@ -151,14 +169,29 @@ export function GuardianEditForm({ guardian }) {
       item: 'None',
       jacket_size: 'None', 
       shirt_size: 'None',
-      delivery: 'None' 
+      delivery: 'None',
+      date: '',
+      by: '',
+      notes: ''
     },
     accommodations: guardian.accommodations || { 
       hotel_name: '', 
       room_type: 'None', 
       arrival_date: '', 
-      departure_date: '', 
+      departure_date: '',
+      arrival_time: '',
+      arrival_flight: '',
+      attend_banquette: false,
+      banquette_guest: '',
+      departure_time: '',
+      departure_flight: '',
       notes: '' 
+    },
+    metadata: guardian.metadata || {
+      created_at: '',
+      created_by: '',
+      updated_at: '',
+      updated_by: ''
     }
   }), [guardian]);
 
@@ -439,6 +472,19 @@ export function GuardianEditForm({ guardian }) {
                     <Grid xs={12} md={6}>
                       <Controller
                         control={control}
+                        name="name.nickname"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.name?.nickname)} fullWidth>
+                            <InputLabel>Nickname</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.name?.nickname ? <FormHelperText>{errors.name.nickname.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
                         name="birth_date"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.birth_date)} fullWidth>
@@ -462,6 +508,285 @@ export function GuardianEditForm({ guardian }) {
                             </Select>
                             {errors.gender ? <FormHelperText>{errors.gender.message}</FormHelperText> : null}
                           </FormControl>
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Medical Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={FirstAid} 
+                    title="Medical Information" 
+                  />
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="weight"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.weight)} fullWidth>
+                            <InputLabel>Weight (lbs)</InputLabel>
+                            <OutlinedInput 
+                              {...field} 
+                              type="number" 
+                              inputProps={{ min: 60, max: 450 }}
+                            />
+                            {errors.weight ? <FormHelperText>{errors.weight.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="occupation"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.occupation)} fullWidth>
+                            <InputLabel>Occupation</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.occupation ? <FormHelperText>{errors.occupation.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="notes.service"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.notes?.service)} fullWidth>
+                            <InputLabel>Are you a veteran?</InputLabel>
+                            <Select {...field}>
+                              <Option value="N">No</Option>
+                              <Option value="Y">Yes</Option>
+                            </Select>
+                            {errors.notes?.service ? <FormHelperText>{errors.notes.service.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="medical.level"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.medical?.level)} fullWidth>
+                            <InputLabel>Medical Level</InputLabel>
+                            <Select {...field}>
+                              <Option value="">None</Option>
+                              <Option value="A">A</Option>
+                              <Option value="B">B</Option>
+                              <Option value="C">C</Option>
+                              <Option value="D">D</Option>
+                            </Select>
+                            {errors.medical?.level ? <FormHelperText>{errors.medical.level.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="medical.food_restriction"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.medical?.food_restriction)} fullWidth>
+                            <InputLabel>Food Restrictions</InputLabel>
+                            <Select {...field}>
+                              <Option value="None">None</Option>
+                              <Option value="Vegetarian">Vegetarian</Option>
+                              <Option value="Vegan">Vegan</Option>
+                              <Option value="Gluten Free">Gluten Free</Option>
+                              <Option value="Diabetic">Diabetic</Option>
+                              <Option value="Other">Other</Option>
+                            </Select>
+                            {errors.medical?.food_restriction ? <FormHelperText>{errors.medical.food_restriction.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="notes.other"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.notes?.other)} fullWidth>
+                            <InputLabel>Service Details</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.notes?.other ? <FormHelperText>{errors.notes.other.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                        Physical Capabilities
+                      </Typography>
+                      <Stack direction="row" spacing={2}>
+                        <Controller
+                          control={control}
+                          name="medical.can_push"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Can Push Wheelchair"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="medical.can_lift"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Can Lift"
+                            />
+                          )}
+                        />
+                      </Stack>
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="medical.limitations"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.medical?.limitations)} fullWidth>
+                            <InputLabel>Medical Limitations</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.medical?.limitations ? <FormHelperText>{errors.medical.limitations.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="medical.experience"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.medical?.experience)} fullWidth>
+                            <InputLabel>Medical Experience</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.medical?.experience ? <FormHelperText>{errors.medical.experience.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                        Medical Forms
+                      </Typography>
+                      <Stack direction="row" spacing={2}>
+                        <Controller
+                          control={control}
+                          name="medical.release"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Medical Release Signed"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="medical.form"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Medical Form Completed"
+                            />
+                          )}
+                        />
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Call Center Information Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Headset} 
+                    title="Call Center Information" 
+                  />
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="call.assigned_to"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth>
+                            <InputLabel>Call Assigned To</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.call?.assigned_to ? <FormHelperText>{errors.call.assigned_to.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="call.fm_number"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.call?.fm_number)} fullWidth>
+                            <InputLabel>FM Number</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.call?.fm_number ? <FormHelperText>{errors.call.fm_number.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="call.notes"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.call?.notes)} fullWidth>
+                            <InputLabel>Call Notes</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.call?.notes ? <FormHelperText>{errors.call.notes.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="flight.confirmed_date"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.confirmed_date)} fullWidth>
+                            <InputLabel>Confirmed Date</InputLabel>
+                            <OutlinedInput {...field} type="date" />
+                            {errors.flight?.confirmed_date ? <FormHelperText>{errors.flight.confirmed_date.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="flight.confirmed_by"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.confirmed_by)} fullWidth>
+                            <InputLabel>Confirmed By</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.flight?.confirmed_by ? <FormHelperText>{errors.flight.confirmed_by.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="call.email_sent"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Checkbox {...field} checked={field.value} />}
+                            label="Email Sent"
+                          />
                         )}
                       />
                     </Grid>
@@ -585,6 +910,131 @@ export function GuardianEditForm({ guardian }) {
                           />
                         )}
                       />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="flight.training"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.training)} fullWidth>
+                            <InputLabel>Training</InputLabel>
+                            <Select {...field}>
+                              <Option value="None">None</Option>
+                              <Option value="Main">Main</Option>
+                              <Option value="Previous">Previous</Option>
+                              <Option value="Phone">Phone</Option>
+                              <Option value="Web">Web</Option>
+                            </Select>
+                            {errors.flight?.training ? <FormHelperText>{errors.flight.training.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="flight.booksOrdered"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.booksOrdered)} fullWidth>
+                            <InputLabel>Books Ordered</InputLabel>
+                            <OutlinedInput {...field} type="number" inputProps={{ min: 0 }} />
+                            {errors.flight?.booksOrdered ? <FormHelperText>{errors.flight.booksOrdered.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="flight.training_notes"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.training_notes)} fullWidth>
+                            <InputLabel>Training Notes</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.flight?.training_notes ? <FormHelperText>{errors.flight.training_notes.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="flight.status_note"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.flight?.status_note)} fullWidth>
+                            <InputLabel>Status Note</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.flight?.status_note ? <FormHelperText>{errors.flight.status_note.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                        Training & Status
+                      </Typography>
+                      <Stack direction="row" spacing={2} flexWrap="wrap">
+                        <Controller
+                          control={control}
+                          name="flight.training_complete"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Training Complete"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="flight.training_see_doc"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Training See Doc"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="flight.mediaWaiver"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Media Waiver"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="flight.infection_test"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Infection Test"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="flight.nofly"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Not Flying"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name="flight.exempt"
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Checkbox {...field} checked={field.value} />}
+                              label="Exempt"
+                            />
+                          )}
+                        />
+                      </Stack>
                     </Grid>
                   </Grid>
                 </CardContent>
@@ -939,6 +1389,297 @@ export function GuardianEditForm({ guardian }) {
                               <Option value="Polo">Polo</Option>
                               <Option value="Both">Both</Option>
                             </Select>
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
+                        name="apparel.shirt_size"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.apparel?.shirt_size)} fullWidth>
+                            <InputLabel>Apparel Shirt Size</InputLabel>
+                            <Select {...field}>
+                              <Option value="None">None</Option>
+                              <Option value="XS">X-Small</Option>
+                              <Option value="S">Small</Option>
+                              <Option value="M">Medium</Option>
+                              <Option value="L">Large</Option>
+                              <Option value="XL">X-Large</Option>
+                              <Option value="2XL">2X-Large</Option>
+                              <Option value="3XL">3X-Large</Option>
+                              <Option value="4XL">4X-Large</Option>
+                              <Option value="5XL">5X-Large</Option>
+                              <Option value="WXS">WX-Small</Option>
+                              <Option value="WS">W-Small</Option>
+                              <Option value="WM">W-Medium</Option>
+                              <Option value="WL">W-Large</Option>
+                              <Option value="WXL">WX-Large</Option>
+                              <Option value="W2XL">W2X-Large</Option>
+                              <Option value="W3XL">W3X-Large</Option>
+                              <Option value="W4XL">W4X-Large</Option>
+                              <Option value="W5XL">W5X-Large</Option>
+                            </Select>
+                            {errors.apparel?.shirt_size ? <FormHelperText>{errors.apparel.shirt_size.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
+                        name="apparel.date"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.apparel?.date)} fullWidth>
+                            <InputLabel>Date Sent</InputLabel>
+                            <OutlinedInput {...field} type="date" />
+                            {errors.apparel?.date ? <FormHelperText>{errors.apparel.date.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Controller
+                        control={control}
+                        name="apparel.by"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.apparel?.by)} fullWidth>
+                            <InputLabel>Sent By</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.apparel?.by ? <FormHelperText>{errors.apparel.by.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="apparel.notes"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.apparel?.notes)} fullWidth>
+                            <InputLabel>Apparel Notes</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.apparel?.notes ? <FormHelperText>{errors.apparel.notes.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Accommodations Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Bed} 
+                    title="Accommodations" 
+                  />
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.hotel_name"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.hotel_name)} fullWidth>
+                            <InputLabel>Hotel Name</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.accommodations?.hotel_name ? <FormHelperText>{errors.accommodations.hotel_name.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.room_type"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.room_type)} fullWidth>
+                            <InputLabel>Room Type</InputLabel>
+                            <Select {...field}>
+                              <Option value="None">None</Option>
+                              <Option value="Single">Single</Option>
+                              <Option value="Double">Double</Option>
+                              <Option value="Suite">Suite</Option>
+                            </Select>
+                            {errors.accommodations?.room_type ? <FormHelperText>{errors.accommodations.room_type.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.arrival_date"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.arrival_date)} fullWidth>
+                            <InputLabel>Arrival Date</InputLabel>
+                            <OutlinedInput {...field} type="date" />
+                            {errors.accommodations?.arrival_date ? <FormHelperText>{errors.accommodations.arrival_date.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.departure_date"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.departure_date)} fullWidth>
+                            <InputLabel>Departure Date</InputLabel>
+                            <OutlinedInput {...field} type="date" />
+                            {errors.accommodations?.departure_date ? <FormHelperText>{errors.accommodations.departure_date.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.arrival_time"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.arrival_time)} fullWidth>
+                            <InputLabel>Arrival Time</InputLabel>
+                            <OutlinedInput {...field} type="time" />
+                            {errors.accommodations?.arrival_time ? <FormHelperText>{errors.accommodations.arrival_time.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.arrival_flight"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.arrival_flight)} fullWidth>
+                            <InputLabel>Arrival Flight</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.accommodations?.arrival_flight ? <FormHelperText>{errors.accommodations.arrival_flight.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.departure_time"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.departure_time)} fullWidth>
+                            <InputLabel>Departure Time</InputLabel>
+                            <OutlinedInput {...field} type="time" />
+                            {errors.accommodations?.departure_time ? <FormHelperText>{errors.accommodations.departure_time.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="accommodations.departure_flight"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.departure_flight)} fullWidth>
+                            <InputLabel>Departure Flight</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.accommodations?.departure_flight ? <FormHelperText>{errors.accommodations.departure_flight.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="accommodations.attend_banquette"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Checkbox {...field} checked={field.value} />}
+                            label="Attend Banquette"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="accommodations.banquette_guest"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.banquette_guest)} fullWidth>
+                            <InputLabel>Banquette Guest</InputLabel>
+                            <OutlinedInput {...field} />
+                            {errors.accommodations?.banquette_guest ? <FormHelperText>{errors.accommodations.banquette_guest.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Controller
+                        control={control}
+                        name="accommodations.notes"
+                        render={({ field }) => (
+                          <FormControl error={Boolean(errors.accommodations?.notes)} fullWidth>
+                            <InputLabel>Accommodations Notes</InputLabel>
+                            <OutlinedInput {...field} multiline rows={3} />
+                            {errors.accommodations?.notes ? <FormHelperText>{errors.accommodations.notes.message}</FormHelperText> : null}
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Metadata Card */}
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+                <CardContent>
+                  <SectionHeader 
+                    icon={Clock} 
+                    title="Record Information" 
+                  />
+                  <Grid container spacing={3}>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="metadata.created_at"
+                        render={({ field }) => (
+                          <FormControl fullWidth>
+                            <InputLabel>Created At</InputLabel>
+                            <OutlinedInput {...field} InputProps={{ readOnly: true }} />
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="metadata.created_by"
+                        render={({ field }) => (
+                          <FormControl fullWidth>
+                            <InputLabel>Created By</InputLabel>
+                            <OutlinedInput {...field} InputProps={{ readOnly: true }} />
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="metadata.updated_at"
+                        render={({ field }) => (
+                          <FormControl fullWidth>
+                            <InputLabel>Updated At</InputLabel>
+                            <OutlinedInput {...field} InputProps={{ readOnly: true }} />
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Controller
+                        control={control}
+                        name="metadata.updated_by"
+                        render={({ field }) => (
+                          <FormControl fullWidth>
+                            <InputLabel>Updated By</InputLabel>
+                            <OutlinedInput {...field} InputProps={{ readOnly: true }} />
                           </FormControl>
                         )}
                       />
