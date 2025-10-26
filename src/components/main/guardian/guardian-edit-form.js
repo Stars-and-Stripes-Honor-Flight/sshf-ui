@@ -3,7 +3,6 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -41,7 +40,6 @@ import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
-import { guardianSchema } from '@/schemas/guardian';
 
 const getStatusColor = (status) => {
   const colors = {
@@ -92,6 +90,14 @@ const SectionHeader = ({ icon: Icon, title }) => (
 export function GuardianEditForm({ guardian }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
+  const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
+
+  // Update _rev when guardian prop changes
+  React.useEffect(() => {
+    if (guardian._rev) {
+      setGuardianRev(guardian._rev);
+    }
+  }, [guardian._rev]);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
@@ -202,15 +208,30 @@ export function GuardianEditForm({ guardian }) {
     watch,
   } = useForm({
     defaultValues,
-    resolver: zodResolver(guardianSchema)
+    // Removed zodResolver for simplicity
   });
 
   const onSubmit = React.useCallback(
     async (data) => {
       try {
         setSaving(true);
-        // TODO: Update this to use the guardian API endpoint when available
-        await api.updateVeteran(data._id, data);
+        
+        // Create clean payload with required fields
+        const payload = {
+          ...data,
+          _rev: guardianRev,
+          type: 'Guardian'
+        };
+        
+        // Remove metadata (API handles this)
+        delete payload.metadata;
+        
+        // Remove history arrays from nested objects
+        if (payload.flight?.history) delete payload.flight.history;
+        if (payload.veteran?.history) delete payload.veteran.history;
+        if (payload.call?.history) delete payload.call.history;
+        
+        await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
         router.push(paths.main.search.list);
       } catch (err) {
@@ -220,7 +241,7 @@ export function GuardianEditForm({ guardian }) {
         setSaving(false);
       }
     },
-    [router]
+    [router, guardianRev]
   );
 
   const watchStatus = watch('flight.status');
