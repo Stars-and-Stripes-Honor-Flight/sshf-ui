@@ -29,10 +29,10 @@ import {
   EnvelopeSimple,
   TShirt,
   FirstAid,
-  Bed,
   Calendar,
   Headset,
-  Clock
+  Clock,
+  Eye
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -87,11 +87,29 @@ const SectionHeader = ({ icon: Icon, title }) => (
   </Stack>
 );
 
-export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
+export function GuardianEditForm({ guardian }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
-  const decodedReturnUrl = decodeURIComponent(returnUrl);
+  
+  // Ref for the veteran pairings section
+  const veteranPairingsRef = React.useRef(null);
+  
+  // Helper function to navigate back with fallback
+  const handleGoBack = React.useCallback(() => {
+    const previousPage = sessionStorage.getItem('previousPage');
+    
+    if (previousPage === 'veteran-details') {
+      sessionStorage.setItem('scrollToSection', 'guardian-pairing');
+    }
+
+
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(paths.main.search.list);
+    }
+  }, [router]);
 
   // Update _rev when guardian prop changes
   React.useEffect(() => {
@@ -99,6 +117,40 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
       setGuardianRev(guardian._rev);
     }
   }, [guardian._rev]);
+  
+  // Check if we should scroll to a specific section on page load
+  React.useEffect(() => {
+    const scrollToSection = sessionStorage.getItem('scrollToSection');
+    
+    if (scrollToSection === 'veteran-pairings') {
+      // Use multiple attempts to ensure DOM is fully rendered
+      const attemptScroll = () => {
+        if (veteranPairingsRef.current) {
+          veteranPairingsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          sessionStorage.removeItem('scrollToSection');
+        } else {
+          setTimeout(attemptScroll, 200);
+        }
+      };
+      
+      requestAnimationFrame(() => {
+        setTimeout(attemptScroll, 300);
+      });
+    }
+  }, [guardian]);
+  
+  // Also check on mount in case guardian data is already loaded
+  React.useEffect(() => {
+    const scrollToSection = sessionStorage.getItem('scrollToSection');
+    if (scrollToSection === 'veteran-pairings' && veteranPairingsRef.current) {
+      setTimeout(() => {
+        if (veteranPairingsRef.current) {
+          veteranPairingsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          sessionStorage.removeItem('scrollToSection');
+        }
+      }, 500);
+    }
+  }, []);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
@@ -234,7 +286,8 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
         
         await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
-        router.push(decodedReturnUrl);
+        
+        handleGoBack();
       } catch (err) {
         logger.error(err);
         toast.error('Failed to update guardian: ' + (err.message || 'Unknown error'));
@@ -242,7 +295,7 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
         setSaving(false);
       }
     },
-    [router, guardianRev, decodedReturnUrl]
+    [router, guardianRev, handleGoBack]
   );
 
   const watchStatus = watch('flight.status');
@@ -1261,42 +1314,69 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
               </Card>
 
               {/* Veteran Pairing Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={veteranPairingsRef}>
                 <CardContent>
                   <SectionHeader 
                     icon={UsersFour} 
                     title="Veteran Pairing Information" 
                   />
                   <Grid container spacing={3}>
-                    <Grid xs={12}>
+                    {guardian.veteran?.pairings?.length > 0 && (
+                      <>
+                        <Grid xs={12} md={6}>
+                          <InputLabel sx={{ mb: 2 }}>Currently Paired Veterans</InputLabel>
+                          <Stack spacing={2}>
+                            {guardian.veteran.pairings.map((pairing, index) => (
+                              <Card
+                                key={pairing.id || index}
+                                variant="outlined"
+                                onClick={() => {
+                                  sessionStorage.setItem('previousPage', 'guardian-details');
+                                  sessionStorage.removeItem('scrollToSection'); // Clear any scroll flag
+                                  router.push(paths.main.veterans.details(pairing.id));
+                                }}
+                                sx={{
+                                  textDecoration: 'none',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    boxShadow: 2,
+                                    borderColor: 'primary.main',
+                                    cursor: 'pointer'
+                                  },
+                                  '& *': {
+                                    cursor: 'pointer'
+                                  }
+                                }}
+                              >
+                                <CardContent sx={{ py: 1, px: 2, cursor: 'pointer', '&:last-child': { pb: 1 } }}>
+                                  <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                                    <Typography variant="body1" color="text.primary" sx={{ cursor: 'pointer' }}>
+                                      {pairing.name}
+                                    </Typography>
+                                    <Eye size={20} color="var(--mui-palette-primary-main)" style={{ cursor: 'pointer' }} />
+                                  </Stack>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </Stack>
+                        </Grid>
+                        <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' }, mx: 2 }} />
+                      </>
+                    )}
+                    <Grid xs={12} md={guardian.veteran?.pairings?.length > 0 ? 5.5 : 12}>
                       <Controller
                         control={control}
                         name="veteran.pref_notes"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.veteran?.pref_notes)} fullWidth>
                             <InputLabel>Veteran Preference Notes</InputLabel>
-                            <OutlinedInput {...field} multiline rows={2} />
+                            <OutlinedInput {...field} multiline rows={guardian.veteran?.pairings?.length > 0 ? 8 : 2} />
                             {errors.veteran?.pref_notes && <FormHelperText>{errors.veteran.pref_notes.message}</FormHelperText>}
                           </FormControl>
                         )}
                       />
                     </Grid>
-                    {guardian.veteran?.pairings?.length > 0 && (
-                      <Grid xs={12}>
-                        <Typography variant="subtitle1">Currently Paired Veterans:</Typography>
-                        <Box sx={{ mt: 1 }}>
-                          {guardian.veteran.pairings.map((pairing, index) => (
-                            <Chip
-                              key={pairing.id || index}
-                              label={pairing.name}
-                              color="primary"
-                              variant="outlined"
-                              sx={{ mr: 1, mb: 1 }}
-                            />
-                          ))}
-                        </Box>
-                      </Grid>
-                    )}
                   </Grid>
                 </CardContent>
               </Card>
@@ -1481,165 +1561,6 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
                 </CardContent>
               </Card>
 
-              {/* Accommodations Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
-                <CardContent>
-                  <SectionHeader 
-                    icon={Bed} 
-                    title="Accommodations" 
-                  />
-                  <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.hotel_name"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.hotel_name)} fullWidth>
-                            <InputLabel>Hotel Name</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.accommodations?.hotel_name ? <FormHelperText>{errors.accommodations.hotel_name.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.room_type"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.room_type)} fullWidth>
-                            <InputLabel>Room Type</InputLabel>
-                            <Select {...field}>
-                              <Option value="None">None</Option>
-                              <Option value="Single">Single</Option>
-                              <Option value="Double">Double</Option>
-                              <Option value="Suite">Suite</Option>
-                            </Select>
-                            {errors.accommodations?.room_type ? <FormHelperText>{errors.accommodations.room_type.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.arrival_date"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.arrival_date)} fullWidth>
-                            <InputLabel>Arrival Date</InputLabel>
-                            <OutlinedInput {...field} type="date" />
-                            {errors.accommodations?.arrival_date ? <FormHelperText>{errors.accommodations.arrival_date.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.departure_date"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.departure_date)} fullWidth>
-                            <InputLabel>Departure Date</InputLabel>
-                            <OutlinedInput {...field} type="date" />
-                            {errors.accommodations?.departure_date ? <FormHelperText>{errors.accommodations.departure_date.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.arrival_time"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.arrival_time)} fullWidth>
-                            <InputLabel>Arrival Time</InputLabel>
-                            <OutlinedInput {...field} type="time" />
-                            {errors.accommodations?.arrival_time ? <FormHelperText>{errors.accommodations.arrival_time.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.arrival_flight"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.arrival_flight)} fullWidth>
-                            <InputLabel>Arrival Flight</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.accommodations?.arrival_flight ? <FormHelperText>{errors.accommodations.arrival_flight.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.departure_time"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.departure_time)} fullWidth>
-                            <InputLabel>Departure Time</InputLabel>
-                            <OutlinedInput {...field} type="time" />
-                            {errors.accommodations?.departure_time ? <FormHelperText>{errors.accommodations.departure_time.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="accommodations.departure_flight"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.departure_flight)} fullWidth>
-                            <InputLabel>Departure Flight</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.accommodations?.departure_flight ? <FormHelperText>{errors.accommodations.departure_flight.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12}>
-                      <Controller
-                        control={control}
-                        name="accommodations.attend_banquette"
-                        render={({ field }) => (
-                          <FormControlLabel
-                            control={<Checkbox {...field} checked={field.value} />}
-                            label="Attend Banquette"
-                          />
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12}>
-                      <Controller
-                        control={control}
-                        name="accommodations.banquette_guest"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.banquette_guest)} fullWidth>
-                            <InputLabel>Banquette Guest</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.accommodations?.banquette_guest ? <FormHelperText>{errors.accommodations.banquette_guest.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12}>
-                      <Controller
-                        control={control}
-                        name="accommodations.notes"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.accommodations?.notes)} fullWidth>
-                            <InputLabel>Accommodations Notes</InputLabel>
-                            <OutlinedInput {...field} multiline rows={3} />
-                            {errors.accommodations?.notes ? <FormHelperText>{errors.accommodations.notes.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
               {/* Metadata Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
@@ -1722,8 +1643,9 @@ export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
       >
         <Button 
           color="inherit" 
-          component={RouterLink} 
-          href={decodedReturnUrl}
+          onClick={() => {
+            handleGoBack();
+          }}
           sx={{
             borderRadius: 2,
             fontWeight: 'medium'

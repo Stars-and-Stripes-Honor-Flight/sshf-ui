@@ -19,6 +19,7 @@ jest.mock('@/components/core/toaster', () => ({
 
 describe('GuardianEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
+  const mockBack = jest.fn();
   const mockUpdateGuardian = jest.fn();
   
   // Mock guardian data with all required fields
@@ -165,7 +166,14 @@ describe('GuardianEditForm - Update Functionality', () => {
     jest.clearAllMocks();
     
     useRouter.mockReturnValue({
-      push: mockPush
+      push: mockPush,
+      back: mockBack
+    });
+    
+    // Mock window.history.length
+    Object.defineProperty(window, 'history', {
+      value: { length: 2 },
+      writable: true
     });
     
     api.updateGuardian = mockUpdateGuardian;
@@ -265,7 +273,7 @@ describe('GuardianEditForm - Update Functionality', () => {
     });
   });
 
-  test('shows success message and redirects after successful update', async () => {
+  test('shows success message and navigates back after successful update', async () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);
     
@@ -274,21 +282,7 @@ describe('GuardianEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search');
-    });
-  });
-
-  test('redirects to custom returnUrl when provided', async () => {
-    const user = userEvent.setup();
-    const customReturnUrl = encodeURIComponent('/search?status=Active');
-    render(<GuardianEditForm guardian={mockGuardian} returnUrl={customReturnUrl} />);
-    
-    const saveButton = screen.getByRole('button', { name: /save changes/i });
-    await user.click(saveButton);
-    
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search?status=Active');
+      expect(mockBack).toHaveBeenCalled();
     });
   });
 
@@ -304,7 +298,7 @@ describe('GuardianEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Failed to update guardian: ' + errorMessage);
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockBack).not.toHaveBeenCalled();
     });
   });
 
