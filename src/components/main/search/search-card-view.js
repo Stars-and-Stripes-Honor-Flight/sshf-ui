@@ -26,9 +26,7 @@ const status = {
   Removed: { label: 'Removed', icon: <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" /> }
 };
 
-export function SearchCardView({ rows, currentUrl = '/search' }) {
-  const returnUrl = encodeURIComponent(currentUrl);
-
+export function SearchCardView({ rows }) {
   if (!rows || rows.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
@@ -46,7 +44,6 @@ export function SearchCardView({ rows, currentUrl = '/search' }) {
         const detailUrl = isVeteran
           ? paths.main.veterans.details(row.id)
           : paths.main.guardians.details(row.id);
-        const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
         
         const { label, icon } = status[row.status] ?? { label: 'Unknown', icon: null };
 
@@ -62,7 +59,7 @@ export function SearchCardView({ rows, currentUrl = '/search' }) {
               }
             }}
             component={RouterLink}
-            href={fullUrl}
+            href={detailUrl}
           >
             <CardContent>
               <Stack spacing={2}>
@@ -89,7 +86,7 @@ export function SearchCardView({ rows, currentUrl = '/search' }) {
                     <Typography 
                       variant="h6" 
                       component={RouterLink}
-                      href={fullUrl}
+                      href={detailUrl}
                       sx={{ 
                         fontWeight: 600, 
                         mb: 1,

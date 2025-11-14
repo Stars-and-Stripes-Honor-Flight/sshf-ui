@@ -178,7 +178,6 @@ export function ApiTable({
     urlParams = "",
     hidePagination = false,
     mobileCardView = null,
-    currentUrl = '',
 }) 
 {
 
@@ -423,7 +422,7 @@ export function ApiTable({
                             <LinearProgress />
                         </Box>
                     ) : (
-                        React.cloneElement(mobileCardView, { rows, currentUrl })
+                        React.cloneElement(mobileCardView, { rows })
                     )}
                 </>
             ) : (

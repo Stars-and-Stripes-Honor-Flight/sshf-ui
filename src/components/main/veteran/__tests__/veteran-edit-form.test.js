@@ -18,6 +18,7 @@ jest.mock('@/components/core/toaster', () => ({
 
 describe('VeteranEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
+  const mockBack = jest.fn();
   const mockUpdateVeteran = jest.fn();
   
   // Mock veteran data with all required fields
@@ -195,7 +196,14 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     // Setup mocks
     useRouter.mockReturnValue({
-      push: mockPush
+      push: mockPush,
+      back: mockBack
+    });
+    
+    // Mock window.history.length
+    Object.defineProperty(window, 'history', {
+      value: { length: 2 },
+      writable: true
     });
     
     api.updateVeteran = mockUpdateVeteran;
@@ -301,7 +309,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     });
   });
 
-  test('shows success message and redirects after successful update', async () => {
+  test('shows success message and navigates back after successful update', async () => {
     const user = userEvent.setup();
     render(<VeteranEditForm veteran={mockVeteran} />);
     
@@ -310,21 +318,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search');
-    });
-  });
-
-  test('redirects to custom returnUrl when provided', async () => {
-    const user = userEvent.setup();
-    const customReturnUrl = encodeURIComponent('/search?lastName=Smith');
-    render(<VeteranEditForm veteran={mockVeteran} returnUrl={customReturnUrl} />);
-    
-    const saveButton = screen.getByRole('button', { name: /save changes/i });
-    await user.click(saveButton);
-    
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search?lastName=Smith');
+      expect(mockBack).toHaveBeenCalled();
     });
   });
 
@@ -340,7 +334,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(`Failed to update veteran: ${errorMessage}`);
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockBack).not.toHaveBeenCalled();
     });
   });
 

@@ -18,7 +18,7 @@ import { config } from '@/config';
 import { ApiTable } from '@/components/core/table/api-table';
 import { Option } from '@/components/core/option';
 
-import { createSearchColumns } from '@/components/main/search/search-columns';
+import { searchColumns } from '@/components/main/search/search-columns';
 import { SearchCardView } from '@/components/main/search/search-card-view';
 import { usePermissions } from '@/hooks/use-permissions';
 
@@ -97,14 +97,6 @@ export default function Page() {
   }
 
   const [readyToFetch, setReadyToFetch] = React.useState(true);
-  const [currentUrl, setCurrentUrl] = React.useState('/search');
-
-  // Track current URL including query parameters
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentUrl(window.location.pathname + window.location.search);
-    }
-  }, [searchParams, debouncedSearch]);
 
   // Initialize from URL parameters on page load ONLY
   React.useEffect(() => {
@@ -119,6 +111,11 @@ export default function Page() {
     // Auto-focus the search input
     if (searchInputRef.current) {
       searchInputRef.current.focus();
+    }
+    
+    // Set current page for navigation tracking
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('previousPage', 'search');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -170,14 +167,13 @@ export default function Page() {
               <ApiTable 
                 entity='VeteransAndGuardians'
                 entityFriendlyName='Search Veterans & Guardians'
-                columns={createSearchColumns(currentUrl)}
+                columns={searchColumns}
                 readyToFetch={readyToFetch}
                 updatesearchFilters={updatesearchFilters}
                 filters={searchFilters}
                 defaultRowsPerPage={25}
                 hidePagination={true}
-                mobileCardView={<SearchCardView />}
-                currentUrl={currentUrl} />
+                mobileCardView={<SearchCardView />} />
             </Card>
           </Stack>
         </Box>

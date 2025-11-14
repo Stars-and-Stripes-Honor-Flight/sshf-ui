@@ -22,12 +22,7 @@ import { Leaf } from '@phosphor-icons/react/dist/ssr/Leaf';
 import { HourglassHigh } from '@phosphor-icons/react/dist/ssr/HourglassHigh';
 import { Copy } from '@phosphor-icons/react/dist/ssr/Copy';
 
-// Function to create columns with return URL
-export const createSearchColumns = (currentPath = '/search') => {
-    const returnUrl = encodeURIComponent(currentPath);
-    
-    return [
-
+export const searchColumns = [
     { 
         field: 'type', 
         name: 'Type', 
@@ -56,7 +51,6 @@ export const createSearchColumns = (currentPath = '/search') => {
             const detailUrl = row.type == "Veteran" 
                 ? paths.main.veterans.details(row.id) 
                 : paths.main.guardians.details(row.id);
-            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
 
             return (
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -69,7 +63,7 @@ export const createSearchColumns = (currentPath = '/search') => {
                         textAlign: 'center',
                         width: 70
                         }}
-                        component={RouterLink} href={fullUrl}
+                        component={RouterLink} href={detailUrl}
                     >
                         {icon}
                     </Box>
@@ -86,11 +80,10 @@ export const createSearchColumns = (currentPath = '/search') => {
             const detailUrl = row.type == "Veteran" 
                 ? paths.main.veterans.details(row.id) 
                 : paths.main.guardians.details(row.id);
-            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
             
             return <Typography variant='body1' 
                 component={RouterLink} 
-                href={fullUrl}
+                href={detailUrl}
                 sx={{ color: 'primary.main' }}
             >
                 {row.name}
@@ -185,10 +178,9 @@ export const createSearchColumns = (currentPath = '/search') => {
             const detailUrl = row.type == "Veteran" 
                 ? paths.main.veterans.details(row.id) 
                 : paths.main.guardians.details(row.id);
-            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
             
             return (
-                <IconButton component={RouterLink} href={fullUrl}>
+                <IconButton component={RouterLink} href={detailUrl}>
                     <EyeIcon />
                 </IconButton>
             );
@@ -199,7 +191,3 @@ export const createSearchColumns = (currentPath = '/search') => {
         align: 'center',
     },
 ];
-};
-
-// Export default columns for backward compatibility
-export const searchColumns = createSearchColumns();
