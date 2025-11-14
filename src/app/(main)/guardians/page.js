@@ -15,7 +15,7 @@ import { paths } from '@/paths';
 
 export default function Page() {
   React.useEffect(() => {
-    document.title = `Veteran Details | ${config.site.name}`;
+    document.title = `Guardian Details | ${config.site.name}`;
   }, []);
 
   return (
@@ -50,11 +50,11 @@ export default function Page() {
                 </Box>
                 
                 <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                  Veteran Details
+                  Guardian Details
                 </Typography>
                 
                 <Typography variant="body1" color="text.secondary">
-                  Use our search feature to find a specific veteran. From the search results, you can view and edit veteran details.
+                  Use our search feature to find a specific guardian. From the search results, you can view and edit guardian details.
                 </Typography>
                 
                 <Button
@@ -75,3 +75,4 @@ export default function Page() {
     </Box>
   );
 }
+

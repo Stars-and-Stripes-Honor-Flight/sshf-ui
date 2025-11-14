@@ -310,7 +310,21 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search/');
+      expect(mockPush).toHaveBeenCalledWith('/search');
+    });
+  });
+
+  test('redirects to custom returnUrl when provided', async () => {
+    const user = userEvent.setup();
+    const customReturnUrl = encodeURIComponent('/search?lastName=Smith');
+    render(<VeteranEditForm veteran={mockVeteran} returnUrl={customReturnUrl} />);
+    
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+    
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
+      expect(mockPush).toHaveBeenCalledWith('/search?lastName=Smith');
     });
   });
 

@@ -102,10 +102,11 @@ const SectionHeader = ({ icon: Icon, title }) => (
   </Stack>
 );
 
-export function VeteranEditForm({ veteran }) {
+export function VeteranEditForm({ veteran, returnUrl = '/search' }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
+  const decodedReturnUrl = decodeURIComponent(returnUrl);
 
   // Update _rev when veteran prop changes
   React.useEffect(() => {
@@ -265,7 +266,7 @@ export function VeteranEditForm({ veteran }) {
         
         await api.updateVeteran(data._id, payload);
         toast.success('Veteran updated successfully');
-        router.push(paths.main.search.list);
+        router.push(decodedReturnUrl);
       } catch (err) {
         logger.error(err);
         toast.error('Failed to update veteran: ' + (err.message || 'Unknown error'));
@@ -273,7 +274,7 @@ export function VeteranEditForm({ veteran }) {
         setSaving(false);
       }
     },
-    [router, veteranRev]
+    [router, veteranRev, decodedReturnUrl]
   );
 
   const watchBranch = watch('service.branch');
@@ -373,7 +374,6 @@ export function VeteranEditForm({ veteran }) {
                     <Typography 
                       variant="h6"
                       sx={{ 
-                        color: 'primary.main',
                         fontWeight: 'medium' 
                       }}
                     >
@@ -441,7 +441,6 @@ export function VeteranEditForm({ veteran }) {
                         <Typography 
                           variant="h6"
                           sx={{ 
-                            color: 'primary.main',
                             fontWeight: 'medium' 
                           }}
                         >
@@ -2269,7 +2268,7 @@ export function VeteranEditForm({ veteran }) {
         <Button 
           color="inherit" 
           component={RouterLink} 
-          href={paths.main.search.list}
+          href={decodedReturnUrl}
           sx={{
             borderRadius: 2,
             fontWeight: 'medium'

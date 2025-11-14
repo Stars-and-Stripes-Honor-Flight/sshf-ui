@@ -12,7 +12,12 @@ export const layoutConfig = {
           title: 'Search',
           icon: 'address-book',
           items: [
-            { key: 'search/', title: 'Veterans & Guardians', href: paths.main.search.list }
+            { 
+              key: 'search', 
+              title: 'Veterans & Guardians', 
+              href: paths.main.search.list,
+              matcher: { type: 'startsWith', href: '/search' }
+            }
           ],
         },
         {
@@ -20,8 +25,18 @@ export const layoutConfig = {
           title: 'Veteran',
           icon: 'veteran',
           items: [
-            { key: 'veteran/', title: 'List veterans', href: paths.main.veterans.list},
-            { key: 'veteran:create', title: 'Create veteran profile', href: paths.main.veterans.create }
+            { 
+              key: 'veteran:details', 
+              title: 'Veteran Details', 
+              href: paths.main.veterans.list,
+              matcher: { type: 'startsWith', href: '/veterans/detail' }
+            },
+            { 
+              key: 'veteran:create', 
+              title: 'Create veteran profile', 
+              href: paths.main.veterans.create,
+              matcher: { type: 'startsWith', href: '/veterans/create' }
+            }
           ],
         },
         {
@@ -29,8 +44,18 @@ export const layoutConfig = {
           title: 'Guardian',
           icon: 'guardian',
           items: [
-            { key: 'guardian/', title: 'List guardians', href: paths.main.guardians.list},
-            { key: 'guardian:create', title: 'Create guardian profile', href: paths.main.guardians.create }
+            { 
+              key: 'guardian:details', 
+              title: 'Guardian Details', 
+              href: paths.main.guardians.list,
+              matcher: { type: 'startsWith', href: '/guardians/detail' }
+            },
+            { 
+              key: 'guardian:create', 
+              title: 'Create guardian profile', 
+              href: paths.main.guardians.create,
+              matcher: { type: 'startsWith', href: '/guardians/create' }
+            }
           ],
         },
         {
@@ -38,7 +63,7 @@ export const layoutConfig = {
           title: 'Settings',
           href: paths.main.settings.account,
           icon: 'gear',
-          matcher: { type: 'startsWith', href: '/main/settings' },
+          matcher: { type: 'startsWith', href: '/settings' },
         },
       ],
     },

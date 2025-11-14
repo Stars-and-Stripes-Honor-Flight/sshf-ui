@@ -9,19 +9,28 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
+import { useColorScheme } from '@mui/material/styles';
 import { LockKey as LockKeyIcon } from '@phosphor-icons/react/dist/ssr/LockKey';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
+import { Moon as MoonIcon } from '@phosphor-icons/react/dist/ssr/Moon';
+import { Sun as SunIcon } from '@phosphor-icons/react/dist/ssr/Sun';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/domain/client';
 
 export function UserPopover({ user = {}, anchorEl, onClose, open }) {
+  const { mode, setMode } = useColorScheme();
+
   const logout = React.useCallback(async () => {
     await authClient.signOut();
     onClose();
     window.location.href = paths.auth.domain.signIn;
   }, [onClose]);
+
+  const toggleTheme = React.useCallback(() => {
+    setMode(mode === 'light' ? 'dark' : 'light');
+  }, [mode, setMode]);
 
 
   return (
@@ -47,6 +56,15 @@ export function UserPopover({ user = {}, anchorEl, onClose, open }) {
           </ListItemIcon>
           Account
         </MenuItem>
+        <MenuItem onClick={toggleTheme}>
+          <ListItemIcon>
+            {mode === 'light' ? <MoonIcon /> : <SunIcon />}
+          </ListItemIcon>
+          {mode === 'light' ? 'Dark Mode' : 'Light Mode'}
+        </MenuItem>
+      </List>
+      <Divider />
+      <List sx={{ p: 1 }}>
         <MenuItem onClick={logout}>
           <ListItemIcon>
             <SignOutIcon />

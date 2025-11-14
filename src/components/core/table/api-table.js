@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { 
     Divider, 
     LinearProgress, 
@@ -175,6 +176,9 @@ export function ApiTable({
     filters = defaultFilter,
     sorts = [],
     urlParams = "",
+    hidePagination = false,
+    mobileCardView = null,
+    currentUrl = '',
 }) 
 {
 
@@ -190,6 +194,7 @@ export function ApiTable({
     
 
     const router = useRouter();
+    const isMobile = useMediaQuery('(max-width:899px)'); // md breakpoint
     const [rows, setRows] = React.useState([]);
     const [tablePageData, setTablePageData] = React.useState({
         rowsPerPage: defaultRowsPerPage,
@@ -409,19 +414,38 @@ export function ApiTable({
         <React.Fragment>
             <TableTabs tableTabs={tableTabs} handleTabChange={handleTabChange} currentTab={currentTab} />
             <FiltersAndSorts filters={filters} sorts={userSorts} handleChange={handleChange} handleClearFilters={handleClearFilters}/>
-            <Box sx={{ overflowX: 'auto' }}>
-                <DataTable columns={columns} rows={rows} />
-                <LoadingOrEmptyMessage rows={rows} entityFriendlyName={entityFriendlyName} columns={columns} tablePageData={tablePageData} isLoading={isLoading}/>
-            </Box>
-            <Divider/>
-            <TablePagination       
-                component="div"
-                count={tablePageData.count}
-                onPageChange={onPageChange}
-                onRowsPerPageChange={onRowsPerPageChange}
-                page={tablePageData.page}
-                rowsPerPage={tablePageData.rowsPerPage}
-                rowsPerPageOptions={[5, 10, 25, 50]} />
+            
+            {/* Show card view on mobile if provided, otherwise show table */}
+            {isMobile && mobileCardView ? (
+                <>
+                    {isLoading ? (
+                        <Box sx={{ p: 3, padding: 0 }}>
+                            <LinearProgress />
+                        </Box>
+                    ) : (
+                        React.cloneElement(mobileCardView, { rows, currentUrl })
+                    )}
+                </>
+            ) : (
+                <Box sx={{ overflowX: 'auto' }}>
+                    <DataTable columns={columns} rows={rows} />
+                    <LoadingOrEmptyMessage rows={rows} entityFriendlyName={entityFriendlyName} columns={columns} tablePageData={tablePageData} isLoading={isLoading}/>
+                </Box>
+            )}
+            
+            {!hidePagination && (
+                <>
+                    <Divider/>
+                    <TablePagination       
+                        component="div"
+                        count={tablePageData.count}
+                        onPageChange={onPageChange}
+                        onRowsPerPageChange={onRowsPerPageChange}
+                        page={tablePageData.page}
+                        rowsPerPage={tablePageData.rowsPerPage}
+                        rowsPerPageOptions={[5, 10, 25, 50]} />
+                </>
+            )}
         </React.Fragment>
     );
 

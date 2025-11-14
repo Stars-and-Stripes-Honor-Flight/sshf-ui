@@ -8,25 +8,25 @@ export const paths = {
   main: {
     overview: '/',
     settings: {
-      account: '/settings/account/',
-      billing: '/settings/billing/',
-      integrations: '/settings/integrations/',
-      notifications: '/settings/notifications/',
-      security: '/settings/security/',
-      team: '/settings/team/',
+      account: '/settings/account',
+      billing: '/settings/billing',
+      integrations: '/settings/integrations',
+      notifications: '/settings/notifications',
+      security: '/settings/security',
+      team: '/settings/team',
     },
     search: {
-      list: '/search/'
+      list: '/search'
     },   
     veterans: {
-      list: '/veterans/',
-      create: '/veterans/create/',
+      list: '/veterans',
+      create: '/veterans/create',
       details: (veteranId) => `/veterans/details?id=${veteranId}`,
       preview: (veteranId) => `/veterans/preview?id=${veteranId}`
     },
     guardians: {
-      list: '/guardians/',
-      create: '/guardians/create/',
+      list: '/guardians',
+      create: '/guardians/create',
       details: (guardianId) => `/guardians/details?id=${guardianId}`
     },
   },

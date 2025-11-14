@@ -67,7 +67,6 @@ export function MainNav({ items }) {
               orientation="vertical"
               sx={{ borderColor: 'var(--MainNav-divider)', display: { xs: 'none', lg: 'block' } }}
             />
-            <Client/>
             <UserButton user={ user } />
           </Stack>
         </Box>

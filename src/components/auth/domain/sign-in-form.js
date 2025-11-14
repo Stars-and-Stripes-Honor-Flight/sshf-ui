@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
 
@@ -69,7 +71,7 @@ export function SignInForm() {
         <Stack spacing={2}>
           {oAuthProviders.map((provider) => (
             <Button
-              color="secondary"
+              color="primary"
               disabled={isPending}
               endIcon={
                 <Box 
@@ -86,13 +88,50 @@ export function SignInForm() {
                   toast.error('Authentication failed');
                 });
               }}
-              variant="outlined"
+              variant="contained"
+              size="large"
+              sx={{
+                color: '#ffffff',
+                '&:hover': {
+                  color: '#ffffff',
+                }
+              }}
             >
               Continue with {provider.name}
             </Button>
           ))}
         </Stack>
       </Stack>
+      
+      {/* Mobile-only buttons - hidden on large screens where split-layout shows them */}
+      <Box sx={{ display: { xs: 'block', lg: 'none' }, mt: 3 }}>
+        <Divider />
+        <Stack spacing={2} sx={{ mt: 3 }}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            Looking for something else?
+          </Typography>
+          <Button
+            variant="outlined"
+            color="secondary"
+            href="https://www.starsandstripeshonorflight.org/veteran-application/"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+          >
+            Veteran Application
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            href="https://www.starsandstripeshonorflight.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+          >
+            Visit Main Website
+          </Button>
+        </Stack>
+      </Box>
     </Stack>
   );
 }

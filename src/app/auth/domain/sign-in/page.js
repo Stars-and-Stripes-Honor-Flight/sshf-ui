@@ -5,7 +5,7 @@ import { SignInForm } from '@/components/auth/domain/sign-in-form';
 import { GuestGuard } from '@/components/auth/guest-guard';
 import { SplitLayout } from '@/components/auth/split-layout';
 
-export const metadata = { title: `Sign in | Domain | Auth | ${config.site.name}` };
+export const metadata = { title: `Sign in | ${config.site.name}` };
 
 export default function Page() {
   return (
