@@ -76,6 +76,7 @@
     "@ianvs/prettier-plugin-sort-imports": "4.4.1",
     "@testing-library/jest-dom": "6.6.2",
     "@testing-library/react": "16.0.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/jest": "29.5.13",
     "@types/mapbox-gl": "3.4.0",
     "@types/node": "22.10.7",

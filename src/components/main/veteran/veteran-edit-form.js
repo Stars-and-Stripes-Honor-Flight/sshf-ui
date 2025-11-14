@@ -105,6 +105,14 @@ const SectionHeader = ({ icon: Icon, title }) => (
 export function VeteranEditForm({ veteran }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
+  const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
+
+  // Update _rev when veteran prop changes
+  React.useEffect(() => {
+    if (veteran._rev) {
+      setVeteranRev(veteran._rev);
+    }
+  }, [veteran._rev]);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
@@ -239,8 +247,23 @@ export function VeteranEditForm({ veteran }) {
     async (data) => {
       try {
         setSaving(true);
-        // Call the API to update the veteran
-        await api.updateVeteran(data._id, data);
+        
+        // Create clean payload with required fields
+        const payload = {
+          ...data,
+          _rev: veteranRev,
+          type: 'Veteran'
+        };
+        
+        // Remove metadata (API handles this)
+        delete payload.metadata;
+        
+        // Remove history arrays from nested objects
+        if (payload.flight?.history) delete payload.flight.history;
+        if (payload.guardian?.history) delete payload.guardian.history;
+        if (payload.call?.history) delete payload.call.history;
+        
+        await api.updateVeteran(data._id, payload);
         toast.success('Veteran updated successfully');
         router.push(paths.main.search.list);
       } catch (err) {
@@ -250,7 +273,7 @@ export function VeteranEditForm({ veteran }) {
         setSaving(false);
       }
     },
-    [router]
+    [router, veteranRev]
   );
 
   const watchBranch = watch('service.branch');
