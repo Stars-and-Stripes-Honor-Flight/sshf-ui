@@ -87,10 +87,11 @@ const SectionHeader = ({ icon: Icon, title }) => (
   </Stack>
 );
 
-export function GuardianEditForm({ guardian }) {
+export function GuardianEditForm({ guardian, returnUrl = '/search' }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
+  const decodedReturnUrl = decodeURIComponent(returnUrl);
 
   // Update _rev when guardian prop changes
   React.useEffect(() => {
@@ -233,7 +234,7 @@ export function GuardianEditForm({ guardian }) {
         
         await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
-        router.push(paths.main.search.list);
+        router.push(decodedReturnUrl);
       } catch (err) {
         logger.error(err);
         toast.error('Failed to update guardian: ' + (err.message || 'Unknown error'));
@@ -241,7 +242,7 @@ export function GuardianEditForm({ guardian }) {
         setSaving(false);
       }
     },
-    [router, guardianRev]
+    [router, guardianRev, decodedReturnUrl]
   );
 
   const watchStatus = watch('flight.status');
@@ -282,7 +283,7 @@ export function GuardianEditForm({ guardian }) {
                   <Person 
                     size={120}
                     weight="duotone"
-                    color="var(--mui-palette-primary-main)"
+                    color="#ff9999"
                   />
                 </Box>
                 <Stack spacing={2}>
@@ -314,15 +315,6 @@ export function GuardianEditForm({ guardian }) {
                   <Divider />
                   {/* Mobile: Single column info (below name) */}
                   <Stack spacing={2} sx={{ display: { xs: 'block', md: 'none' } }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: 'primary.main',
-                        fontWeight: 'medium'
-                      }}
-                    >
-                      Guardian
-                    </Typography>
                     <Typography variant="body2">
                       {watchTraining ? `Training: ${watchTraining}` : 'No Training Completed'}
                     </Typography>
@@ -355,14 +347,13 @@ export function GuardianEditForm({ guardian }) {
                         <Person 
                           size={120}
                           weight="duotone"
-                          color="var(--mui-palette-primary-main)"
+                          color="#ff9999"
                         />
                       </Box>
                       <Stack spacing={1} sx={{ mt: 2, alignItems: 'center', textAlign: 'center' }}>
                         <Typography
                           variant="h6"
                           sx={{
-                            color: 'primary.main',
                             fontWeight: 'medium'
                           }}
                         >
@@ -1732,7 +1723,7 @@ export function GuardianEditForm({ guardian }) {
         <Button 
           color="inherit" 
           component={RouterLink} 
-          href={paths.main.search.list}
+          href={decodedReturnUrl}
           sx={{
             borderRadius: 2,
             fontWeight: 'medium'

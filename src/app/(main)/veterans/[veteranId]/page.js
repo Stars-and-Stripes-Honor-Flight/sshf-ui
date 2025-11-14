@@ -1,5 +1,8 @@
+'use client';
+
 import * as React from 'react';
 import RouterLink from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
@@ -10,11 +13,15 @@ import { config } from '@/config';
 import { paths } from '@/paths';
 import { VeteranEditForm } from '@/components/main/veteran/veteran-edit-form';
 
-export const metadata = { title: `Details | Veterans | Dashboard | ${config.site.name}` };
-
 // This would normally fetch the veteran from the API based on the veteranId param
-export default function Page({ searchParams }) {
-  const veteranId = searchParams.id; // Get the id from URL query parameter
+export default function Page() {
+  const searchParams = useSearchParams();
+  const veteranId = searchParams.get('id'); // Get the id from URL query parameter
+  const returnUrl = searchParams.get('returnUrl') || paths.main.search.list;
+  
+  React.useEffect(() => {
+    document.title = `Details | Veterans | Dashboard | ${config.site.name}`;
+  }, []);
 
   // Using the same data as in the veterans list page
   const veterans = [
@@ -160,18 +167,18 @@ export default function Page({ searchParams }) {
             <Link
               color="text.primary"
               component={RouterLink}
-              href={paths.main.veterans.list}
+              href={decodeURIComponent(returnUrl)}
               sx={{ alignItems: 'center', display: 'inline-flex', gap: 1 }}
               variant="subtitle2"
             >
               <ArrowLeftIcon fontSize="var(--icon-fontSize-md)" />
-              Veterans
+              Back to Search
             </Link>
           </div>
           <div>
             <Typography variant="h4">Edit Veteran</Typography>
           </div>
-          <VeteranEditForm veteran={veteran} />
+          <VeteranEditForm veteran={veteran} returnUrl={returnUrl} />
         </Stack>
       </Box>
     </Box>

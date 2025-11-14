@@ -19,6 +19,7 @@ import { useSearchParams } from 'next/navigation';
 export default function Page() {
   const searchParams = useSearchParams();
   const guardianId = searchParams.get('id');
+  const returnUrl = searchParams.get('returnUrl') || paths.main.search.list;
   
   const [guardian, setGuardian] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -68,7 +69,7 @@ export default function Page() {
             <Link
               color="text.primary"
               component={RouterLink}
-              href={paths.main.search.list}
+              href={decodeURIComponent(returnUrl)}
               sx={{ alignItems: 'center', display: 'inline-flex', gap: 1 }}
               variant="subtitle2"
             >
@@ -93,7 +94,7 @@ export default function Page() {
           )}
           
           {!loading && !error && guardian && (
-            <GuardianEditForm guardian={guardian} />
+            <GuardianEditForm guardian={guardian} returnUrl={returnUrl} />
           )}
         </Stack>
       </Box>

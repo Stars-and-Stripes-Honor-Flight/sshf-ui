@@ -101,9 +101,8 @@ function renderNavItems({ depth = 0, items = [], onClose, pathname }) {
   const children = items.reduce((acc, curr) => {
     const { items: childItems, key, ...item } = curr;
 
-    const forceOpen = childItems
-      ? Boolean(childItems.find((childItem) => childItem.href && pathname.startsWith(childItem.href)))
-      : false;
+    // Open all items with children by default
+    const forceOpen = Boolean(childItems);
 
     acc.push(
       <NavItem depth={depth} forceOpen={forceOpen} key={key} onClose={onClose} pathname={pathname} {...item}>

@@ -274,7 +274,21 @@ describe('GuardianEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
-      expect(mockPush).toHaveBeenCalledWith('/search/');
+      expect(mockPush).toHaveBeenCalledWith('/search');
+    });
+  });
+
+  test('redirects to custom returnUrl when provided', async () => {
+    const user = userEvent.setup();
+    const customReturnUrl = encodeURIComponent('/search?status=Active');
+    render(<GuardianEditForm guardian={mockGuardian} returnUrl={customReturnUrl} />);
+    
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+    
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
+      expect(mockPush).toHaveBeenCalledWith('/search?status=Active');
     });
   });
 

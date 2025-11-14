@@ -2,6 +2,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -19,12 +20,33 @@ export function SplitLayout({ children }) {
         }}
       >
         <Stack spacing={4} sx={{ maxWidth: '800px' }}>
-          <Stack spacing={1}>
+          <Stack spacing={2}>
             <Typography variant="h4">Welcome to the Stars and Stripes Honor Flight App</Typography>
             <Typography color="text.secondary">
-              If you are looking to submit a veteran application, please click the button below.
+              If you are looking to submit a veteran application or visit our main website, please use the buttons below.
             </Typography>
-            <Link href="https://www.starsandstripeshonorflight.org/veteran-application/">Veteran Application Link</Link>
+            <Stack direction="row" spacing={2} sx={{ pt: 1 }}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                href="https://www.starsandstripeshonorflight.org/veteran-application/"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ flex: 1 }}
+              >
+                Veteran Application
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                href="https://www.starsandstripeshonorflight.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ flex: 1 }}
+              >
+                Visit Main Website
+              </Button>
+            </Stack>
           </Stack>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}

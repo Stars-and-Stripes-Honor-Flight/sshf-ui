@@ -64,6 +64,7 @@ export function SideNav({ color = 'evident', items = [] }) {
           flex: '1 1 auto',
           overflowY: 'auto',
           p: 2,
+          pb: 10,
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
         }}
@@ -103,9 +104,8 @@ function renderNavItems({ depth = 0, items = [], pathname }) {
   const children = items.reduce((acc, curr) => {
     const { items: childItems, key, ...item } = curr;
 
-    const forceOpen = childItems
-      ? Boolean(childItems.find((childItem) => childItem.href && pathname.startsWith(childItem.href)))
-      : false;
+    // Open all items with children by default
+    const forceOpen = Boolean(childItems);
 
     acc.push(
       <NavItem depth={depth} forceOpen={forceOpen} key={key} pathname={pathname} {...item}>

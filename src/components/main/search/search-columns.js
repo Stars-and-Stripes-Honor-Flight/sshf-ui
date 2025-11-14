@@ -3,6 +3,7 @@ import RouterLink from 'next/link';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 
 import { dayjs } from '@/lib/dayjs';
@@ -21,20 +22,41 @@ import { Leaf } from '@phosphor-icons/react/dist/ssr/Leaf';
 import { HourglassHigh } from '@phosphor-icons/react/dist/ssr/HourglassHigh';
 import { Copy } from '@phosphor-icons/react/dist/ssr/Copy';
 
-export const searchColumns = [
+// Function to create columns with return URL
+export const createSearchColumns = (currentPath = '/search') => {
+    const returnUrl = encodeURIComponent(currentPath);
+    
+    return [
 
     { 
         field: 'type', 
         name: 'Type', 
-        width: '75px', 
+        width: '70px', 
         formatter: (row) => 
         {
             let label = <Typography variant='body2' >{row.type}</Typography>;
-            let icon = <UserIcon size="25" color="green" weight="fill" />;
+            let icon = (
+                <Tooltip title="Guardian" arrow placement="top">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '5px' }}>
+                        <UserIcon size="40" color="#ff9999" weight="regular" />
+                    </span>
+                </Tooltip>
+            );
 
             if (row.type == "Veteran") {
-                icon = <MedalMilitaryIcon size="25" color="blue" weight="fill" />;
+                icon = (
+                    <Tooltip title="Veteran" arrow placement="top">
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <MedalMilitaryIcon size="50" color="#b5ccf6" weight="fill" />
+                        </span>
+                    </Tooltip>
+                );
             }
+
+            const detailUrl = row.type == "Veteran" 
+                ? paths.main.veterans.details(row.id) 
+                : paths.main.guardians.details(row.id);
+            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
 
             return (
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -45,11 +67,11 @@ export const searchColumns = [
                         flex: '0 0 auto',
                         p: '2px 12px',
                         textAlign: 'center',
-                        width: 125
+                        width: 70
                         }}
-                        component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
+                        component={RouterLink} href={fullUrl}
                     >
-                        {icon} {label}
+                        {icon}
                     </Box>
                 </Stack>
             );
@@ -58,11 +80,18 @@ export const searchColumns = [
     { 
         field: 'name',
         name: 'Name',
-        width: '250px',
+        width: '200px',
         formatter: (row) => 
         {
+            const detailUrl = row.type == "Veteran" 
+                ? paths.main.veterans.details(row.id) 
+                : paths.main.guardians.details(row.id);
+            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
+            
             return <Typography variant='body1' 
-                component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}
+                component={RouterLink} 
+                href={fullUrl}
+                sx={{ color: 'primary.main' }}
             >
                 {row.name}
             </Typography>;
@@ -106,10 +135,32 @@ export const searchColumns = [
             return (<Chip icon={icon} label={label} size="small" variant="outlined" />);
         }, 
     },
-    { field: 'pairing', name: 'Pairing', width: '250px', },
+    { 
+        field: 'pairing',
+        name: 'Pairing',
+        width: '200px',
+        formatter: (row) => 
+        {
+            if (row.pairing === "None" || !row.pairing) {
+                return (
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" size={18} />
+                        <Typography variant='body2'>None</Typography>
+                    </Stack>
+                );
+            }
+            
+            return (
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" size={18} />
+                    <Typography variant='body2'>{row.pairing}</Typography>
+                </Stack>
+            );
+        }
+    },
     {
         field: 'appdate',
-        name: 'Appl. Date',
+        name: 'App Date',
         width: '70px',
         formatter: (row) => (
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -130,14 +181,25 @@ export const searchColumns = [
         ),
     },
     {
-        formatter: (row) => (
-            <IconButton component={RouterLink} href={row.type == "Veteran" ? paths.main.veterans.details(row.id) : paths.main.guardians.details(row.id)}>
-            <EyeIcon />
-        </IconButton>
-        ),
+        formatter: (row) => {
+            const detailUrl = row.type == "Veteran" 
+                ? paths.main.veterans.details(row.id) 
+                : paths.main.guardians.details(row.id);
+            const fullUrl = returnUrl ? `${detailUrl}&returnUrl=${returnUrl}` : detailUrl;
+            
+            return (
+                <IconButton component={RouterLink} href={fullUrl}>
+                    <EyeIcon />
+                </IconButton>
+            );
+        },
         name: 'Actions',
         hideName: false,
         width: '70px',
         align: 'center',
     },
 ];
+};
+
+// Export default columns for backward compatibility
+export const searchColumns = createSearchColumns();
