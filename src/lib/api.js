@@ -205,6 +205,75 @@ class ApiClient {
       throw error;
     }
   }
+
+  // Get a flight by ID
+  async getFlight(id) {
+    try {
+      const response = await this.request(`/flights/${id}`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch flight: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Get all flights
+  async listFlights() {
+    try {
+      const response = await this.request('/flights', {
+        method: 'GET',
+      });
+      const data = await response.json();
+      // Handle response wrapping - if data has rows property, extract it
+      return Array.isArray(data) ? data : (data.rows || data);
+    } catch (error) {
+      toast.error(`Failed to fetch flights: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Create a new flight
+  async createFlight(data) {
+    try {
+      const response = await this.request('/flights', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to create flight: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Update a flight
+  async updateFlight(id, data) {
+    try {
+      const response = await this.request(`/flights/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update flight: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Delete a flight
+  async deleteFlight(id) {
+    try {
+      const response = await this.request(`/flights/${id}`, {
+        method: 'DELETE',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to delete flight: ${error.message}`);
+      throw error;
+    }
+  }
 }
 
 export const api = new ApiClient(); 

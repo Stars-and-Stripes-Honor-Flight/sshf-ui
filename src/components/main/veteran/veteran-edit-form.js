@@ -36,7 +36,9 @@ import {
   House,
   Clock,
   Headset,
-  Eye
+  Eye,
+  HistoryIcon,
+  X
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -44,6 +46,7 @@ import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
+import { HistoryDialog } from '@/components/core/history-dialog';
 
 const getBranchImage = (branch) => {
   const images = {
@@ -107,8 +110,23 @@ export function VeteranEditForm({ veteran }) {
   const [saving, setSaving] = React.useState(false);
   const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
   
+  // History dialog state
+  const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
+  const [historyDialogData, setHistoryDialogData] = React.useState({ title: '', history: [] });
+  
   // Ref for the guardian pairing section
   const guardianPairingRef = React.useRef(null);
+  
+  // Helper function to open history dialog
+  const handleOpenHistory = React.useCallback((title, history) => {
+    setHistoryDialogData({ title, history: history || [] });
+    setHistoryDialogOpen(true);
+  }, []);
+  
+  // Helper function to close history dialog
+  const handleCloseHistory = React.useCallback(() => {
+    setHistoryDialogOpen(false);
+  }, []);
   
   // Helper function to navigate back with fallback
   const handleGoBack = React.useCallback(() => {
@@ -979,10 +997,25 @@ export function VeteranEditForm({ veteran }) {
               {/* Flight Status Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
-                  <SectionHeader 
-                    icon={Airplane} 
-                    title="Flight Status" 
-                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+                    <SectionHeader 
+                      icon={Airplane} 
+                      title="Flight Status" 
+                    />
+                    <Button
+                      startIcon={<Clock size={18} weight="bold" />}
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleOpenHistory('Flight Status', veteran.flight?.history || [])}
+                      sx={{
+                        borderRadius: 1,
+                        textTransform: 'none',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      History ({veteran.flight?.history?.length || 0})
+                    </Button>
+                  </Stack>
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -1313,10 +1346,25 @@ export function VeteranEditForm({ veteran }) {
               {/* Call Center Information Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
-                  <SectionHeader 
-                    icon={Headset} 
-                    title="Call Center Information" 
-                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+                    <SectionHeader 
+                      icon={Headset} 
+                      title="Call Center Information" 
+                    />
+                    <Button
+                      startIcon={<Clock size={18} weight="bold" />}
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleOpenHistory('Call Center', veteran.call?.history || [])}
+                      sx={{
+                        borderRadius: 1,
+                        textTransform: 'none',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      History ({veteran.call?.history?.length || 0})
+                    </Button>
+                  </Stack>
                   <Grid container spacing={3}>
                     <Grid xs={12} md={6}>
                       <Controller
@@ -1676,10 +1724,25 @@ export function VeteranEditForm({ veteran }) {
               {/* Guardian Information Card */}
               <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={guardianPairingRef}>
                 <CardContent>
-                  <SectionHeader 
-                    icon={UsersFour} 
-                    title="Guardian Pairing Information" 
-                  />
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+                    <SectionHeader 
+                      icon={UsersFour} 
+                      title="Guardian Pairing Information" 
+                    />
+                    <Button
+                      startIcon={<Clock size={18} weight="bold" />}
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleOpenHistory('Guardian Pairing', veteran.guardian?.history || [])}
+                      sx={{
+                        borderRadius: 1,
+                        textTransform: 'none',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      History ({veteran.guardian?.history?.length || 0})
+                    </Button>
+                  </Stack>
                   <Grid container spacing={3}>
                     {veteran.guardian?.id && veteran.guardian?.name && (
                       <>
@@ -2213,6 +2276,12 @@ export function VeteranEditForm({ veteran }) {
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </Box>
+      <HistoryDialog 
+        open={historyDialogOpen}
+        onClose={handleCloseHistory}
+        history={historyDialogData.history}
+        title={historyDialogData.title}
+      />
     </form>
   );
 }

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { authClient } from '@/lib/auth/domain/client';
 import { logger } from '@/lib/default-logger';
+import { api } from '@/lib/api';
 
 export const UserContext = React.createContext(undefined);
 
@@ -46,6 +47,18 @@ export function UserProvider({ children }) {
         error: null, 
         isLoading: false 
       }));
+
+      // Load flights into local storage once user is authenticated
+      try {
+        const existingFlights = localStorage.getItem('flights-list');
+        if (!existingFlights) {
+          const flights = await api.listFlights();
+          localStorage.setItem('flights-list', JSON.stringify(flights));
+        }
+      } catch (err) {
+        logger.error('Failed to load flights:', err);
+        // Don't fail the whole authentication if flights fail to load
+      }
     } catch (err) {
       logger.error(err);
       setState(prev => ({ 

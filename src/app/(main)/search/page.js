@@ -21,6 +21,7 @@ import { Option } from '@/components/core/option';
 import { searchColumns } from '@/components/main/search/search-columns';
 import { SearchCardView } from '@/components/main/search/search-card-view';
 import { usePermissions } from '@/hooks/use-permissions';
+import { getFlights } from '@/lib/flights';
 
 export default function Page() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function Page() {
   const [quickSearch, setQuickSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const [flights, setFlights] = React.useState([]);
   
   const [searchFilters, setSearchFilters] = React.useState([
     { property: "lastName", propertyFriendlyName: "Last Name", filterType: "text" },
@@ -96,6 +98,27 @@ export default function Page() {
     setSearchFilters(newsearchFilter);
   }
 
+  // When flight is selected, automatically set status to All
+  React.useEffect(() => {
+    const flightFilter = searchFilters.find(f => f.property === 'flight');
+    const statusFilter = searchFilters.find(f => f.property === 'status');
+    
+    if (flightFilter && flightFilter.value && flightFilter.value !== 'All' && statusFilter && statusFilter.value !== 'All') {
+      // Update the status filter to 'All'
+      const updatedFilters = searchFilters.map(f => 
+        f.property === 'status' ? { ...f, value: 'All' } : f
+      );
+      
+      // Update URL with the new status
+      const params = new URLSearchParams(window.location.search);
+      params.set('status', 'All');
+      const newUrl = params.toString() ? `?${params.toString()}` : '/search';
+      router.replace(newUrl, { scroll: false });
+      
+      setSearchFilters(updatedFilters);
+    }
+  }, [searchFilters.find(f => f.property === 'flight')?.value, searchFilters.length]);
+
   const [readyToFetch, setReadyToFetch] = React.useState(true);
 
   // Initialize from URL parameters on page load ONLY
@@ -108,6 +131,10 @@ export default function Page() {
     setDebouncedSearch(urlSearch);
     setIsInitialized(true);
     
+    // Load flights from local storage
+    const cachedFlights = getFlights();
+    setFlights(cachedFlights);
+    
     // Auto-focus the search input
     if (searchInputRef.current) {
       searchInputRef.current.focus();
@@ -119,6 +146,31 @@ export default function Page() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
+
+  // Update search filters with flight options when flights load
+  React.useEffect(() => {
+    if (flights.length > 0) {
+      const flightOptions = [
+        <Option key="All" value="All">All Flights</Option>,
+        ...flights.map(flight => (
+          <Option key={flight._id} value={String(flight.name)}>
+            {String(flight.name)}
+          </Option>
+        ))
+      ];
+
+      setSearchFilters(prev => [
+        prev[0], // Keep lastName filter
+        prev[1], // Keep status filter
+        { 
+          property: "flight", 
+          propertyFriendlyName: "Flight", 
+          filterType: "combo", 
+          options: flightOptions
+        }
+      ]);
+    }
+  }, [flights]);
 
   /* Why two useEffects? 
   * The first use effect is loading in the extra data the grid needs to populate the combo filter
@@ -173,7 +225,8 @@ export default function Page() {
                 filters={searchFilters}
                 defaultRowsPerPage={25}
                 hidePagination={true}
-                mobileCardView={<SearchCardView />} />
+                mobileCardView={<SearchCardView />}
+                flights={flights} />
             </Card>
           </Stack>
         </Box>
