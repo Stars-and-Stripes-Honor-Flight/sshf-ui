@@ -39,7 +39,7 @@ name: Deploy to Cloud Run from Source
 on:
   push:
     branches:
-      - 67-setup-ui-cicd-github-action  # Temporary: remove after testing
+      - 67-setup-ui-cicd-github-action  # Temporary: remove after testing.
   pull_request:
     types: [closed, synchronize]
     branches:
