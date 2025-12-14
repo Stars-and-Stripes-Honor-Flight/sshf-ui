@@ -41,7 +41,7 @@ on:
     branches:
       - 67-setup-ui-cicd-github-action  # Temporary: remove after testing.
   pull_request:
-    types: [closed, synchronize]
+    types: [closed]
     branches:
       - main
   workflow_dispatch:
