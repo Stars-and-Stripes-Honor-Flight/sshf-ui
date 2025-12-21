@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
@@ -14,9 +14,9 @@ import { config } from '@/config';
 import { paths } from '@/paths';
 import { GuardianEditForm } from '@/components/main/guardian/guardian-edit-form';
 import { api } from '@/lib/api';
+import { useNavigationBack } from '@/hooks/use-navigation-back';
 
 export default function Page() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const guardianId = searchParams.get('id');
   
@@ -38,21 +38,8 @@ export default function Page() {
     }
   }, []);
   
-  // Helper function to navigate back with fallback
-  const handleGoBack = React.useCallback(() => {
-    // If we came from veteran details, set flag to scroll back to guardian pairing section
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage === 'veteran-details') {
-      sessionStorage.setItem('scrollToSection', 'guardian-pairing');
-    }
-    
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(paths.main.search.list);
-    }
-  }, [router]);
+  // Use shared navigation back hook
+  const handleGoBack = useNavigationBack();
 
   React.useEffect(() => {
     const fetchGuardian = async () => {
@@ -85,7 +72,7 @@ export default function Page() {
       component="main"
       sx={{
         flexGrow: 1,
-        py: 3
+        py: 1
       }}
     >
       <Box

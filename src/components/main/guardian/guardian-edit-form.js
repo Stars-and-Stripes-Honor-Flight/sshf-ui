@@ -5,8 +5,10 @@ import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Link from '@mui/material/Link';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
@@ -18,6 +20,10 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
 import { 
@@ -25,7 +31,7 @@ import {
   Person,
   Airplane,
   Phone,
-  UsersFour,
+  Users,
   EnvelopeSimple,
   TShirt,
   FirstAid,
@@ -33,7 +39,11 @@ import {
   Headset,
   Clock,
   Eye,
-  X
+  X,
+  Plus,
+  Gear,
+  ArrowUp,
+  LinkBreak
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -42,6 +52,9 @@ import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { HistoryDialog } from '@/components/core/history-dialog';
+import { GoodToFlyStatus } from '@/components/main/shared/good-to-fly-status';
+import { StickyHeader } from '@/components/main/shared/sticky-header';
+import { useNavigationBack } from '@/hooks/use-navigation-back';
 
 const getStatusColor = (status) => {
   const colors = {
@@ -53,6 +66,16 @@ const getStatusColor = (status) => {
     'Future-Fall': 'warning'
   };
   return colors[status] || 'default';
+};
+
+const getMedicalLevelColor = (level) => {
+  const colors = {
+    'A': 'success',
+    'B': 'info',
+    'C': 'warning',
+    'D': 'error'
+  };
+  return colors[level] || 'default';
 };
 
 // Component for section headers
@@ -98,8 +121,30 @@ export function GuardianEditForm({ guardian }) {
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
   const [historyDialogData, setHistoryDialogData] = React.useState({ title: '', history: [] });
   
+  // Pairing management dialog state
+  const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
+  
+  // Scroll state for "Back to Top" link
+  const [showBackToTop, setShowBackToTop] = React.useState(false);
+  
   // Ref for the veteran pairings section
   const veteranPairingsRef = React.useRef(null);
+  
+  // Handle scroll to show/hide "Back to Top" link
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollThreshold = 100;
+      setShowBackToTop(window.scrollY > scrollThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
   
   // Helper function to open history dialog
   const handleOpenHistory = React.useCallback((title, history) => {
@@ -112,21 +157,8 @@ export function GuardianEditForm({ guardian }) {
     setHistoryDialogOpen(false);
   }, []);
   
-  // Helper function to navigate back with fallback
-  const handleGoBack = React.useCallback(() => {
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage === 'veteran-details') {
-      sessionStorage.setItem('scrollToSection', 'guardian-pairing');
-    }
-
-
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(paths.main.search.list);
-    }
-  }, [router]);
+  // Use shared navigation back hook
+  const handleGoBack = useNavigationBack();
 
   // Update _rev when guardian prop changes
   React.useEffect(() => {
@@ -135,39 +167,6 @@ export function GuardianEditForm({ guardian }) {
     }
   }, [guardian._rev]);
   
-  // Check if we should scroll to a specific section on page load
-  React.useEffect(() => {
-    const scrollToSection = sessionStorage.getItem('scrollToSection');
-    
-    if (scrollToSection === 'veteran-pairings') {
-      // Use multiple attempts to ensure DOM is fully rendered
-      const attemptScroll = () => {
-        if (veteranPairingsRef.current) {
-          veteranPairingsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          sessionStorage.removeItem('scrollToSection');
-        } else {
-          setTimeout(attemptScroll, 200);
-        }
-      };
-      
-      requestAnimationFrame(() => {
-        setTimeout(attemptScroll, 300);
-      });
-    }
-  }, [guardian]);
-  
-  // Also check on mount in case guardian data is already loaded
-  React.useEffect(() => {
-    const scrollToSection = sessionStorage.getItem('scrollToSection');
-    if (scrollToSection === 'veteran-pairings' && veteranPairingsRef.current) {
-      setTimeout(() => {
-        if (veteranPairingsRef.current) {
-          veteranPairingsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          sessionStorage.removeItem('scrollToSection');
-        }
-      }, 500);
-    }
-  }, []);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
@@ -180,13 +179,11 @@ export function GuardianEditForm({ guardian }) {
       state: '', 
       zip: '', 
       phone_day: '', 
-      phone_eve: '', 
       phone_mbl: '', 
       email: '' 
     },
     birth_date: guardian.birth_date || '',
     gender: guardian.gender || '',
-    weight: guardian.weight || '',
     occupation: guardian.occupation || '',
     app_date: guardian.app_date || '',
     notes: guardian.notes || { service: 'N', other: '' },
@@ -225,7 +222,6 @@ export function GuardianEditForm({ guardian }) {
     call: guardian.call || {
       assigned_to: '',
       notes: '',
-      fm_number: '',
       email_sent: false
     },
     emerg_contact: guardian.emerg_contact || { 
@@ -317,21 +313,51 @@ export function GuardianEditForm({ guardian }) {
 
   const watchStatus = watch('flight.status');
   const watchTraining = watch('flight.training');
+  const watchMedicalLevel = watch('medical.level');
+
+  // Scroll to section handler
+  const handleScrollToSection = React.useCallback((sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
+  const nickname = watch('name.nickname') || guardian.name?.nickname;
+  const fullName = nickname 
+    ? nickname 
+    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${guardian.name?.first || ''} ${guardian.name?.last || ''}`.trim();
+  const displayName = nickname 
+    ? `${watch('name.first') || guardian.name?.first || ''} ${watch('name.last') || guardian.name?.last || ''}`.trim()
+    : null;
+  const additionalInfo = null;
 
   return (
     <form 
       onSubmit={handleSubmit(onSubmit)}
       style={{ paddingBottom: '80px' }}
     >
-      <Grid container spacing={4}>
-        <Grid xs={12} md={7}>
+      <StickyHeader
+        name={fullName}
+        nickname={nickname}
+        fullName={displayName}
+        status={watchStatus || guardian.flight?.status}
+        statusColor={getStatusColor(watchStatus || guardian.flight?.status)}
+        additionalInfo={additionalInfo}
+        type="guardian"
+      />
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 4, md: 2 }, width: '100%', alignItems: 'stretch' }}>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, flexShrink: 0, display: 'flex' }}>
           <Card 
             id="guardian-info"
             sx={{
               position: 'sticky',
               top: 24,
               backgroundColor: 'background.neutral',
-              boxShadow: (theme) => theme.shadows[8]
+              boxShadow: (theme) => theme.shadows[8],
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             <CardContent>
@@ -363,24 +389,62 @@ export function GuardianEditForm({ guardian }) {
                     alignItems="center" 
                     justifyContent="space-between"
                   >
-                    <Typography 
-                      variant="h4"
-                      sx={{
-                        fontWeight: 'bold',
-                        color: 'text.primary'
-                      }}
-                    >
-                      {guardian.name?.first} {guardian.name?.last}
-                    </Typography>
-                    <Chip
-                      label={watchStatus || 'No Status'}
-                      color={getStatusColor(watchStatus)}
-                      size="small"
-                      sx={{
-                        borderRadius: 1,
-                        fontWeight: 'medium'
-                      }}
-                    />
+                    <Stack spacing={0.5}>
+                      {watch('name.nickname') || guardian.name?.nickname ? (
+                        <>
+                          <Typography 
+                            variant="h4"
+                            sx={{
+                              fontWeight: 'bold',
+                              color: 'primary.main'
+                            }}
+                          >
+                            {watch('name.nickname') || guardian.name?.nickname}
+                          </Typography>
+                          <Typography 
+                            variant="body2"
+                            sx={{
+                              color: 'text.secondary',
+                              fontStyle: 'italic'
+                            }}
+                          >
+                            {watch('name.first') || guardian.name?.first} {watch('name.last') || guardian.name?.last}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography 
+                          variant="h4"
+                          sx={{
+                            fontWeight: 'bold',
+                            color: 'text.primary'
+                          }}
+                        >
+                          {watch('name.first') || guardian.name?.first} {watch('name.last') || guardian.name?.last}
+                        </Typography>
+                      )}
+                    </Stack>
+                    <Stack direction="row" spacing={1}>
+                      <Chip
+                        label={watchStatus || 'No Status'}
+                        color={getStatusColor(watchStatus)}
+                        size="small"
+                        sx={{
+                          borderRadius: 1,
+                          fontWeight: 'medium'
+                        }}
+                      />
+                      {watchMedicalLevel && (
+                        <Chip
+                          label={`Medical Level: ${watchMedicalLevel}`}
+                          color={getMedicalLevelColor(watchMedicalLevel)}
+                          size="small"
+                          sx={{
+                            borderRadius: 1,
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      )}
+                    </Stack>
                   </Stack>
                   <Divider />
                   {/* Mobile: Single column info (below name) */}
@@ -388,14 +452,86 @@ export function GuardianEditForm({ guardian }) {
                     <Typography variant="body2">
                       {watchTraining ? `Training: ${watchTraining}` : 'No Training Completed'}
                     </Typography>
+                    <Divider />
+                    {/* Veteran Pairings Display - Mobile */}
                     {guardian.veteran?.pairings?.length > 0 ? (
-                      <Typography variant="body2">
-                        Paired with: {guardian.veteran.pairings.map(p => p.name).join(', ')}
-                      </Typography>
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Paired Veterans
+                          </Typography>
+                          <Tooltip title="Manage Pairings" arrow placement="top">
+                            <IconButton
+                              size="small"
+                              onClick={() => setPairingDialogOpen(true)}
+                              sx={{
+                                color: 'text.secondary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  backgroundColor: 'action.hover'
+                                }
+                              }}
+                            >
+                              <Gear size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                        <Stack spacing={1}>
+                          {guardian.veteran.pairings.map((pairing, index) => (
+                            <Card
+                              key={pairing.id || index}
+                              variant="outlined"
+                              onClick={() => {
+                                sessionStorage.setItem('previousPage', 'guardian-details');
+                                router.push(paths.main.veterans.details(pairing.id));
+                              }}
+                              sx={{
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  boxShadow: 2,
+                                  borderColor: 'primary.main'
+                                }
+                              }}
+                            >
+                              <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.primary">
+                                    {pairing.name}
+                                  </Typography>
+                                  <Eye size={16} color="var(--mui-palette-primary-main)" />
+                                </Stack>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </Stack>
+                      </Box>
                     ) : (
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        Not paired with any veterans
-                      </Typography>
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <LinkBreak size={16} color="var(--mui-palette-warning-main)" />
+                            <Typography variant="caption" color="text.secondary">
+                              No Veterans Paired
+                            </Typography>
+                          </Stack>
+                          <Tooltip title="Manage Pairings" arrow placement="top">
+                            <IconButton
+                              size="small"
+                              onClick={() => setPairingDialogOpen(true)}
+                              sx={{
+                                color: 'text.secondary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  backgroundColor: 'action.hover'
+                                }
+                              }}
+                            >
+                              <Gear size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </Box>
                     )}
                   </Stack>
                   {/* Desktop/Tablet: Two-column layout (icon left, training info right) */}
@@ -436,14 +572,86 @@ export function GuardianEditForm({ guardian }) {
                         <Typography variant="subtitle1">
                           {watchTraining ? `Training: ${watchTraining}` : 'No Training Completed'}
                         </Typography>
+                        <Divider />
+                        {/* Veteran Pairings Display - Desktop */}
                         {guardian.veteran?.pairings?.length > 0 ? (
-                          <Typography variant="body2">
-                            Paired with: {guardian.veteran.pairings.map(p => p.name).join(', ')}
-                          </Typography>
+                          <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Paired Veterans
+                              </Typography>
+                              <Tooltip title="Manage Pairings" arrow placement="top">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPairingDialogOpen(true)}
+                                  sx={{
+                                    color: 'text.secondary',
+                                    '&:hover': {
+                                      color: 'primary.main',
+                                      backgroundColor: 'action.hover'
+                                    }
+                                  }}
+                                >
+                                  <Gear size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                            <Stack spacing={1}>
+                              {guardian.veteran.pairings.map((pairing, index) => (
+                                <Card
+                                  key={pairing.id || index}
+                                  variant="outlined"
+                                  onClick={() => {
+                                    sessionStorage.setItem('previousPage', 'guardian-details');
+                                    router.push(paths.main.veterans.details(pairing.id));
+                                  }}
+                                  sx={{
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                      boxShadow: 2,
+                                      borderColor: 'primary.main'
+                                    }
+                                  }}
+                                >
+                                  <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                                    <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                                      <Typography variant="body2" color="text.primary">
+                                        {pairing.name}
+                                      </Typography>
+                                      <Eye size={16} color="var(--mui-palette-primary-main)" />
+                                    </Stack>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </Stack>
+                          </Box>
                         ) : (
-                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            Not paired with any veterans
-                          </Typography>
+                          <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <LinkBreak size={16} color="var(--mui-palette-warning-main)" />
+                                <Typography variant="caption" color="text.secondary">
+                                  No Veterans Paired
+                                </Typography>
+                              </Stack>
+                              <Tooltip title="Manage Pairings" arrow placement="top">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPairingDialogOpen(true)}
+                                  sx={{
+                                    color: 'text.secondary',
+                                    '&:hover': {
+                                      color: 'primary.main',
+                                      backgroundColor: 'action.hover'
+                                    }
+                                  }}
+                                >
+                                  <Gear size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </Box>
                         )}
                         <Divider />
                         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -480,8 +688,15 @@ export function GuardianEditForm({ guardian }) {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid xs={12} md={5}>
+        </Box>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, flexShrink: 0, pr: { md: 3 }, ml: { md: 0 }, display: 'flex' }}>
+          <Box sx={{ width: '100%', display: 'flex' }}>
+            <GoodToFlyStatus data={watch()} type="guardian" onScrollToSection={handleScrollToSection} />
+          </Box>
+        </Box>
+      </Box>
+      <Grid container spacing={4} sx={{ mt: 4 }}>
+        <Grid xs={12} md={12}>
           <Stack spacing={4}>
             {/* Essential Information Group */}
             <Stack spacing={3}>
@@ -598,30 +813,13 @@ export function GuardianEditForm({ guardian }) {
               </Card>
 
               {/* Medical Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="medical-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={FirstAid} 
                     title="Medical Information" 
                   />
                   <Grid container spacing={3}>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="weight"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.weight)} fullWidth>
-                            <InputLabel>Weight (lbs)</InputLabel>
-                            <OutlinedInput 
-                              {...field} 
-                              type="number" 
-                              inputProps={{ min: 60, max: 450 }}
-                            />
-                            {errors.weight ? <FormHelperText>{errors.weight.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
                     <Grid xs={12} md={6}>
                       <Controller
                         control={control}
@@ -823,19 +1021,6 @@ export function GuardianEditForm({ guardian }) {
                         )}
                       />
                     </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="call.fm_number"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.call?.fm_number)} fullWidth>
-                            <InputLabel>FM Number</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.call?.fm_number ? <FormHelperText>{errors.call.fm_number.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
                     <Grid xs={12}>
                       <Controller
                         control={control}
@@ -892,7 +1077,7 @@ export function GuardianEditForm({ guardian }) {
               </Card>
 
               {/* Flight Status Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="flight-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
                     <SectionHeader 
@@ -1168,7 +1353,7 @@ export function GuardianEditForm({ guardian }) {
               </Typography>
 
               {/* Address Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="address-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={EnvelopeSimple} 
@@ -1256,19 +1441,6 @@ export function GuardianEditForm({ guardian }) {
                     <Grid xs={12} md={4}>
                       <Controller
                         control={control}
-                        name="address.phone_eve"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.address?.phone_eve)} fullWidth>
-                            <InputLabel>Evening Phone</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.address?.phone_eve && <FormHelperText>{errors.address.phone_eve.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={4}>
-                      <Controller
-                        control={control}
                         name="address.phone_mbl"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.address?.phone_mbl)} fullWidth>
@@ -1297,7 +1469,7 @@ export function GuardianEditForm({ guardian }) {
               </Card>
 
               {/* Emergency Contact Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="emergency-contact-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={Phone} 
@@ -1361,25 +1533,25 @@ export function GuardianEditForm({ guardian }) {
               </Card>
 
               {/* Veteran Pairing Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={veteranPairingsRef}>
+              <Card id="veteran-pairings" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={veteranPairingsRef}>
                 <CardContent>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
                     <SectionHeader 
-                      icon={UsersFour} 
+                      icon={Users} 
                       title="Veteran Pairing Information" 
                     />
                     <Button
-                      startIcon={<Clock size={18} weight="bold" />}
+                      startIcon={<Gear size={18} weight="bold" />}
                       variant="outlined"
                       size="small"
-                      onClick={() => handleOpenHistory('Veteran Pairing', guardian.veteran?.history || [])}
+                      onClick={() => setPairingDialogOpen(true)}
                       sx={{
                         borderRadius: 1,
                         textTransform: 'none',
                         fontWeight: 'medium'
                       }}
                     >
-                      History ({guardian.veteran?.history?.length || 0})
+                      Manage Pairing
                     </Button>
                   </Stack>
                   <Grid container spacing={3}>
@@ -1394,7 +1566,6 @@ export function GuardianEditForm({ guardian }) {
                                 variant="outlined"
                                 onClick={() => {
                                   sessionStorage.setItem('previousPage', 'guardian-details');
-                                  sessionStorage.removeItem('scrollToSection'); // Clear any scroll flag
                                   router.push(paths.main.veterans.details(pairing.id));
                                 }}
                                 sx={{
@@ -1427,13 +1598,15 @@ export function GuardianEditForm({ guardian }) {
                       </>
                     )}
                     <Grid xs={12} md={guardian.veteran?.pairings?.length > 0 ? 5.5 : 12}>
+                      <InputLabel sx={{ mb: 2 }}>
+                        Veteran Preference Notes
+                      </InputLabel>
                       <Controller
                         control={control}
                         name="veteran.pref_notes"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.veteran?.pref_notes)} fullWidth>
-                            <InputLabel>Veteran Preference Notes</InputLabel>
-                            <OutlinedInput {...field} multiline rows={guardian.veteran?.pairings?.length > 0 ? 8 : 2} />
+                            <OutlinedInput {...field} multiline rows={8} placeholder="Veteran Preference Notes" />
                             {errors.veteran?.pref_notes && <FormHelperText>{errors.veteran.pref_notes.message}</FormHelperText>}
                           </FormControl>
                         )}
@@ -1690,43 +1863,76 @@ export function GuardianEditForm({ guardian }) {
         sx={{
           position: 'fixed',
           bottom: 0,
-          left: 0,
+          left: { xs: 0, lg: 'var(--SideNav-width)' },
           right: 0,
           padding: 2,
           backgroundColor: 'background.paper',
           borderTop: 1,
           borderColor: 'divider',
-          zIndex: 1200,
+          zIndex: 1000,
           backdropFilter: 'blur(20px)',
           display: 'flex',
           justifyContent: 'flex-end',
+          alignItems: 'center',
           gap: 2
         }}
       >
-        <Button 
-          color="inherit" 
-          onClick={() => {
-            handleGoBack();
-          }}
-          sx={{
-            borderRadius: 2,
-            fontWeight: 'medium'
-          }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          variant="contained"
-          disabled={saving}
-          sx={{
-            borderRadius: 2,
-            fontWeight: 'medium',
-            boxShadow: (theme) => theme.shadows[4]
-          }}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        {showBackToTop && (
+          <Box
+            component="button"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              color: 'text.secondary',
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              marginRight: 'auto',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              font: 'inherit',
+              '&:hover': {
+                color: 'primary.main',
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            <ArrowUp size={16} />
+            Back to Top
+          </Box>
+        )}
+        <Stack direction="row" spacing={2}>
+          <Button 
+            color="inherit" 
+            onClick={() => {
+              handleGoBack();
+            }}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 'medium'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained"
+            disabled={saving}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 'medium',
+              boxShadow: (theme) => theme.shadows[4]
+            }}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Stack>
       </Box>
       <HistoryDialog 
         open={historyDialogOpen}
@@ -1734,6 +1940,78 @@ export function GuardianEditForm({ guardian }) {
         history={historyDialogData.history}
         title={historyDialogData.title}
       />
+      <Dialog
+        open={pairingDialogOpen}
+        onClose={() => setPairingDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Users size={24} weight="bold" />
+            Veteran Pairing Management
+          </Box>
+          <Box
+            component="button"
+            onClick={() => setPairingDialogOpen(false)}
+            sx={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'text.primary'
+              },
+              transition: 'color 0.2s'
+            }}
+            aria-label="Close"
+          >
+            <X size={24} weight="bold" />
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3}>
+            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+              Coming Soon
+            </Typography>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 'medium' }}>
+                Veteran Preference Notes:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  p: 2, 
+                  backgroundColor: 'background.neutral', 
+                  borderRadius: 1,
+                  minHeight: 100,
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {watch('veteran.pref_notes') || guardian.veteran?.pref_notes || 'No preference notes entered.'}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 } 

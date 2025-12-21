@@ -1,26 +1,39 @@
 import Box from '@mui/material/Box';
-import RouterLink from 'next/link';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
-import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 
 import { dayjs } from '@/lib/dayjs';
-
-import { paths } from '@/paths';
 import { Chip } from '@mui/material';
-import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
-import { Clock as ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr/MedalMilitary';
-import { FlowerLotus } from '@phosphor-icons/react/dist/ssr/FlowerLotus';
-import { Flower } from '@phosphor-icons/react/dist/ssr/Flower';
-import { Leaf } from '@phosphor-icons/react/dist/ssr/Leaf';
-import { HourglassHigh } from '@phosphor-icons/react/dist/ssr/HourglassHigh';
-import { Copy } from '@phosphor-icons/react/dist/ssr/Copy';
+import { Users } from '@phosphor-icons/react/dist/ssr/Users';
+import { LinkBreak } from '@phosphor-icons/react/dist/ssr/LinkBreak';
+
+// Status color mapping to match edit screens
+const getStatusColor = (status) => {
+  const colors = {
+    'Active': 'success',
+    'Flown': 'info',
+    'Deceased': 'default',
+    'Removed': 'error',
+    'Future-Spring': 'warning',
+    'Future-Fall': 'warning',
+    'Future-PostRestriction': 'warning',
+    'Copied': 'default'
+  };
+  return colors[status] || 'default';
+};
+
+// Remove SSHF- prefix from flight names
+const formatFlightName = (flightName) => {
+  if (!flightName || flightName === "None") {
+    return flightName;
+  }
+  return flightName.replace(/^SSHF-/i, '');
+};
 
 export const searchColumns = [
     { 
@@ -48,10 +61,6 @@ export const searchColumns = [
                 );
             }
 
-            const detailUrl = row.type == "Veteran" 
-                ? paths.main.veterans.details(row.id) 
-                : paths.main.guardians.details(row.id);
-
             return (
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
                     <Box 
@@ -63,7 +72,6 @@ export const searchColumns = [
                         textAlign: 'center',
                         width: 70
                         }}
-                        component={RouterLink} href={detailUrl}
                     >
                         {icon}
                     </Box>
@@ -77,27 +85,26 @@ export const searchColumns = [
         width: '200px',
         formatter: (row) => 
         {
-            const detailUrl = row.type == "Veteran" 
-                ? paths.main.veterans.details(row.id) 
-                : paths.main.guardians.details(row.id);
-            
-            return <Typography variant='body1' 
-                component={RouterLink} 
-                href={detailUrl}
-                sx={{ color: 'primary.main' }}
-            >
-                {row.name}
-            </Typography>;
+            return (
+                <Typography 
+                    variant='subtitle1' 
+                    sx={{ 
+                        color: 'primary.main',
+                        fontWeight: 'medium'
+                    }}
+                >
+                    {row.name}
+                </Typography>
+            );
         }
     },
-    { field: 'city', name: 'City', width: '150px', },
     { 
         field: 'flight',
         name: 'Flight',
         width: '150px',
         formatter: (row) => 
         {
-            let label = row.flight;
+            let label = formatFlightName(row.flight);
             let icon = <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" />;
 
             if (row.flight != "None") {
@@ -113,19 +120,17 @@ export const searchColumns = [
         width: '150px', 
         formatter: (row) => 
         {
-            const status = {
-                'Flown': { label: 'Flown', icon: <ClockIcon color="var(--mui-palette-primary-main)" weight="fill" /> },
-                'Active': { label: 'Active', icon: <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" />,},
-                'Removed': { label: 'Removed', icon: <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" /> },
-                'Deceased': { label: 'Deceased', icon: <FlowerLotus color="var(--mui-palette-grey-500)" weight="fill" /> },
-                'Future-Spring': { label: 'Future-Spring', icon: <Flower color="var(--mui-palette-success-light)" weight="fill" /> },
-                'Future-Fall': { label: 'Future-Fall', icon: <Leaf color="var(--mui-palette-warning-light)" weight="fill" /> },
-                'Future-PostRestriction': { label: 'Future-PostRestriction', icon: <HourglassHigh color="var(--mui-palette-info-main)" weight="fill" /> },
-                'Copied': { label: 'Copied', icon: <Copy color="var(--mui-palette-info-light)" weight="fill" /> },
-            };
-            const { label, icon } = status[row.status] ?? { label: 'Unknown', icon: null };
-        
-            return (<Chip icon={icon} label={label} size="small" variant="outlined" />);
+            return (
+                <Chip
+                    label={row.status || 'No Status'}
+                    color={getStatusColor(row.status)}
+                    size="small"
+                    sx={{
+                        borderRadius: 1,
+                        fontWeight: 'medium'
+                    }}
+                />
+            );
         }, 
     },
     { 
@@ -135,17 +140,18 @@ export const searchColumns = [
         formatter: (row) => 
         {
             if (row.pairing === "None" || !row.pairing) {
+                const message = row.type === "Veteran" ? "No Guardian Paired" : "No Veterans Paired";
                 return (
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" size={18} />
-                        <Typography variant='body2'>None</Typography>
+                        <LinkBreak color="var(--mui-palette-warning-main)" weight="regular" size={18} />
+                        <Typography variant='body2'>{message}</Typography>
                     </Stack>
                 );
             }
             
             return (
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" size={18} />
+                    <Users color="var(--mui-palette-success-main)" weight="fill" size={18} />
                     <Typography variant='body2'>{row.pairing}</Typography>
                 </Stack>
             );
@@ -172,22 +178,5 @@ export const searchColumns = [
         </Box>
         </Stack>
         ),
-    },
-    {
-        formatter: (row) => {
-            const detailUrl = row.type == "Veteran" 
-                ? paths.main.veterans.details(row.id) 
-                : paths.main.guardians.details(row.id);
-            
-            return (
-                <IconButton component={RouterLink} href={detailUrl}>
-                    <EyeIcon />
-                </IconButton>
-            );
-        },
-        name: 'Actions',
-        hideName: false,
-        width: '70px',
-        align: 'center',
     },
 ];

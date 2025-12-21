@@ -27,6 +27,7 @@ import { toast } from '@/components/core/toaster';
 import { DataTable } from '@/components/core/data-table';
 import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
+import { paths } from '@/paths';
 
 import { api } from '@/lib/api';
 
@@ -111,12 +112,18 @@ let TableTabs = ({ tableTabs, handleTabChange, currentTab }) => {
 }
 
 let FiltersAndSorts = ({ filters, sorts, handleChange, handleClearFilters }) => {
-    const hasFilters = filters.some(f => f.value != undefined);
+    // Check if any filter has a value, including hidden ones (like lastName from quick search)
+    const hasFilters = filters.some(f => f.value != undefined && f.value !== '');
     let filterButtons = [];
     let sortButtons = [];
     
     if (filters.length > 0) {
         filters.forEach(f => {
+            // Skip hidden filters (like lastName which is handled by quick search)
+            if (f.hidden) {
+                return;
+            }
+            
             let filterButton = <TextFilterButton 
                 key={f.property}
                 value={f.value || f.defaultValue || ''} 
@@ -182,13 +189,36 @@ export function ApiTable({
 {
 
     const searchParams = useSearchParams();
-    filters.forEach((f, index) => {
-        if (searchParams.get(f.property)) {
-            filters[index].value = searchParams.get(f.property);
-        } else {
-            delete filters[index].value;
+    
+    // Helper function to format flight name for display (remove SSHF- prefix)
+    const formatFlightNameForDisplay = (flightName) => {
+        if (!flightName || flightName === "All") {
+            return flightName;
         }
-    });
+        return flightName.replace(/^SSHF-/i, '');
+    };
+
+    // Create a memoized version of filters with values from URL params for display
+    // This avoids mutating the filters prop and prevents unnecessary re-renders
+    const filtersWithUrlValues = React.useMemo(() => {
+        return filters.map(f => {
+            const urlValue = searchParams.get(f.property);
+            // URL params are the source of truth - if param exists in URL, use it (even if empty string)
+            // If param doesn't exist in URL (null), use undefined to clear the filter
+            // Don't fall back to f.value as that's stale state from parent
+            let displayValue = urlValue !== null ? urlValue : undefined;
+            
+            // For flight filter, remove SSHF- prefix for display
+            if (f.property === 'flight' && displayValue) {
+                displayValue = formatFlightNameForDisplay(displayValue);
+            }
+            
+            return {
+                ...f,
+                value: displayValue
+            };
+        });
+    }, [filters, searchParams]);
     
     
 
@@ -236,7 +266,6 @@ export function ApiTable({
     const fetchEntity = async () => {
         showLoading();
         try {    
-            const hasFilters = filters.some(f => f.value != undefined);
             let filterParams = {};
             
             // Set default status filter to 'Active' if not specified
@@ -247,23 +276,47 @@ export function ApiTable({
                 filterParams.status = currentTab;
             }
             
-            // Handle text filters
+            // Read all filter values directly from URL params to ensure they're always current
+            // This handles the case when page is refreshed and filters are in URL but not yet synced to filters array
             filters.forEach(f => {
-                if (f.value != undefined) {
-                    // Handle lastname filter specifically
+                const urlValue = searchParams.get(f.property);
+                if (urlValue) {
                     if (f.property === 'lastName') {
-                        filterParams.lastname = f.value;
-                    }
-                    // Handle status filter
-                    else if (f.property === 'status') {
-                        filterParams.status = f.value;
-                    }
-                    // Handle flight filter
-                    else if (f.property === 'flight') {
-                        filterParams.flight = f.value;
+                        filterParams.lastname = urlValue;
+                    } else if (f.property === 'status') {
+                        filterParams.status = urlValue;
+                    } else if (f.property === 'flight') {
+                        // Ensure SSHF- prefix is present for API calls
+                        let flightValue = urlValue;
+                        if (flightValue !== 'All' && !flightValue.match(/^SSHF-/i)) {
+                            flightValue = `SSHF-${flightValue}`;
+                        }
+                        filterParams.flight = flightValue;
                     }
                 }
             });
+            
+            // Also check for lastName directly from URL (for quick search, even if not in filters array)
+            const lastNameFromUrl = searchParams.get('lastName');
+            if (lastNameFromUrl && !filterParams.lastname) {
+                filterParams.lastname = lastNameFromUrl;
+            }
+            
+            // Also check for flight directly from URL (flight filter is added dynamically, may not be in filters array on refresh)
+            const flightFromUrl = searchParams.get('flight');
+            if (flightFromUrl && !filterParams.flight) {
+                // Ensure SSHF- prefix is present for API calls
+                let flightValue = flightFromUrl;
+                if (flightValue !== 'All' && !flightValue.match(/^SSHF-/i)) {
+                    flightValue = `SSHF-${flightValue}`;
+                }
+                filterParams.flight = flightValue;
+            }
+            
+            // Ensure flight param has SSHF- prefix if it was set from filters array
+            if (filterParams.flight && filterParams.flight !== 'All' && !filterParams.flight.match(/^SSHF-/i)) {
+                filterParams.flight = `SSHF-${filterParams.flight}`;
+            }
             
             // Set pagination
             filterParams.limit = tablePageData.rowsPerPage;
@@ -333,21 +386,50 @@ export function ApiTable({
 
   
     const updateSearchParams = React.useCallback(
-      (newFilters, newSortDir) => {
+      (newFilters, newSortDir, clearAllFilters = false) => {
+        const currentParams = new URLSearchParams(window.location.search);
         const searchParamsBuilder = new URLSearchParams();
+        
+        // Known filter properties that should be managed
+        const knownFilterProperties = new Set(['lastName', 'status', 'flight']);
 
-        newFilters.forEach(f => {
-            if (f.value != undefined) {
-                searchParamsBuilder.set(f.property, f.value);
+        // Start with all current params
+        currentParams.forEach((value, key) => {
+            // Skip filter params - we'll handle them separately
+            if (!knownFilterProperties.has(key)) {
+                searchParamsBuilder.set(key, value);
             }
         });
 
+        // Handle filter params
+        if (clearAllFilters) {
+            // When clearing, don't add any filter params (they're already excluded above)
+        } else {
+            // Update/add filter values from newFilters
+            newFilters.forEach(f => {
+                if (f.value != undefined && f.value !== '') {
+                    searchParamsBuilder.set(f.property, f.value);
+                } else if (!f.hidden) {
+                    // For visible filters, remove when cleared
+                    searchParamsBuilder.delete(f.property);
+                } else {
+                    // For hidden filters (like lastName), preserve from URL if exists
+                    const currentValue = currentParams.get(f.property);
+                    if (currentValue) {
+                        searchParamsBuilder.set(f.property, currentValue);
+                    }
+                }
+            });
+        }
+
+        // Update sort params
         newSortDir.forEach(s => {
             if (s.value != undefined) {
                 searchParamsBuilder.set(s.property, s.direction);
+            } else {
+                searchParamsBuilder.delete(s.property);
             }
-        })
-
+        });
 
         router.push(`${window.location.pathname}?${searchParamsBuilder.toString()}`);
       },
@@ -355,17 +437,12 @@ export function ApiTable({
     );
   
     const handleClearFilters = React.useCallback(() => {
-        let tempFilters = [];
+        // Clear all filter values
+        const clearedFilters = filters.map(f => ({ ...f, value: undefined }));
         
-        for(let filter of filters) {
-            let tempFilter = {...filter};
-            delete tempFilter.value;
-            tempFilters.push(tempFilter);
-        }
-
-        
-        updateSearchParams(tempFilters, userSorts);
-        updateMappingFilters(tempFilters);
+        // Clear all filters from URL
+        updateSearchParams(clearedFilters, userSorts, true);
+        updateMappingFilters(clearedFilters);
     }, [updateSearchParams, filters, userSorts]);
   
     const handleChange = React.useCallback(
@@ -394,6 +471,12 @@ export function ApiTable({
   
 
 
+    // Convert searchParams to a stable string for dependency comparison
+    // This prevents unnecessary re-renders when searchParams object reference changes but values don't
+    const searchParamsString = React.useMemo(() => {
+        return searchParams.toString();
+    }, [searchParams]);
+
     React.useEffect(() => {
         showLoading();
         if (!readyToFetch) {
@@ -406,13 +489,13 @@ export function ApiTable({
         }
 
         fetchData();
-    }, [tablePageData.page, tablePageData.rowsPerPage, tabFilter, filters, readyToFetch, searchParams]);
+    }, [tablePageData.page, tablePageData.rowsPerPage, tabFilter, readyToFetch, searchParamsString]);
 
 
     return (
         <React.Fragment>
             <TableTabs tableTabs={tableTabs} handleTabChange={handleTabChange} currentTab={currentTab} />
-            <FiltersAndSorts filters={filters} sorts={userSorts} handleChange={handleChange} handleClearFilters={handleClearFilters}/>
+            <FiltersAndSorts filters={filtersWithUrlValues} sorts={userSorts} handleChange={handleChange} handleClearFilters={handleClearFilters}/>
             
             {/* Show card view on mobile if provided, otherwise show table */}
             {isMobile && mobileCardView ? (
@@ -427,7 +510,26 @@ export function ApiTable({
                 </>
             ) : (
                 <Box sx={{ overflowX: 'auto' }}>
-                    <DataTable columns={columns} rows={rows} />
+                    <DataTable 
+                        columns={columns} 
+                        rows={rows}
+                        hover={true}
+                        onClick={(event, row) => {
+                            // Store search URL with filters for back navigation
+                            if (typeof window !== 'undefined') {
+                                const searchUrl = window.location.pathname + window.location.search;
+                                sessionStorage.setItem('searchUrl', searchUrl);
+                                sessionStorage.setItem('previousPage', 'search');
+                            }
+                            
+                            // Navigate to detail page based on row type
+                            if (row.type === 'Veteran') {
+                                router.push(paths.main.veterans.details(row.id));
+                            } else if (row.type === 'Guardian') {
+                                router.push(paths.main.guardians.details(row.id));
+                            }
+                        }}
+                    />
                     <LoadingOrEmptyMessage rows={rows} entityFriendlyName={entityFriendlyName} columns={columns} tablePageData={tablePageData} isLoading={isLoading}/>
                 </Box>
             )}

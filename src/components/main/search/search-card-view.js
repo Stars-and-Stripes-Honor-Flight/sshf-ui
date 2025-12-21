@@ -6,24 +6,47 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr/MedalMilitary';
-import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
-import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
-import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
+import { LinkBreak } from '@phosphor-icons/react/dist/ssr/LinkBreak';
+import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 
 import { paths } from '@/paths';
 import { dayjs } from '@/lib/dayjs';
 
-const status = {
-  Active: { label: 'Active', icon: <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" /> },
-  Flown: { label: 'Flown', icon: <CheckCircleIcon color="var(--mui-palette-primary-main)" weight="fill" /> },
-  Deceased: { label: 'Deceased', icon: <XCircleIcon color="var(--mui-palette-error-main)" weight="fill" /> },
-  Removed: { label: 'Removed', icon: <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" /> }
+// Store search URL when navigating to details page
+const handleCardClick = () => {
+  if (typeof window !== 'undefined') {
+    const searchUrl = window.location.pathname + window.location.search;
+    sessionStorage.setItem('searchUrl', searchUrl);
+    sessionStorage.setItem('previousPage', 'search');
+  }
+};
+
+// Remove SSHF- prefix from flight names
+const formatFlightName = (flightName) => {
+  if (!flightName || flightName === "None") {
+    return flightName;
+  }
+  return flightName.replace(/^SSHF-/i, '');
+};
+
+// Status color mapping to match edit screens
+const getStatusColor = (status) => {
+  const colors = {
+    'Active': 'success',
+    'Flown': 'info',
+    'Deceased': 'default',
+    'Removed': 'error',
+    'Future-Spring': 'warning',
+    'Future-Fall': 'warning',
+    'Future-PostRestriction': 'warning',
+    'Copied': 'default'
+  };
+  return colors[status] || 'default';
 };
 
 export function SearchCardView({ rows }) {
@@ -44,8 +67,6 @@ export function SearchCardView({ rows }) {
         const detailUrl = isVeteran
           ? paths.main.veterans.details(row.id)
           : paths.main.guardians.details(row.id);
-        
-        const { label, icon } = status[row.status] ?? { label: 'Unknown', icon: null };
 
         return (
           <Card 
@@ -60,8 +81,16 @@ export function SearchCardView({ rows }) {
             }}
             component={RouterLink}
             href={detailUrl}
+            onClick={handleCardClick}
           >
-            <CardContent>
+            <CardContent sx={{ 
+              pt: 2, 
+              px: 2, 
+              pb: '12px !important',
+              '&:last-child': { 
+                paddingBottom: '12px !important' 
+              }
+            }}>
               <Stack spacing={2}>
                 {/* Header: Type Icon and Name */}
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start' }}>
@@ -87,63 +116,77 @@ export function SearchCardView({ rows }) {
                       variant="h6" 
                       component={RouterLink}
                       href={detailUrl}
+                      onClick={handleCardClick}
                       sx={{ 
                         fontWeight: 600, 
-                        mb: 1,
                         color: 'primary.main',
                         textDecoration: 'none'
                       }}
                     >
                       {row.name} {row.lastname}
                     </Typography>
-                    {/* Status and Flight Chips */}
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                      <Chip icon={icon} label={label} size="small" variant="outlined" />
-                      {row.flight && (
-                        <Chip 
-                          icon={<AirplaneTiltIcon color="var(--mui-palette-success-main)" weight="fill" />}
-                          label={row.flight}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Stack>
                   </Box>
-                  <EyeIcon size={20} />
                 </Stack>
 
-                <Divider />
-
-                {/* Details Grid */}
-                <Stack spacing={1.5}>
-                  {/* Pairing */}
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                      Pairing:
-                    </Typography>
+                {/* Status, Flight, Pairing, and App Date */}
+                <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between', mb: 0 }}>
+                  {/* Left Column: Status, Flight and Pairing */}
+                  <Stack spacing={1} sx={{ flex: 1 }}>
+                    {/* Status Chip */}
+                    <Chip
+                      label={row.status || 'No Status'}
+                      color={getStatusColor(row.status)}
+                      size="small"
+                      sx={{
+                        borderRadius: 1,
+                        fontWeight: 'medium',
+                        alignSelf: 'flex-start'
+                      }}
+                    />
+                    {/* Flight Chip */}
+                    <Chip 
+                      icon={
+                        <AirplaneTiltIcon 
+                          color={row.flight !== "None" ? "var(--mui-palette-success-main)" : "var(--mui-palette-warning-main)"} 
+                          weight="fill" 
+                        />
+                      }
+                      label={formatFlightName(row.flight)}
+                      size="small"
+                      variant="outlined"
+                      sx={{ alignSelf: 'flex-start' }}
+                    />
+                    {/* Pairing */}
                     {row.pairing === "None" || !row.pairing ? (
-                      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                        <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" size={16} />
-                        <Typography variant="body2">None</Typography>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <LinkBreak color="var(--mui-palette-warning-main)" weight="regular" size={18} />
+                        <Typography variant='body2'>
+                          {row.type === "Veteran" ? "No Guardian Paired" : "No Veterans Paired"}
+                        </Typography>
                       </Stack>
                     ) : (
-                      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-                        <CheckCircleIcon color="var(--mui-palette-success-main)" weight="fill" size={16} />
-                        <Typography variant="body2">{row.pairing}</Typography>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <Users color="var(--mui-palette-success-main)" weight="fill" size={18} />
+                        <Typography variant='body2'>{row.pairing}</Typography>
                       </Stack>
                     )}
                   </Stack>
 
-                  {/* Application Date */}
+                  {/* Right Column: Application Date */}
                   {row.appdate && (
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                        App Date:
-                      </Typography>
-                      <Typography variant="body2">
-                        {dayjs(row.appdate).format('MMM D, YYYY')}
-                      </Typography>
-                    </Stack>
+                    <Box
+                      sx={{
+                        bgcolor: 'var(--mui-palette-background-level1)',
+                        borderRadius: 1.5,
+                        flex: '0 0 auto',
+                        p: '2px 12px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography variant="body2">{dayjs(row.appdate).format('MMM').toUpperCase()}</Typography>
+                      <Typography variant="h6">{dayjs(row.appdate).format('DD')} </Typography>
+                      <Typography variant="caption">{dayjs(row.appdate).format('YY')}</Typography>
+                    </Box>
                   )}
                 </Stack>
               </Stack>

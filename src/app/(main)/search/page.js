@@ -1,17 +1,14 @@
 'use client'
 
 import * as React from 'react';
-import RouterLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
-import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 
 import { paths } from '@/paths';
 import { config } from '@/config';
@@ -46,7 +43,7 @@ export default function Page() {
   const [flights, setFlights] = React.useState([]);
   
   const [searchFilters, setSearchFilters] = React.useState([
-    { property: "lastName", propertyFriendlyName: "Last Name", filterType: "text" },
+    { property: "lastName", propertyFriendlyName: "Last Name", filterType: "text", hidden: true },
     { property: "status", propertyFriendlyName: "Status", 
       filterType: "combo", options: [
         <Option key="All" value="All">All</Option>,
@@ -92,6 +89,12 @@ export default function Page() {
     // ApiTable will automatically read the filter value from the URL
     const newUrl = params.toString() ? `?${params.toString()}` : '/search';
     router.replace(newUrl, { scroll: false });
+    
+    // Update stored search URL for back navigation
+    if (typeof window !== 'undefined') {
+      const searchUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+      sessionStorage.setItem('searchUrl', searchUrl);
+    }
   }, [debouncedSearch, isInitialized, router]);
 
   const updatesearchFilters = (newsearchFilter) => {
@@ -119,7 +122,7 @@ export default function Page() {
     }
   }, [searchFilters.find(f => f.property === 'flight')?.value, searchFilters.length]);
 
-  const [readyToFetch, setReadyToFetch] = React.useState(true);
+  const [readyToFetch, setReadyToFetch] = React.useState(false);
 
   // Initialize from URL parameters on page load ONLY
   React.useEffect(() => {
@@ -140,27 +143,81 @@ export default function Page() {
       searchInputRef.current.focus();
     }
     
-    // Set current page for navigation tracking
+    // Set current page for navigation tracking and store search URL with filters
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('previousPage', 'search');
+      // Store the current search URL with query parameters for back navigation
+      const searchUrl = window.location.pathname + window.location.search;
+      sessionStorage.setItem('searchUrl', searchUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
+
+  // Sync quick search input when lastName is cleared from URL (e.g., via Clear filters button)
+  // This ensures the input field reflects the URL state when filters are cleared
+  React.useEffect(() => {
+    if (!isInitialized) return; // Skip on initial mount
+    
+    const urlLastName = searchParams.get('lastName') || '';
+    const currentSearch = debouncedSearch || '';
+    
+    // Only update if the URL value differs from our current state
+    // This handles the case when Clear filters removes lastName from URL
+    if (urlLastName !== currentSearch) {
+      setQuickSearch(urlLastName);
+      setDebouncedSearch(urlLastName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isInitialized]); // debouncedSearch intentionally excluded to prevent loops - we check it inside the effect
+
+  // Update stored search URL whenever URL parameters change (for back navigation)
+  React.useEffect(() => {
+    if (!isInitialized) return; // Skip on initial mount
+    
+    if (typeof window !== 'undefined') {
+      const searchUrl = window.location.pathname + window.location.search;
+      sessionStorage.setItem('searchUrl', searchUrl);
+    }
+  }, [searchParams, isInitialized]);
+
+  // Helper function to remove SSHF- prefix from flight names for display
+  const formatFlightNameForDisplay = (flightName) => {
+    if (!flightName || flightName === "All") {
+      return flightName;
+    }
+    return flightName.replace(/^SSHF-/i, '');
+  };
+
+  // Helper function to ensure SSHF- prefix is present for API calls
+  const ensureFlightPrefix = (flightName) => {
+    if (!flightName || flightName === "All") {
+      return flightName;
+    }
+    // If it doesn't start with SSHF-, add it
+    if (!flightName.match(/^SSHF-/i)) {
+      return `SSHF-${flightName}`;
+    }
+    return flightName;
+  };
 
   // Update search filters with flight options when flights load
   React.useEffect(() => {
     if (flights.length > 0) {
       const flightOptions = [
         <Option key="All" value="All">All Flights</Option>,
-        ...flights.map(flight => (
-          <Option key={flight._id} value={String(flight.name)}>
-            {String(flight.name)}
-          </Option>
-        ))
+        ...flights.map(flight => {
+          const displayName = formatFlightNameForDisplay(flight.name);
+          // Store display name (without prefix) as value, but display it without prefix
+          return (
+            <Option key={flight._id} value={displayName}>
+              {displayName}
+            </Option>
+          );
+        })
       ];
 
       setSearchFilters(prev => [
-        prev[0], // Keep lastName filter
+        prev[0], // Keep lastName filter (hidden)
         prev[1], // Keep status filter
         { 
           property: "flight", 
