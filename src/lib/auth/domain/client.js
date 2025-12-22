@@ -15,6 +15,7 @@ class AuthClient {
   constructor() {
     this.googleAuthInitialized = false;
     this.tokenClient = null;
+    this.getUserPromise = null; // Cache for in-flight getUser requests
   }
 
   async initializeGoogleAuth() {
@@ -136,71 +137,84 @@ class AuthClient {
   }
 
   async getUser() {
-    // Get a valid token using token manager
-    const token = await tokenManager.getValidToken();
-
-    if (!token) {
-      return { data: null };
+    // If there's already a getUser request in progress, return that promise instead of making a new call
+    if (this.getUserPromise) {
+      return this.getUserPromise;
     }
 
-    try {
-      // Fetch basic user info
-      const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    // Create the promise and cache it
+    this.getUserPromise = (async () => {
+      try {
+        // Get a valid token using token manager
+        const token = await tokenManager.getValidToken();
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user info');
-      }
+        if (!token) {
+          return { data: null };
+        }
 
-      const userData = await userResponse.json();
-
-      const roles = [];
-
-      // Check group memberships (preload roles)
-      const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-      //const ROLE_READ_ACCESS = "TBD";
-      const possibleRoles = [ROLE_FULL_ACCESS];
-
-      for (const role of possibleRoles) {
-        // Call user/hasgroup endpoint on api to check authorization.
-        const hasGroupResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/hasgroup?groupEmail=${role}`, {
+        // Fetch basic user info
+        const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (!hasGroupResponse.ok) {
-          continue;
+        if (!userResponse.ok) {
+          throw new Error('Failed to fetch user info');
         }
 
-        const hasGroupData = await hasGroupResponse.json();
-        if (hasGroupData.hasgroup) {
-          roles.push({name: role, email: role});
+        const userData = await userResponse.json();
+
+        const roles = [];
+
+        // Check group memberships (preload roles)
+        const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
+        //const ROLE_READ_ACCESS = "TBD";
+        const possibleRoles = [ROLE_FULL_ACCESS];
+
+        for (const role of possibleRoles) {
+          // Call user/hasgroup endpoint on api to check authorization.
+          const hasGroupResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/hasgroup?groupEmail=${role}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!hasGroupResponse.ok) {
+            continue;
+          }
+
+          const hasGroupData = await hasGroupResponse.json();
+          if (hasGroupData.hasgroup) {
+            roles.push({name: role, email: role});
+          }
         }
+
+        const user = {
+          id: userData.sub,
+          email: userData.email,
+          firstName: userData.given_name,
+          lastName: userData.family_name,
+          avatar: userData.picture,
+          roles: roles // Add roles to user data
+        };
+
+        // Store the complete user data
+        localStorage.setItem('user-data', JSON.stringify(user));
+
+        return { data: user };
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        tokenManager.clearTokens();
+        localStorage.removeItem('user-data');
+        return { data: null };
+      } finally {
+        // Clear the cached promise so future calls can make new requests
+        this.getUserPromise = null;
       }
+    })();
 
-      const user = {
-        id: userData.sub,
-        email: userData.email,
-        firstName: userData.given_name,
-        lastName: userData.family_name,
-        avatar: userData.picture,
-        roles: roles // Add roles to user data
-      };
-
-      // Store the complete user data
-      localStorage.setItem('user-data', JSON.stringify(user));
-
-      return { data: user };
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      tokenManager.clearTokens();
-      localStorage.removeItem('user-data');
-      return { data: null };
-    }
+    return this.getUserPromise;
   }
 
   async signOut() {

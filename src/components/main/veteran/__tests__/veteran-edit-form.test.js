@@ -194,6 +194,9 @@ describe('VeteranEditForm - Update Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
     // Setup mocks
     useRouter.mockReturnValue({
       push: mockPush,
@@ -205,6 +208,9 @@ describe('VeteranEditForm - Update Functionality', () => {
       value: { length: 2 },
       writable: true
     });
+    
+    // Set up sessionStorage for navigation back hook
+    sessionStorage.setItem('previousPage', 'guardian-details');
     
     api.updateVeteran = mockUpdateVeteran;
     mockUpdateVeteran.mockResolvedValue({

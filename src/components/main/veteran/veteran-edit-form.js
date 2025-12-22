@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Checkbox from '@mui/material/Checkbox';
@@ -19,6 +21,10 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
 import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
@@ -27,7 +33,7 @@ import {
   Medal,
   Airplane,
   Phone,
-  UsersFour,
+  Users,
   EnvelopeSimple,
   TShirt,
   Camera,
@@ -38,7 +44,10 @@ import {
   Headset,
   Eye,
   HistoryIcon,
-  X
+  X,
+  Gear,
+  ArrowUp,
+  LinkBreak
 } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
@@ -47,6 +56,9 @@ import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { HistoryDialog } from '@/components/core/history-dialog';
+import { GoodToFlyStatus } from '@/components/main/shared/good-to-fly-status';
+import { StickyHeader } from '@/components/main/shared/sticky-header';
+import { useNavigationBack } from '@/hooks/use-navigation-back';
 
 const getBranchImage = (branch) => {
   const images = {
@@ -69,6 +81,17 @@ const getStatusColor = (status) => {
     'Future-Fall': 'warning'
   };
   return colors[status] || 'default';
+};
+
+const getMedicalLevelColor = (level) => {
+  const levelStr = String(level);
+  const colors = {
+    '1': 'success',
+    '2': 'warning',
+    '2.5': 'warning',
+    '3': 'error'
+  };
+  return colors[levelStr] || 'default';
 };
 
 // Add new component for section headers
@@ -114,8 +137,30 @@ export function VeteranEditForm({ veteran }) {
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
   const [historyDialogData, setHistoryDialogData] = React.useState({ title: '', history: [] });
   
+  // Pairing management dialog state
+  const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
+  
+  // Scroll state for "Back to Top" link
+  const [showBackToTop, setShowBackToTop] = React.useState(false);
+  
   // Ref for the guardian pairing section
   const guardianPairingRef = React.useRef(null);
+  
+  // Handle scroll to show/hide "Back to Top" link
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollThreshold = 100;
+      setShowBackToTop(window.scrollY > scrollThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
   
   // Helper function to open history dialog
   const handleOpenHistory = React.useCallback((title, history) => {
@@ -128,21 +173,13 @@ export function VeteranEditForm({ veteran }) {
     setHistoryDialogOpen(false);
   }, []);
   
-  // Helper function to navigate back with fallback
-  const handleGoBack = React.useCallback(() => {
-    // If we came from guardian details, set flag to scroll back to guardian pairing section
-    const previousPage = sessionStorage.getItem('previousPage');
-    
-    if (previousPage === 'guardian-details') {
-      sessionStorage.setItem('scrollToSection', 'veteran-pairings');
+  // Use shared navigation back hook
+  const handleGoBack = useNavigationBack({
+    scrollConfig: {
+      fromPage: 'guardian-details',
+      toSection: 'veteran-pairings'
     }
-    
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(paths.main.search.list);
-    }
-  }, [router]);
+  });
 
   // Update _rev when veteran prop changes
   React.useEffect(() => {
@@ -151,50 +188,16 @@ export function VeteranEditForm({ veteran }) {
     }
   }, [veteran._rev]);
   
-  // Check if we should scroll to a specific section on page load
-  React.useEffect(() => {
-    const scrollToSection = sessionStorage.getItem('scrollToSection');
-    
-    if (scrollToSection === 'guardian-pairing') {
-      // Use multiple attempts to ensure DOM is fully rendered
-      const attemptScroll = () => {
-        if (guardianPairingRef.current) {
-          guardianPairingRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          sessionStorage.removeItem('scrollToSection');
-        } else {
-          setTimeout(attemptScroll, 200);
-        }
-      };
-      
-      requestAnimationFrame(() => {
-        setTimeout(attemptScroll, 300);
-      });
-    }
-  }, [veteran]);
-  
-  // Also check on mount in case veteran data is already loaded
-  React.useEffect(() => {
-    const scrollToSection = sessionStorage.getItem('scrollToSection');
-    if (scrollToSection === 'guardian-pairing' && guardianPairingRef.current) {
-      setTimeout(() => {
-        if (guardianPairingRef.current) {
-          guardianPairingRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          sessionStorage.removeItem('scrollToSection');
-        }
-      }, 500);
-    }
-  }, []);
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
     _id: veteran._id || '',
     name: veteran.name || { first: '', middle: '', last: '', nickname: '' },
-    address: veteran.address || { street: '', city: '', state: '', zip: '', phone_day: '', phone_mbl: '', phone_eve: '', email: '' },
+    address: veteran.address || { street: '', city: '', state: '', zip: '', phone_day: '', phone_mbl: '', email: '' },
     service: veteran.service || { branch: '', rank: '', dates: '', activity: '' },
     vet_type: veteran.vet_type || '',
     birth_date: veteran.birth_date || '',
     gender: veteran.gender || '',
-    weight: veteran.weight || '',
     app_date: veteran.app_date || '',
     medical: veteran.medical || { 
       level: '', 
@@ -231,7 +234,6 @@ export function VeteranEditForm({ veteran }) {
       relation: '', 
       address: { 
         phone: '', 
-        phone_eve: '',
         phone_mbl: '',
         email: '',
         street: '',
@@ -245,7 +247,6 @@ export function VeteranEditForm({ veteran }) {
       relation: '', 
       address: { 
         phone: '', 
-        phone_eve: '',
         phone_mbl: '',
         email: '',
         street: '',
@@ -266,7 +267,6 @@ export function VeteranEditForm({ veteran }) {
     call: veteran.call || {
       assigned_to: '',
       notes: '',
-      fm_number: '',
       mail_sent: false,
       email_sent: false
     },
@@ -352,21 +352,51 @@ export function VeteranEditForm({ veteran }) {
   const watchDates = watch('service.dates');
   const watchVetType = watch('vet_type');
   const watchStatus = watch('flight.status');
+  const watchMedicalLevel = watch('medical.level');
+
+  // Scroll to section handler
+  const handleScrollToSection = React.useCallback((sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
+  const nickname = watch('name.nickname') || veteran.name?.nickname;
+  const fullName = nickname 
+    ? nickname 
+    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${veteran.name?.first || ''} ${veteran.name?.last || ''}`.trim();
+  const displayName = nickname 
+    ? `${watch('name.first') || veteran.name?.first || ''} ${watch('name.last') || veteran.name?.last || ''}`.trim()
+    : null;
+  const additionalInfo = watchBranch ? `${watchBranch}${watchRank ? ` • ${watchRank}` : ''}` : null;
 
   return (
     <form 
       onSubmit={handleSubmit(onSubmit)}
       style={{ paddingBottom: '80px' }}
     >
-      <Grid container spacing={4}>
-        <Grid xs={12} md={7}>
+      <StickyHeader
+        name={fullName}
+        nickname={nickname}
+        fullName={displayName}
+        status={watchStatus || veteran.flight?.status}
+        statusColor={getStatusColor(watchStatus || veteran.flight?.status)}
+        additionalInfo={additionalInfo}
+        type="veteran"
+      />
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 4, md: 2 }, width: '100%', alignItems: 'stretch' }}>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, flexShrink: 0, display: 'flex' }}>
           <Card 
             id="veteran-info"
             sx={{
               position: 'sticky',
               top: 24,
               backgroundColor: 'background.neutral',
-              boxShadow: (theme) => theme.shadows[8]
+              boxShadow: (theme) => theme.shadows[8],
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             <CardContent>
@@ -419,24 +449,62 @@ export function VeteranEditForm({ veteran }) {
                     alignItems="center" 
                     justifyContent="space-between"
                   >
-                    <Typography 
-                      variant="h4"
-                      sx={{
-                        fontWeight: 'bold',
-                        color: 'text.primary'
-                      }}
-                    >
-                      {veteran.name?.first} {veteran.name?.last}
-                    </Typography>
-                    <Chip
-                      label={watchStatus || 'No Status'}
-                      color={getStatusColor(watchStatus)}
-                      size="small"
-                      sx={{
-                        borderRadius: 1,
-                        fontWeight: 'medium'
-                      }}
-                    />
+                    <Stack spacing={0.5}>
+                      {watch('name.nickname') || veteran.name?.nickname ? (
+                        <>
+                          <Typography 
+                            variant="h4"
+                            sx={{
+                              fontWeight: 'bold',
+                              color: 'primary.main'
+                            }}
+                          >
+                            {watch('name.nickname') || veteran.name?.nickname}
+                          </Typography>
+                          <Typography 
+                            variant="body2"
+                            sx={{
+                              color: 'text.secondary',
+                              fontStyle: 'italic'
+                            }}
+                          >
+                            {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography 
+                          variant="h4"
+                          sx={{
+                            fontWeight: 'bold',
+                            color: 'text.primary'
+                          }}
+                        >
+                          {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
+                        </Typography>
+                      )}
+                    </Stack>
+                    <Stack direction="row" spacing={1}>
+                      <Chip
+                        label={watchStatus || 'No Status'}
+                        color={getStatusColor(watchStatus)}
+                        size="small"
+                        sx={{
+                          borderRadius: 1,
+                          fontWeight: 'medium'
+                        }}
+                      />
+                      {watchMedicalLevel && (
+                        <Chip
+                          label={`Medical Level: ${watchMedicalLevel}`}
+                          color={getMedicalLevelColor(watchMedicalLevel)}
+                          size="small"
+                          sx={{
+                            borderRadius: 1,
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      )}
+                    </Stack>
                   </Stack>
                   <Divider />
                   {/* Mobile: Single column service info (below name) */}
@@ -464,6 +532,82 @@ export function VeteranEditForm({ veteran }) {
                       size="small"
                       sx={{ alignSelf: 'flex-start' }}
                     />
+                    <Divider />
+                    {/* Guardian Pairing Display - Mobile */}
+                    {watch('guardian.id') && watch('guardian.name') ? (
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Paired Guardian
+                          </Typography>
+                          <Tooltip title="Manage Pairings" arrow placement="top">
+                            <IconButton
+                              size="small"
+                              onClick={() => setPairingDialogOpen(true)}
+                              sx={{
+                                color: 'text.secondary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  backgroundColor: 'action.hover'
+                                }
+                              }}
+                            >
+                              <Gear size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                        <Card
+                          variant="outlined"
+                          onClick={() => {
+                            sessionStorage.setItem('previousPage', 'veteran-details');
+                            router.push(paths.main.guardians.details(watch('guardian.id')));
+                          }}
+                          sx={{
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              boxShadow: 2,
+                              borderColor: 'primary.main'
+                            }
+                          }}
+                        >
+                          <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                            <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                              <Typography variant="body2" color="text.primary">
+                                {watch('guardian.name')}
+                              </Typography>
+                              <Eye size={16} color="var(--mui-palette-primary-main)" />
+                            </Stack>
+                          </CardContent>
+                        </Card>
+                      </Box>
+                    ) : (
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <LinkBreak size={16} color="var(--mui-palette-warning-main)" />
+                            <Typography variant="caption" color="text.secondary">
+                              No Guardian Paired
+                            </Typography>
+                          </Stack>
+                          <Tooltip title="Manage Pairings" arrow placement="top">
+                            <IconButton
+                              size="small"
+                              onClick={() => setPairingDialogOpen(true)}
+                              sx={{
+                                color: 'text.secondary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  backgroundColor: 'action.hover'
+                                }
+                              }}
+                            >
+                              <Gear size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </Box>
+                    )}
                   </Stack>
                   {/* Desktop/Tablet: Two-column layout (image left, service info right) */}
                   <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
@@ -536,6 +680,82 @@ export function VeteranEditForm({ veteran }) {
                           sx={{ alignSelf: 'flex-start' }}
                         />
                         <Divider />
+                        {/* Guardian Pairing Display */}
+                        {watch('guardian.id') && watch('guardian.name') ? (
+                          <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Paired Guardian
+                              </Typography>
+                              <Tooltip title="Manage Pairings" arrow placement="top">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPairingDialogOpen(true)}
+                                  sx={{
+                                    color: 'text.secondary',
+                                    '&:hover': {
+                                      color: 'primary.main',
+                                      backgroundColor: 'action.hover'
+                                    }
+                                  }}
+                                >
+                                  <Gear size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                            <Card
+                              variant="outlined"
+                              onClick={() => {
+                                sessionStorage.setItem('previousPage', 'veteran-details');
+                                router.push(paths.main.guardians.details(watch('guardian.id')));
+                              }}
+                              sx={{
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  boxShadow: 2,
+                                  borderColor: 'primary.main'
+                                }
+                              }}
+                            >
+                              <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.primary">
+                                    {watch('guardian.name')}
+                                  </Typography>
+                                  <Eye size={16} color="var(--mui-palette-primary-main)" />
+                                </Stack>
+                              </CardContent>
+                            </Card>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <LinkBreak size={16} color="var(--mui-palette-warning-main)" />
+                                <Typography variant="caption" color="text.secondary">
+                                  No Guardian Paired
+                                </Typography>
+                              </Stack>
+                              <Tooltip title="Manage Pairings" arrow placement="top">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPairingDialogOpen(true)}
+                                  sx={{
+                                    color: 'text.secondary',
+                                    '&:hover': {
+                                      color: 'primary.main',
+                                      backgroundColor: 'action.hover'
+                                    }
+                                  }}
+                                >
+                                  <Gear size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </Box>
+                        )}
+                        <Divider />
                         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                           <Controller
                             control={control}
@@ -570,8 +790,15 @@ export function VeteranEditForm({ veteran }) {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid xs={12} md={5}>
+        </Box>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, flexShrink: 0, pr: { md: 3 }, ml: { md: 0 }, display: 'flex' }}>
+          <Box sx={{ width: '100%', display: 'flex' }}>
+            <GoodToFlyStatus data={watch()} type="veteran" onScrollToSection={handleScrollToSection} />
+          </Box>
+        </Box>
+      </Box>
+      <Grid container spacing={4} sx={{ mt: 4 }}>
+        <Grid xs={12} md={12}>
           <Stack spacing={4}>
             {/* Essential Information Group */}
             <Stack spacing={3}>
@@ -663,19 +890,6 @@ export function VeteranEditForm({ veteran }) {
                             <InputLabel required>Birth Date</InputLabel>
                             <OutlinedInput {...field} type="date" />
                             {errors.birth_date ? <FormHelperText>{errors.birth_date.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="weight"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.weight)} fullWidth>
-                            <InputLabel>Weight (lbs)</InputLabel>
-                            <OutlinedInput {...field} type="number" inputProps={{ min: 60, max: 450 }} />
-                            {errors.weight ? <FormHelperText>{errors.weight.message}</FormHelperText> : null}
                           </FormControl>
                         )}
                       />
@@ -793,7 +1007,7 @@ export function VeteranEditForm({ veteran }) {
               </Card>
 
               {/* Medical Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="medical-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={FirstAid} 
@@ -995,7 +1209,7 @@ export function VeteranEditForm({ veteran }) {
               </Card>
 
               {/* Flight Status Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="flight-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
                     <SectionHeader 
@@ -1228,7 +1442,7 @@ export function VeteranEditForm({ veteran }) {
               </Typography>
 
               {/* Address Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="address-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={EnvelopeSimple} 
@@ -1379,19 +1593,6 @@ export function VeteranEditForm({ veteran }) {
                         )}
                       />
                     </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="call.fm_number"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.call?.fm_number)} fullWidth>
-                            <InputLabel>FM Number</InputLabel>
-                            <OutlinedInput {...field} inputProps={{ maxLength: 5 }} />
-                            {errors.call?.fm_number ? <FormHelperText>{errors.call.fm_number.message}</FormHelperText> : null}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
                     <Grid xs={12}>
                       <Controller
                         control={control}
@@ -1438,7 +1639,7 @@ export function VeteranEditForm({ veteran }) {
               </Card>
 
               {/* Emergency Contact Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+              <Card id="emergency-contact-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
                 <CardContent>
                   <SectionHeader 
                     icon={Phone} 
@@ -1532,19 +1733,6 @@ export function VeteranEditForm({ veteran }) {
                             <InputLabel>Day Phone</InputLabel>
                             <OutlinedInput {...field} />
                             {errors.emerg_contact?.address?.phone && <FormHelperText>{errors.emerg_contact.address.phone.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
-                        name="emerg_contact.address.phone_eve"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.emerg_contact?.address?.phone_eve)} fullWidth>
-                            <InputLabel>Evening Phone</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.emerg_contact?.address?.phone_eve && <FormHelperText>{errors.emerg_contact.address.phone_eve.message}</FormHelperText>}
                           </FormControl>
                         )}
                       />
@@ -1681,19 +1869,6 @@ export function VeteranEditForm({ veteran }) {
                     <Grid xs={12} md={6}>
                       <Controller
                         control={control}
-                        name="alt_contact.address.phone_eve"
-                        render={({ field }) => (
-                          <FormControl error={Boolean(errors.alt_contact?.address?.phone_eve)} fullWidth>
-                            <InputLabel>Evening Phone</InputLabel>
-                            <OutlinedInput {...field} />
-                            {errors.alt_contact?.address?.phone_eve && <FormHelperText>{errors.alt_contact.address.phone_eve.message}</FormHelperText>}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Controller
-                        control={control}
                         name="alt_contact.address.phone_mbl"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.alt_contact?.address?.phone_mbl)} fullWidth>
@@ -1722,25 +1897,25 @@ export function VeteranEditForm({ veteran }) {
               </Card>
 
               {/* Guardian Information Card */}
-              <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={guardianPairingRef}>
+              <Card id="guardian-pairing" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }} ref={guardianPairingRef}>
                 <CardContent>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
                     <SectionHeader 
-                      icon={UsersFour} 
+                      icon={Users} 
                       title="Guardian Pairing Information" 
                     />
                     <Button
-                      startIcon={<Clock size={18} weight="bold" />}
+                      startIcon={<Gear size={18} weight="bold" />}
                       variant="outlined"
                       size="small"
-                      onClick={() => handleOpenHistory('Guardian Pairing', veteran.guardian?.history || [])}
+                      onClick={() => setPairingDialogOpen(true)}
                       sx={{
                         borderRadius: 1,
                         textTransform: 'none',
                         fontWeight: 'medium'
                       }}
                     >
-                      History ({veteran.guardian?.history?.length || 0})
+                      Manage Pairing
                     </Button>
                   </Stack>
                   <Grid container spacing={3}>
@@ -1753,7 +1928,6 @@ export function VeteranEditForm({ veteran }) {
                               variant="outlined"
                               onClick={() => {
                                 sessionStorage.setItem('previousPage', 'veteran-details');
-                                sessionStorage.removeItem('scrollToSection'); // Clear any scroll flag
                                 router.push(paths.main.guardians.details(veteran.guardian.id));
                               }}
                               sx={{
@@ -1785,13 +1959,15 @@ export function VeteranEditForm({ veteran }) {
                       </>
                     )}
                     <Grid xs={12} md={veteran.guardian?.id && veteran.guardian?.name ? 5.5 : 12}>
+                      <InputLabel sx={{ mb: 2 }}>
+                        Guardian Preference Notes
+                      </InputLabel>
                       <Controller
                         control={control}
                         name="guardian.pref_notes"
                         render={({ field }) => (
                           <FormControl error={Boolean(errors.guardian?.pref_notes)} fullWidth>
-                            <InputLabel>Guardian Preference Notes</InputLabel>
-                            <OutlinedInput {...field} multiline rows={veteran.guardian?.id && veteran.guardian?.name ? 8 : 2} />
+                            <OutlinedInput {...field} multiline rows={8} placeholder="Guardian Preference Notes" />
                             {errors.guardian?.pref_notes && <FormHelperText>{errors.guardian.pref_notes.message}</FormHelperText>}
                           </FormControl>
                         )}
@@ -2240,41 +2416,74 @@ export function VeteranEditForm({ veteran }) {
         sx={{
           position: 'fixed',
           bottom: 0,
-          left: 0,
+          left: { xs: 0, lg: 'var(--SideNav-width)' },
           right: 0,
           padding: 2,
           backgroundColor: 'background.paper',
           borderTop: 1,
           borderColor: 'divider',
-          zIndex: 1200,
+          zIndex: 1000,
           backdropFilter: 'blur(20px)',
           display: 'flex',
           justifyContent: 'flex-end',
+          alignItems: 'center',
           gap: 2
         }}
       >
-        <Button 
-          color="inherit" 
-          onClick={handleGoBack}
-          sx={{
-            borderRadius: 2,
-            fontWeight: 'medium'
-          }}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          variant="contained"
-          disabled={saving}
-          sx={{
-            borderRadius: 2,
-            fontWeight: 'medium',
-            boxShadow: (theme) => theme.shadows[4]
-          }}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        {showBackToTop && (
+          <Box
+            component="button"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              color: 'text.secondary',
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              marginRight: 'auto',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              font: 'inherit',
+              '&:hover': {
+                color: 'primary.main',
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            <ArrowUp size={16} />
+            Back to Top
+          </Box>
+        )}
+        <Stack direction="row" spacing={2}>
+          <Button 
+            color="inherit" 
+            onClick={handleGoBack}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 'medium'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained"
+            disabled={saving}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 'medium',
+              boxShadow: (theme) => theme.shadows[4]
+            }}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Stack>
       </Box>
       <HistoryDialog 
         open={historyDialogOpen}
@@ -2282,6 +2491,78 @@ export function VeteranEditForm({ veteran }) {
         history={historyDialogData.history}
         title={historyDialogData.title}
       />
+      <Dialog
+        open={pairingDialogOpen}
+        onClose={() => setPairingDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Users size={24} weight="bold" />
+            Guardian Pairing Management
+          </Box>
+          <Box
+            component="button"
+            onClick={() => setPairingDialogOpen(false)}
+            sx={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'text.primary'
+              },
+              transition: 'color 0.2s'
+            }}
+            aria-label="Close"
+          >
+            <X size={24} weight="bold" />
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3}>
+            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+              Coming Soon
+            </Typography>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 'medium' }}>
+                Guardian Preference Notes:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  p: 2, 
+                  backgroundColor: 'background.neutral', 
+                  borderRadius: 1,
+                  minHeight: 100,
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {watch('guardian.pref_notes') || veteran.guardian?.pref_notes || 'No preference notes entered.'}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

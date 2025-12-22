@@ -154,7 +154,7 @@ export default function Page() {
       component="main"
       sx={{
         flexGrow: 1,
-        py: 3
+        py: 1
       }}
     >
       <Box

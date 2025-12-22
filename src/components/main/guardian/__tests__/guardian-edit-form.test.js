@@ -165,6 +165,9 @@ describe('GuardianEditForm - Update Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
     useRouter.mockReturnValue({
       push: mockPush,
       back: mockBack
@@ -175,6 +178,9 @@ describe('GuardianEditForm - Update Functionality', () => {
       value: { length: 2 },
       writable: true
     });
+    
+    // Set up sessionStorage for navigation back hook
+    sessionStorage.setItem('previousPage', 'guardian-details');
     
     api.updateGuardian = mockUpdateGuardian;
     mockUpdateGuardian.mockResolvedValue({

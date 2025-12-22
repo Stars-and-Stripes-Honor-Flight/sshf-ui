@@ -75,7 +75,18 @@ export function DataTable({
                   onClick(event, row);
                 },
               })}
-              sx={{ ...(onClick && { cursor: 'pointer' }) }}
+              sx={{ 
+                ...(onClick && { 
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'var(--mui-palette-action-hover)',
+                  },
+                  '&:active': {
+                    backgroundColor: 'var(--mui-palette-action-selected)',
+                  },
+                  transition: 'background-color 0.15s ease-in-out',
+                }) 
+              }}
             >
               {selectable ? (
                 <TableCell padding="checkbox">

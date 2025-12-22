@@ -61,7 +61,7 @@ export function SignInForm() {
       <div>
         <Box 
           component={RouterLink} 
-          href={paths.home} 
+          href={paths.main.search.list} 
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <DynamicLogo colorDark="light" colorLight="dark" height={200} width={200} />

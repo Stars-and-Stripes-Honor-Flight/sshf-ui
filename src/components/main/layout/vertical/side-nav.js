@@ -52,7 +52,7 @@ export function SideNav({ color = 'evident', items = [] }) {
     >
       <Stack spacing={2} sx={{ p: 2 }}>
         <div>
-          <Box component={RouterLink} href={paths.home} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
+          <Box component={RouterLink} href={paths.main.search.list} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
             <Logo color={logoColor} height={210} width={210} />
           </Box>
         </div>
