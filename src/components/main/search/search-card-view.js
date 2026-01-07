@@ -16,13 +16,20 @@ import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 
 import { paths } from '@/paths';
 import { dayjs } from '@/lib/dayjs';
+import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 // Store search URL when navigating to details page
-const handleCardClick = () => {
+const handleCardClick = (isVeteran, detailUrl) => {
   if (typeof window !== 'undefined') {
     const searchUrl = window.location.pathname + window.location.search;
+    // Store search URL for back navigation
     sessionStorage.setItem('searchUrl', searchUrl);
-    sessionStorage.setItem('previousPage', 'search');
+    // Track navigation to detail page
+    pushNavigationEntry({
+      type: isVeteran ? 'veteran-details' : 'guardian-details',
+      url: detailUrl,
+      title: 'Back to Search',
+    });
   }
 };
 
@@ -81,7 +88,7 @@ export function SearchCardView({ rows }) {
             }}
             component={RouterLink}
             href={detailUrl}
-            onClick={handleCardClick}
+            onClick={() => handleCardClick(isVeteran, detailUrl)}
           >
             <CardContent sx={{ 
               pt: 2, 
@@ -114,9 +121,6 @@ export function SearchCardView({ rows }) {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography 
                       variant="h6" 
-                      component={RouterLink}
-                      href={detailUrl}
-                      onClick={handleCardClick}
                       sx={{ 
                         fontWeight: 600, 
                         color: 'primary.main',

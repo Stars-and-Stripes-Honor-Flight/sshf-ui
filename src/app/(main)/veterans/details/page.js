@@ -15,6 +15,7 @@ import { paths } from '@/paths';
 import { VeteranEditForm } from '@/components/main/veteran/veteran-edit-form';
 import { api } from '@/lib/api';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
+import { initializeCurrentPage, getBackLinkText } from '@/lib/navigation-stack';
 
 export default function Page() {
   const searchParams = useSearchParams();
@@ -25,16 +26,14 @@ export default function Page() {
   const [error, setError] = React.useState(null);
   const [backLinkText, setBackLinkText] = React.useState('Back to Search');
   
-  // Determine back link text based on previous page
+  // Initialize this page in navigation stack and determine back link text
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const previousPage = sessionStorage.getItem('previousPage');
+      // Initialize current page in the stack
+      initializeCurrentPage('veteran-details', 'Veteran Details');
       
-      if (previousPage === 'guardian-details') {
-        setBackLinkText('Back to Guardian Details');
-      } else {
-        setBackLinkText('Back to Search');
-      }
+      // Get back link text from previous navigation entry
+      setBackLinkText(getBackLinkText());
     }
   }, []);
   

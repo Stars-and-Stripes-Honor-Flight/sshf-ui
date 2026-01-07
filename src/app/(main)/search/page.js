@@ -12,6 +12,7 @@ import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/di
 
 import { paths } from '@/paths';
 import { config } from '@/config';
+import { initializeCurrentPage } from '@/lib/navigation-stack';
 import { ApiTable } from '@/components/core/table/api-table';
 import { Option } from '@/components/core/option';
 
@@ -143,12 +144,11 @@ export default function Page() {
       searchInputRef.current.focus();
     }
     
-    // Set current page for navigation tracking and store search URL with filters
+    // Initialize search page in navigation stack and store search URL with filters
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('previousPage', 'search');
-      // Store the current search URL with query parameters for back navigation
       const searchUrl = window.location.pathname + window.location.search;
       sessionStorage.setItem('searchUrl', searchUrl);
+      initializeCurrentPage('search', 'Search');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

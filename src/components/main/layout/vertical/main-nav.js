@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { alpha } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
@@ -9,6 +10,7 @@ import IconButton from '@mui/material/IconButton';
 import { List as ListIcon } from '@phosphor-icons/react/dist/ssr/List';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
+import { Warning } from '@phosphor-icons/react';
 
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
@@ -19,6 +21,14 @@ import { UserPopover } from '../user-popover/user-popover';
 export function MainNav({ items }) {
   const [openNav, setOpenNav] = React.useState(false);
   const { user } = useUser();
+  const [isTestEnvironment, setIsTestEnvironment] = React.useState(false);
+  
+  // Show test environment indicator if NODE_ENV is not production or if explicitly set
+  // Only check on client side to avoid hydration mismatches
+  React.useEffect(() => {
+    const isTest = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_SHOW_TEST_BANNER === 'true';
+    setIsTestEnvironment(isTest);
+  }, []);
 
   return (
     <React.Fragment>
@@ -44,31 +54,124 @@ export function MainNav({ items }) {
             minHeight: 'var(--MainNav-height)',
             px: { xs: 2, lg: 3 },
             py: 1,
+            position: 'relative',
           }}
         >
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flex: '1 1 auto' }}>
-            <IconButton
+          {isTestEnvironment ? (
+            <>
+              {/* Mobile menu button - positioned absolutely on the left */}
+              <IconButton
                 onClick={() => {
                   setOpenNav(true);
                 }}
-                sx={{ display: { lg: 'none' } }}
+                sx={{ 
+                  display: { lg: 'none' },
+                  position: 'absolute',
+                  left: { xs: 2 },
+                  zIndex: 1,
+                }}
               >
                 <ListIcon />
-            </IconButton>
-          </Stack>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end' }}
-          >
-            <ContactsButton />
-            <Divider
-              flexItem
-              orientation="vertical"
-              sx={{ borderColor: 'var(--MainNav-divider)', display: { xs: 'none', lg: 'block' } }}
-            />
-            <UserButton user={ user } />
-          </Stack>
+              </IconButton>
+              
+              {/* Test Environment Banner - takes up full width */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: { xs: 5, md: 3 },
+                  mr: { xs: 4, md: 4 },
+                  ml: { xs: 4, md: 0 },
+                  py: 1,
+                  backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.35),
+                  width: '100%',
+                  justifyContent: 'center',
+                  animation: 'pulse 2s ease-in-out infinite',
+                  '@keyframes pulse': {
+                    '0%, 100%': {
+                      opacity: 1,
+                      boxShadow: '0 0 0 0 rgba(255, 152, 0, 0.4)',
+                    },
+                    '50%': {
+                      opacity: 0.95,
+                      boxShadow: '0 0 0 6px rgba(255, 152, 0, 0.1)',
+                    },
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    animation: 'wiggle 2s ease-in-out infinite',
+                    '@keyframes wiggle': {
+                      '0%, 100%': { transform: 'rotate(0deg)' },
+                      '25%': { transform: 'rotate(-10deg)' },
+                      '75%': { transform: 'rotate(10deg)' },
+                    },
+                  }}
+                >
+                  <Warning 
+                    weight="fill" 
+                    size={20}
+                    style={{
+                      color: 'var(--mui-palette-warning-dark)',
+                    }}
+                  />
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 'bold',
+                    fontSize: { xs: '0.7rem', md: '0.8rem' },
+                    color: 'warning.darker',
+                    letterSpacing: '0.1em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  🧪 TEST ENVIRONMENT
+                </Box>
+              </Box>
+              
+              {/* Avatar - positioned absolutely on the right */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  right: { xs: 2, lg: 3 },
+                  zIndex: 1,
+                }}
+              >
+                <UserButton user={ user } />
+              </Box>
+            </>
+          ) : (
+            <>
+              <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flex: '1 1 auto' }}>
+                <IconButton
+                  onClick={() => {
+                    setOpenNav(true);
+                  }}
+                  sx={{ display: { lg: 'none' } }}
+                >
+                  <ListIcon />
+                </IconButton>
+              </Stack>
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{ alignItems: 'center', flex: '1 1 auto', justifyContent: 'flex-end' }}
+              >
+                <ContactsButton />
+                <Divider
+                  flexItem
+                  orientation="vertical"
+                  sx={{ borderColor: 'var(--MainNav-divider)', display: { xs: 'none', lg: 'block' } }}
+                />
+                <UserButton user={ user } />
+              </Stack>
+            </>
+          )}
         </Box>
       </Box>
       <MobileNav

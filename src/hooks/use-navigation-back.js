@@ -2,6 +2,10 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
 import { paths } from '@/paths';
+import { 
+  getPreviousNavigationEntry, 
+  popNavigationEntry 
+} from '@/lib/navigation-stack';
 
 /**
  * Custom hook for handling back navigation with fallback to search page
@@ -16,41 +20,34 @@ export function useNavigationBack(options = {}) {
   const { scrollConfig } = options;
 
   const handleGoBack = React.useCallback(() => {
-    const previousPage = sessionStorage.getItem('previousPage');
+    const previousEntry = getPreviousNavigationEntry();
 
     // Handle scroll configuration if provided
     if (scrollConfig?.fromPage && scrollConfig?.toSection) {
-      if (previousPage === scrollConfig.fromPage) {
+      if (previousEntry?.type === scrollConfig.fromPage) {
         sessionStorage.setItem('scrollToSection', scrollConfig.toSection);
-        // If we came from a known page, try to go back
+        // Pop current entry (we're leaving it) and navigate to previous
+        popNavigationEntry(); // Remove current page from stack
+        if (previousEntry?.url) {
+          router.push(previousEntry.url);
+          return;
+        }
+        // Fallback to browser back
         if (window.history.length > 1) {
           router.back();
           return;
         }
       }
-    } else {
-      // If we came from a known page (like veteran-details or guardian-details), try to go back
-      if (previousPage === 'veteran-details' || previousPage === 'guardian-details') {
-        if (window.history.length > 1) {
-          router.back();
-          return;
-        }
-      }
-    }
-
-    // If we came from search, go back to search with preserved filters
-    if (previousPage === 'search') {
-      const searchUrl = sessionStorage.getItem('searchUrl');
-      if (searchUrl) {
-        router.push(searchUrl);
+    } else if (previousEntry) {
+      // Pop current entry (we're leaving it) and navigate to previous
+      popNavigationEntry(); // Remove current page from stack
+      if (previousEntry?.url) {
+        router.push(previousEntry.url);
         return;
       }
-      // Fallback to search page if no stored URL
-      router.push(paths.main.search.list);
-      return;
     }
 
-    // Default to search page if no previous page or unknown previous page
+    // Fallback to search page if no previous entry or unknown previous page
     // This handles the case when someone navigates directly to the edit page
     router.push(paths.main.search.list);
   }, [router, scrollConfig]);
