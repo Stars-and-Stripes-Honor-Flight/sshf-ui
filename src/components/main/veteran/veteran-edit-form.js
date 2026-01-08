@@ -79,7 +79,7 @@ const getMedicalLevelColor = (level) => {
 };
 
 
-export function VeteranEditForm({ veteran }) {
+export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
@@ -125,12 +125,16 @@ export function VeteranEditForm({ veteran }) {
   }, []);
   
   // Use shared navigation back hook
-  const handleGoBack = useNavigationBack({
+  const baseHandleGoBack = useNavigationBack({
     scrollConfig: {
       fromPage: 'guardian-details',
       toSection: 'veteran-pairings'
     }
   });
+  
+  // Use the navigation handler from parent if provided, otherwise use base
+  // Note: We keep a reference to baseHandleGoBack for use after successful save
+  const handleGoBack = onNavigate || baseHandleGoBack;
 
   // Update _rev when veteran prop changes
   React.useEffect(() => {
@@ -258,12 +262,22 @@ export function VeteranEditForm({ veteran }) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     watch,
+    reset,
   } = useForm({
     defaultValues,
     // Removed zodResolver for simplicity
   });
+
+  // Expose isDirty to parent component for unsaved changes detection
+  React.useEffect(() => {
+    if (onNavigationReady) {
+      onNavigationReady({
+        isDirty,
+      });
+    }
+  }, [isDirty, onNavigationReady]);
 
   const onSubmit = React.useCallback(
     async (data) => {
@@ -285,9 +299,13 @@ export function VeteranEditForm({ veteran }) {
         if (payload.guardian?.history) delete payload.guardian.history;
         if (payload.call?.history) delete payload.call.history;
         
-        await api.updateVeteran(data._id, payload);
+        const updatedVeteran = await api.updateVeteran(data._id, payload);
         toast.success('Veteran updated successfully');
-        handleGoBack();
+        
+        // Reset form state to mark as clean - this clears the dirty bit
+        reset(updatedVeteran);
+        
+        // Stay on the current screen after save
       } catch (err) {
         logger.error(err);
         toast.error('Failed to update veteran: ' + (err.message || 'Unknown error'));
@@ -473,7 +491,7 @@ export function VeteranEditForm({ veteran }) {
                         name: watch('guardian.name')
                       } : null}
                       type="guardian"
-                      onManageClick={() => setPairingDialogOpen(true)}
+                      onManageClick={undefined}
                     />
                   </Stack>
                   {/* Desktop/Tablet: Two-column layout (image left, service info right) */}
@@ -554,7 +572,7 @@ export function VeteranEditForm({ veteran }) {
                             name: watch('guardian.name')
                           } : null}
                           type="guardian"
-                          onManageClick={() => setPairingDialogOpen(true)}
+                          onManageClick={undefined}
                         />
                         <Divider />
                         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -616,7 +634,8 @@ export function VeteranEditForm({ veteran }) {
               veteran={veteran}
               onOpenHistory={handleOpenHistory}
               guardianPairingRef={guardianPairingRef}
-              onManagePairing={() => setPairingDialogOpen(true)}
+              onManagePairing={undefined}
+              watch={watch}
             />
 
             {/* Additional Details Group */}

@@ -23,6 +23,11 @@ export function FormTextField({
   gridProps = {},
   ...other 
 }) {
+  // Extract InputProps from other props to prevent it from being passed to DOM elements
+  const { InputProps: otherInputProps, ...restOther } = other;
+  // Combine InputProps from both sources
+  const finalInputProps = inputPropsProp || otherInputProps;
+  
   return (
     <Grid {...gridProps}>
       <Controller
@@ -31,12 +36,6 @@ export function FormTextField({
         render={({ field }) => {
           // Extract ref from field to avoid passing it to OutlinedInput
           const { ref, ...fieldProps } = field;
-          // Extract InputProps from other to prevent it from being passed to DOM
-          const { InputProps: otherInputProps, ...restOther } = other;
-          // Combine InputProps from both sources
-          const finalInputProps = inputPropsProp || otherInputProps;
-          // Ensure InputProps is never in restOther (extra safety)
-          const { InputProps: _, ...safeRestOther } = restOther;
           return (
             <FormControl error={Boolean(error)} fullWidth={fullWidth}>
               <InputLabel required={required}>{label}</InputLabel>
@@ -48,7 +47,7 @@ export function FormTextField({
                 rows={rows}
                 inputProps={inputProps}
                 {...(finalInputProps ? { InputProps: finalInputProps } : {})}
-                {...safeRestOther}
+                {...restOther}
               />
               {error ? <FormHelperText>{error.message}</FormHelperText> : null}
             </FormControl>

@@ -29,6 +29,7 @@ import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
 import { paths } from '@/paths';
 import { pushNavigationEntry } from '@/lib/navigation-stack';
+import { formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
 
 import { api } from '@/lib/api';
 
@@ -191,14 +192,6 @@ export function ApiTable({
 
     const searchParams = useSearchParams();
     
-    // Helper function to format flight name for display (remove SSHF- prefix)
-    const formatFlightNameForDisplay = (flightName) => {
-        if (!flightName || flightName === "All") {
-            return flightName;
-        }
-        return flightName.replace(/^SSHF-/i, '');
-    };
-
     // Create a memoized version of filters with values from URL params for display
     // This avoids mutating the filters prop and prevents unnecessary re-renders
     const filtersWithUrlValues = React.useMemo(() => {
@@ -288,11 +281,7 @@ export function ApiTable({
                         filterParams.status = urlValue;
                     } else if (f.property === 'flight') {
                         // Ensure SSHF- prefix is present for API calls
-                        let flightValue = urlValue;
-                        if (flightValue !== 'All' && !flightValue.match(/^SSHF-/i)) {
-                            flightValue = `SSHF-${flightValue}`;
-                        }
-                        filterParams.flight = flightValue;
+                        filterParams.flight = ensureFlightPrefix(urlValue);
                     }
                 }
             });
@@ -307,16 +296,12 @@ export function ApiTable({
             const flightFromUrl = searchParams.get('flight');
             if (flightFromUrl && !filterParams.flight) {
                 // Ensure SSHF- prefix is present for API calls
-                let flightValue = flightFromUrl;
-                if (flightValue !== 'All' && !flightValue.match(/^SSHF-/i)) {
-                    flightValue = `SSHF-${flightValue}`;
-                }
-                filterParams.flight = flightValue;
+                filterParams.flight = ensureFlightPrefix(flightFromUrl);
             }
             
             // Ensure flight param has SSHF- prefix if it was set from filters array
-            if (filterParams.flight && filterParams.flight !== 'All' && !filterParams.flight.match(/^SSHF-/i)) {
-                filterParams.flight = `SSHF-${filterParams.flight}`;
+            if (filterParams.flight) {
+                filterParams.flight = ensureFlightPrefix(filterParams.flight);
             }
             
             // Set pagination

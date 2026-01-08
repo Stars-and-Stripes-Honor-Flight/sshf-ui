@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Controller } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -14,7 +15,9 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Phone, Headset, EnvelopeSimple, Clock, Users } from '@phosphor-icons/react';
+import Box from '@mui/material/Box';
+import { Phone, Headset, EnvelopeSimple, Clock, Users, MagnifyingGlass } from '@phosphor-icons/react';
+import { paths } from '@/paths';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
@@ -25,8 +28,38 @@ export function ContactInfoSection({
   veteran, 
   onOpenHistory, 
   guardianPairingRef, 
-  onManagePairing 
+  onManagePairing,
+  watch
 }) {
+  const router = useRouter();
+  
+  const handleSearchForGuardian = () => {
+    // Get preference notes text and extract the last word (likely the last name)
+    const prefNotes = watch ? (watch('guardian.pref_notes') || '') : (veteran.guardian?.pref_notes || '');
+    const trimmedNotes = prefNotes.trim();
+    
+    // Split by space and take the last word as the search query
+    const words = trimmedNotes.split(/\s+/).filter(word => word.length > 0);
+    const searchQuery = words.length > 0 ? words[words.length - 1] : '';
+    
+    // Store veteranId in session storage for pairing flow (instead of URL to avoid extra back button presses)
+    if (typeof window !== 'undefined' && veteran._id) {
+      sessionStorage.setItem('pairingVeteranId', veteran._id);
+    }
+    
+    // Navigate to search page with preference notes as search query
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      // Use the last word from preference notes as the lastName search parameter
+      params.append('lastName', searchQuery);
+    }
+    
+    const searchUrl = params.toString() 
+      ? `${paths.main.search.list}?${params.toString()}`
+      : paths.main.search.list;
+    router.push(searchUrl);
+  };
+
   return (
     <Stack spacing={3}>
       <Typography 
@@ -388,20 +421,41 @@ export function ContactInfoSection({
       </Card>
 
       {/* Guardian Information Card */}
-      <PairingInformationCard
-        control={control}
-        errors={errors}
-        cardId="guardian-pairing"
-        cardRef={guardianPairingRef}
-        title="Guardian Pairing Information"
-        icon={Users}
-        pairingType="guardian"
-        preferenceNotesFieldName="guardian.pref_notes"
-        preferenceNotesPlaceholder="Guardian Preference Notes"
-        onManagePairing={onManagePairing}
-        showHiddenFields={true}
-        entity={veteran}
-      />
+      <Box>
+        <PairingInformationCard
+          control={control}
+          errors={errors}
+          cardId="guardian-pairing"
+          cardRef={guardianPairingRef}
+          title="Guardian Pairing Information"
+          icon={Users}
+          pairingType="guardian"
+          preferenceNotesFieldName="guardian.pref_notes"
+          preferenceNotesPlaceholder="Guardian Preference Notes"
+          onManagePairing={onManagePairing}
+          showHiddenFields={true}
+          entity={veteran}
+          watch={watch}
+          searchButton={
+            watch && (watch('guardian.pref_notes') || '').trim() ? (
+              <Button
+                startIcon={<MagnifyingGlass size={18} weight="bold" />}
+                variant="outlined"
+                size="small"
+                onClick={handleSearchForGuardian}
+                sx={{
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  fontWeight: 'medium',
+                  ml: 'auto'
+                }}
+              >
+                Search for Guardian
+              </Button>
+            ) : null
+          }
+        />
+      </Box>
 
       {/* Mail Call Information Card */}
       <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>

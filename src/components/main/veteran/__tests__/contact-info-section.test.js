@@ -6,6 +6,13 @@ import '@testing-library/jest-dom';
 import { ContactInfoSection } from '../contact-info-section';
 
 // Mock dependencies
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+  })
+}));
 jest.mock('@/components/main/shared/address-information-card', () => ({
   AddressInformationCard: ({ control, errors }) => (
     <div data-testid="address-information-card">

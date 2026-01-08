@@ -98,6 +98,29 @@ class ApiClient {
     }
   }
 
+  // Search for veterans specifically
+  async searchVeterans({ limit = 25, lastname = '', status = 'Active' } = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (limit) queryParams.append('limit', limit);
+      if (lastname) queryParams.append('lastname', lastname);
+      if (status) queryParams.append('status', status);
+      queryParams.append('type', 'Veteran'); // Filter to veterans only
+
+      const response = await this.request(`/veterans/search?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      const data = await response.json();
+      // Handle response wrapping - if data has rows property, extract it
+      return Array.isArray(data) ? data : (data.rows || data);
+    } catch (error) {
+      toast.error(`Veteran search failed: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Get a veteran by ID
   async getVeteran(id) {
     try {

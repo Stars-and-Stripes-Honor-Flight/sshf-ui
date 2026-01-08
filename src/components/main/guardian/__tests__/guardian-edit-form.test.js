@@ -285,7 +285,7 @@ describe('GuardianEditForm - Update Functionality', () => {
     });
   });
 
-  test('shows success message and navigates back after successful update', async () => {
+  test('shows success message and stays on page after successful update', async () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);
     
@@ -294,7 +294,8 @@ describe('GuardianEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
-      expect(mockHandleGoBack).toHaveBeenCalled();
+      // After save, we stay on the page (no navigation)
+      expect(mockHandleGoBack).not.toHaveBeenCalled();
     });
   });
 

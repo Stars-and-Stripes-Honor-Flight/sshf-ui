@@ -15,6 +15,8 @@ import { paths } from '@/paths';
 import { VeteranEditForm } from '@/components/main/veteran/veteran-edit-form';
 import { api } from '@/lib/api';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes';
+import { UnsavedChangesDialog } from '@/components/core/unsaved-changes-dialog';
 import { initializeCurrentPage, getBackLinkText } from '@/lib/navigation-stack';
 
 export default function Page() {
@@ -25,6 +27,7 @@ export default function Page() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const [backLinkText, setBackLinkText] = React.useState('Back to Search');
+  const [isDirty, setIsDirty] = React.useState(false);
   
   // Initialize this page in navigation stack and determine back link text
   React.useEffect(() => {
@@ -38,7 +41,26 @@ export default function Page() {
   }, []);
   
   // Use shared navigation back hook
-  const handleGoBack = useNavigationBack();
+  const baseHandleGoBack = useNavigationBack();
+  
+  // Use unsaved changes hook for page-level navigation
+  const {
+    handleNavigation: handleGoBack,
+    unsavedChangesDialogOpen,
+    handleDiscardChanges,
+    handleCloseDialog,
+    entityType,
+  } = useUnsavedChanges({
+    isDirty,
+    onNavigate: baseHandleGoBack,
+    entityType: 'veteran',
+    interceptRouter: true, // Intercept browser back button
+  });
+  
+  // Handle form navigation ready callback
+  const handleNavigationReady = React.useCallback(({ isDirty: formIsDirty }) => {
+    setIsDirty(formIsDirty);
+  }, []);
 
   React.useEffect(() => {
     const fetchVeteran = async () => {
@@ -108,8 +130,19 @@ export default function Page() {
           )}
           
           {!loading && !error && veteran && (
-            <VeteranEditForm veteran={veteran} />
+            <VeteranEditForm 
+              veteran={veteran} 
+              onNavigationReady={handleNavigationReady}
+              onNavigate={handleGoBack}
+            />
           )}
+          
+          <UnsavedChangesDialog
+            open={unsavedChangesDialogOpen}
+            onClose={handleCloseDialog}
+            onDiscard={handleDiscardChanges}
+            entityType={entityType}
+          />
         </Stack>
       </Box>
     </Box>

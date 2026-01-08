@@ -11,6 +11,7 @@ import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr/MedalMilitary';
 import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 import { LinkBreak } from '@phosphor-icons/react/dist/ssr/LinkBreak';
+import { formatFlightNameForDisplay } from '@/lib/flights';
 
 // Status color mapping to match edit screens
 const getStatusColor = (status) => {
@@ -25,14 +26,6 @@ const getStatusColor = (status) => {
     'Copied': 'default'
   };
   return colors[status] || 'default';
-};
-
-// Remove SSHF- prefix from flight names
-const formatFlightName = (flightName) => {
-  if (!flightName || flightName === "None") {
-    return flightName;
-  }
-  return flightName.replace(/^SSHF-/i, '');
 };
 
 export const searchColumns = [
@@ -104,7 +97,7 @@ export const searchColumns = [
         width: '150px',
         formatter: (row) => 
         {
-            let label = formatFlightName(row.flight);
+            let label = formatFlightNameForDisplay(row.flight);
             let icon = <XCircleIcon color="var(--mui-palette-warning-main)" weight="fill" />;
 
             if (row.flight != "None") {

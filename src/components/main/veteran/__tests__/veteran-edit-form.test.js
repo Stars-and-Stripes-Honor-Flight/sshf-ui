@@ -321,7 +321,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     });
   });
 
-  test('shows success message and navigates back after successful update', async () => {
+  test('shows success message and stays on page after successful update', async () => {
     const user = userEvent.setup();
     render(<VeteranEditForm veteran={mockVeteran} />);
     
@@ -330,7 +330,8 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
-      expect(mockHandleGoBack).toHaveBeenCalled();
+      // After save, we stay on the page (no navigation)
+      expect(mockHandleGoBack).not.toHaveBeenCalled();
     });
   });
 
