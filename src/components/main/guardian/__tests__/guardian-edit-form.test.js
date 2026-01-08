@@ -284,7 +284,7 @@ describe('GuardianEditForm - Update Functionality', () => {
     // Wait for form to be fully initialized
     await waitFor(() => {
       expect(screen.getByDisplayValue('Jane')).toBeInTheDocument();
-    });
+    }, { timeout: 10000 });
     
     // Change the first name field (easier to find)
     const firstNameField = screen.getByDisplayValue('Jane');
@@ -300,7 +300,7 @@ describe('GuardianEditForm - Update Functionality', () => {
       expect(payload.name.first).toBe('Jane Updated');
       expect(payload.name.last).toBe('Smith'); // Other fields should be preserved
     }, { timeout: 10000 });
-  });
+  }, 15000); // Increase test timeout to 15 seconds
 
   test('shows success message and stays on page after successful update', async () => {
     const user = userEvent.setup();

@@ -24,6 +24,8 @@ describe('VeteranEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
   const mockBack = jest.fn();
   const mockUpdateVeteran = jest.fn();
+  const mockGetVeteran = jest.fn();
+  const mockSearchVeterans = jest.fn();
   const mockHandleGoBack = jest.fn();
   
   // Mock veteran data with all required fields
@@ -219,6 +221,16 @@ describe('VeteranEditForm - Update Functionality', () => {
     sessionStorage.setItem('previousPage', 'guardian-details');
     
     api.updateVeteran = mockUpdateVeteran;
+    api.getVeteran = mockGetVeteran;
+    api.searchVeterans = mockSearchVeterans;
+    
+    // Mock pairing dialog API methods
+    mockGetVeteran.mockResolvedValue({
+      _id: 'vet-123',
+      name: { first: 'John', last: 'Veteran' }
+    });
+    mockSearchVeterans.mockResolvedValue([]);
+    
     mockUpdateVeteran.mockResolvedValue({
       ...mockVeteran,
       _rev: '2-xyz789abc123', // New revision after update
