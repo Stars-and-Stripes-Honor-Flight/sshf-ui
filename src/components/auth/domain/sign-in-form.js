@@ -4,6 +4,7 @@ import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -11,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
+import { Warning } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/domain/client';
@@ -26,6 +28,14 @@ export function SignInForm() {
   const router = useRouter();
   const { checkSession } = useUser();
   const [isPending, setIsPending] = React.useState(false);
+  const [isTestEnvironment, setIsTestEnvironment] = React.useState(false);
+  
+  // Show test environment indicator if NODE_ENV is not production or if explicitly set
+  // Only check on client side to avoid hydration mismatches
+  React.useEffect(() => {
+    const isTest = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_SHOW_TEST_BANNER === 'true';
+    setIsTestEnvironment(isTest);
+  }, []);
 
   const onAuth = React.useCallback(async (providerId) => {
     setIsPending(true);
@@ -68,6 +78,65 @@ export function SignInForm() {
         </Box>
       </div>
       <Stack spacing={3}>
+        {isTestEnvironment && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
+              px: 3,
+              py: 1.5,
+              backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.35),
+              width: '100%',
+              borderRadius: 1,
+              animation: 'pulse 2s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%, 100%': {
+                  opacity: 1,
+                  boxShadow: '0 0 0 0 rgba(255, 152, 0, 0.4)',
+                },
+                '50%': {
+                  opacity: 0.95,
+                  boxShadow: '0 0 0 6px rgba(255, 152, 0, 0.1)',
+                },
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                animation: 'wiggle 2s ease-in-out infinite',
+                '@keyframes wiggle': {
+                  '0%, 100%': { transform: 'rotate(0deg)' },
+                  '25%': { transform: 'rotate(-10deg)' },
+                  '75%': { transform: 'rotate(10deg)' },
+                },
+              }}
+            >
+              <Warning 
+                weight="fill" 
+                size={20}
+                style={{
+                  color: 'var(--mui-palette-warning-dark)',
+                }}
+              />
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: { xs: '0.7rem', md: '0.8rem' },
+                color: 'warning.darker',
+                letterSpacing: '0.1em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              🧪 TEST ENVIRONMENT
+            </Box>
+          </Box>
+        )}
         <Stack spacing={2}>
           {oAuthProviders.map((provider) => (
             <Button

@@ -5,10 +5,14 @@ import { VeteranEditForm } from '../veteran-edit-form';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/core/toaster';
+import { useNavigationBack } from '@/hooks/use-navigation-back';
 
 // Mock dependencies
 jest.mock('@/lib/api');
 jest.mock('next/navigation');
+jest.mock('@/hooks/use-navigation-back', () => ({
+  useNavigationBack: jest.fn(() => jest.fn())
+}));
 jest.mock('@/components/core/toaster', () => ({
   toast: {
     success: jest.fn(),
@@ -20,6 +24,7 @@ describe('VeteranEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
   const mockBack = jest.fn();
   const mockUpdateVeteran = jest.fn();
+  const mockHandleGoBack = jest.fn();
   
   // Mock veteran data with all required fields
   const mockVeteran = {
@@ -202,6 +207,7 @@ describe('VeteranEditForm - Update Functionality', () => {
       push: mockPush,
       back: mockBack
     });
+    useNavigationBack.mockReturnValue(mockHandleGoBack);
     
     // Mock window.history.length
     Object.defineProperty(window, 'history', {
@@ -324,7 +330,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Veteran updated successfully');
-      expect(mockBack).toHaveBeenCalled();
+      expect(mockHandleGoBack).toHaveBeenCalled();
     });
   });
 
@@ -340,7 +346,7 @@ describe('VeteranEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(`Failed to update veteran: ${errorMessage}`);
-      expect(mockBack).not.toHaveBeenCalled();
+      expect(mockHandleGoBack).not.toHaveBeenCalled();
     });
   });
 

@@ -28,6 +28,7 @@ import { DataTable } from '@/components/core/data-table';
 import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
 import { paths } from '@/paths';
+import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 import { api } from '@/lib/api';
 
@@ -519,14 +520,25 @@ export function ApiTable({
                             if (typeof window !== 'undefined') {
                                 const searchUrl = window.location.pathname + window.location.search;
                                 sessionStorage.setItem('searchUrl', searchUrl);
-                                sessionStorage.setItem('previousPage', 'search');
                             }
                             
                             // Navigate to detail page based on row type
                             if (row.type === 'Veteran') {
-                                router.push(paths.main.veterans.details(row.id));
+                                const detailUrl = paths.main.veterans.details(row.id);
+                                pushNavigationEntry({
+                                    type: 'veteran-details',
+                                    url: detailUrl,
+                                    title: 'Back to Search',
+                                });
+                                router.push(detailUrl);
                             } else if (row.type === 'Guardian') {
-                                router.push(paths.main.guardians.details(row.id));
+                                const detailUrl = paths.main.guardians.details(row.id);
+                                pushNavigationEntry({
+                                    type: 'guardian-details',
+                                    url: detailUrl,
+                                    title: 'Back to Search',
+                                });
+                                router.push(detailUrl);
                             }
                         }}
                     />
