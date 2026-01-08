@@ -25,6 +25,8 @@ describe('GuardianEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
   const mockBack = jest.fn();
   const mockUpdateGuardian = jest.fn();
+  const mockGetVeteran = jest.fn();
+  const mockSearchVeterans = jest.fn();
   const mockHandleGoBack = jest.fn();
   
   // Mock guardian data with all required fields
@@ -189,6 +191,9 @@ describe('GuardianEditForm - Update Functionality', () => {
     sessionStorage.setItem('previousPage', 'guardian-details');
     
     api.updateGuardian = mockUpdateGuardian;
+    api.getVeteran = mockGetVeteran;
+    api.searchVeterans = mockSearchVeterans;
+    
     mockUpdateGuardian.mockResolvedValue({
       ...mockGuardian,
       _rev: '2-xyz789abc123',
@@ -199,6 +204,13 @@ describe('GuardianEditForm - Update Functionality', () => {
         updated_by: 'admin@example.com'
       }
     });
+    
+    // Mock pairing dialog API methods
+    mockGetVeteran.mockResolvedValue({
+      _id: 'vet-123',
+      name: { first: 'John', last: 'Veteran' }
+    });
+    mockSearchVeterans.mockResolvedValue([]);
   });
 
   test('includes all required fields in API call', async () => {
