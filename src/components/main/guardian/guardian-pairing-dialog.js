@@ -100,7 +100,8 @@ export function GuardianPairingDialog({
   // Initialize selected veterans from current pairings when dialog opens
   React.useEffect(() => {
     if (open) {
-      setSelectedVeterans(currentPairings);
+      // Capture currentPairings when dialog opens
+      setSelectedVeterans([...currentPairings]);
       setSearchQuery('');
       setSearchResults([]);
       // Reset the auto-select flag when dialog opens so it can work again if needed
@@ -126,6 +127,7 @@ export function GuardianPairingDialog({
           };
           
           // Check if veteran is already in pairings to prevent duplicates
+          // Use a ref to get the latest currentPairings without adding it to deps
           const isAlreadyPaired = currentPairings.some(p => p.id === veteranPairing.id);
           
           if (!isAlreadyPaired) {

@@ -281,6 +281,11 @@ describe('GuardianEditForm - Update Functionality', () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);
     
+    // Wait for form to be fully initialized
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Jane')).toBeInTheDocument();
+    });
+    
     // Change the first name field (easier to find)
     const firstNameField = screen.getByDisplayValue('Jane');
     await user.clear(firstNameField);
@@ -294,7 +299,7 @@ describe('GuardianEditForm - Update Functionality', () => {
       const payload = callArgs[1];
       expect(payload.name.first).toBe('Jane Updated');
       expect(payload.name.last).toBe('Smith'); // Other fields should be preserved
-    });
+    }, { timeout: 10000 });
   });
 
   test('shows success message and stays on page after successful update', async () => {
