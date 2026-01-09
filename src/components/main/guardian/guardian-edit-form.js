@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -14,19 +14,13 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
 import { 
   Person,
-  Users,
-  X,
   ArrowUp
 } from '@phosphor-icons/react';
 
-import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
@@ -38,8 +32,8 @@ import { PairingDisplay } from '@/components/main/shared/pairing-display';
 import { EssentialInfoSection } from './essential-info-section';
 import { ContactInfoSection } from './contact-info-section';
 import { AdditionalDetailsSection } from './additional-details-section';
+import { GuardianPairingDialog } from './guardian-pairing-dialog';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 const getStatusColor = (status) => {
   const colors = {
@@ -64,7 +58,7 @@ const getMedicalLevelColor = (level) => {
 };
 
 
-export function GuardianEditForm({ guardian }) {
+export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
@@ -110,7 +104,11 @@ export function GuardianEditForm({ guardian }) {
   }, []);
   
   // Use shared navigation back hook
-  const handleGoBack = useNavigationBack();
+  const baseHandleGoBack = useNavigationBack();
+  
+  // Use the navigation handler from parent if provided, otherwise use base
+  // Note: We keep a reference to baseHandleGoBack for use after successful save
+  const handleGoBack = onNavigate || baseHandleGoBack;
 
   // Update _rev when guardian prop changes
   React.useEffect(() => {
@@ -118,7 +116,7 @@ export function GuardianEditForm({ guardian }) {
       setGuardianRev(guardian._rev);
     }
   }, [guardian._rev]);
-  
+
 
   // Default values based on API structure
   const defaultValues = React.useMemo(() => ({
@@ -222,12 +220,43 @@ export function GuardianEditForm({ guardian }) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     watch,
+    setValue,
+    reset,
   } = useForm({
     defaultValues,
     // Removed zodResolver for simplicity
   });
+
+  // Expose isDirty to parent component for unsaved changes detection
+  React.useEffect(() => {
+    if (onNavigationReady) {
+      onNavigationReady({
+        isDirty,
+      });
+    }
+  }, [isDirty, onNavigationReady]);
+
+  // Handle session storage veteranId for auto-opening dialog
+  const hasAutoOpenedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const veteranId = sessionStorage.getItem('pairingVeteranId');
+    if (veteranId && !pairingDialogOpen && !hasAutoOpenedRef.current) {
+      // Mark that we're processing this veteranId to prevent duplicate runs
+      hasAutoOpenedRef.current = true;
+      // Auto-open dialog - the dialog component will handle selecting the veteran
+      setPairingDialogOpen(true);
+    }
+  }, [pairingDialogOpen]);
+
+  // Handle applying pairings from dialog
+  const handleApplyPairings = React.useCallback((selectedVeterans) => {
+    setValue('veteran.pairings', selectedVeterans);
+    // No toast notification - changes will be saved when user clicks Save Changes
+  }, [setValue]);
 
   const onSubmit = React.useCallback(
     async (data) => {
@@ -249,10 +278,13 @@ export function GuardianEditForm({ guardian }) {
         if (payload.veteran?.history) delete payload.veteran.history;
         if (payload.call?.history) delete payload.call.history;
         
-        await api.updateGuardian(data._id, payload);
+        const updatedGuardian = await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
         
-        handleGoBack();
+        // Reset form state to mark as clean - this clears the dirty bit
+        reset(updatedGuardian);
+        
+        // Stay on the current screen after save
       } catch (err) {
         logger.error(err);
         toast.error('Failed to update guardian: ' + (err.message || 'Unknown error'));
@@ -389,7 +421,7 @@ export function GuardianEditForm({ guardian }) {
                     <Divider />
                     {/* Veteran Pairings Display - Mobile */}
                     <PairingDisplay
-                      pairings={guardian.veteran?.pairings || []}
+                      pairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
                       type="veteran"
                       onManageClick={() => setPairingDialogOpen(true)}
                     />
@@ -435,7 +467,7 @@ export function GuardianEditForm({ guardian }) {
                         <Divider />
                         {/* Veteran Pairings Display - Desktop */}
                         <PairingDisplay
-                          pairings={guardian.veteran?.pairings || []}
+                          pairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
                           type="veteran"
                           onManageClick={() => setPairingDialogOpen(true)}
                         />
@@ -499,6 +531,7 @@ export function GuardianEditForm({ guardian }) {
               guardian={guardian}
               veteranPairingsRef={veteranPairingsRef}
               onManagePairing={() => setPairingDialogOpen(true)}
+              watch={watch}
             />
 
             {/* Additional Details Group */}
@@ -560,9 +593,7 @@ export function GuardianEditForm({ guardian }) {
         <Stack direction="row" spacing={2}>
           <Button 
             color="inherit" 
-            onClick={() => {
-              handleGoBack();
-            }}
+            onClick={handleGoBack}
             sx={{
               borderRadius: 2,
               fontWeight: 'medium'
@@ -590,78 +621,13 @@ export function GuardianEditForm({ guardian }) {
         history={historyDialogData.history}
         title={historyDialogData.title}
       />
-      <Dialog
+      <GuardianPairingDialog
         open={pairingDialogOpen}
         onClose={() => setPairingDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2
-          }
-        }}
-      >
-        <DialogTitle 
-          sx={{ 
-            fontWeight: 'bold',
-            fontSize: '1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Users size={24} weight="bold" />
-            Veteran Pairing Management
-          </Box>
-          <Box
-            component="button"
-            onClick={() => setPairingDialogOpen(false)}
-            sx={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'text.secondary',
-              '&:hover': {
-                color: 'text.primary'
-              },
-              transition: 'color 0.2s'
-            }}
-            aria-label="Close"
-          >
-            <X size={24} weight="bold" />
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={3}>
-            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-              Coming Soon
-            </Typography>
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 'medium' }}>
-                Veteran Preference Notes:
-              </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  p: 2, 
-                  backgroundColor: 'background.neutral', 
-                  borderRadius: 1,
-                  minHeight: 100,
-                  whiteSpace: 'pre-wrap'
-                }}
-              >
-                {watch('veteran.pref_notes') || guardian.veteran?.pref_notes || 'No preference notes entered.'}
-              </Typography>
-            </Box>
-          </Stack>
-        </DialogContent>
-      </Dialog>
+        onApply={handleApplyPairings}
+        currentPairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
+        preferenceNotes={watch('veteran.pref_notes') || guardian.veteran?.pref_notes || ''}
+      />
     </form>
   );
 }

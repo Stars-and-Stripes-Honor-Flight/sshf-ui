@@ -21,8 +21,21 @@ export function ContactInfoSection({
   errors, 
   guardian, 
   veteranPairingsRef, 
-  onManagePairing 
+  onManagePairing,
+  watch
 }) {
+  // Create entity object with form state for pairings
+  const entityWithFormState = React.useMemo(() => {
+    const formPairings = watch ? watch('veteran.pairings') : null;
+    return {
+      ...guardian,
+      veteran: {
+        ...guardian.veteran,
+        pairings: formPairings || guardian.veteran?.pairings || []
+      }
+    };
+  }, [guardian, watch]);
+
   return (
     <Stack spacing={3}>
       <Typography 
@@ -121,7 +134,7 @@ export function ContactInfoSection({
         preferenceNotesPlaceholder="Veteran Preference Notes"
         onManagePairing={onManagePairing}
         showHiddenFields={false}
-        entity={guardian}
+        entity={entityWithFormState}
       />
     </Stack>
   );

@@ -43,17 +43,13 @@ export function PairingDisplay({
       : paths.main.veterans.details(id);
   };
   
-  const getPreviousPage = () => {
-    return type === 'guardian' 
-      ? 'guardian-details'
-      : 'veteran-details';
-  };
-  
   const handlePairingClick = (id) => {
-    sessionStorage.setItem('previousPage', getPreviousPage());
     router.push(getDetailsPath(id));
   };
   
+  // Only show gear icon for veteran pairings (on guardian page), not for guardian pairings (on veteran page)
+  const showManageButton = type === 'veteran' && onManageClick;
+
   if (normalizedPairings.length === 0) {
     return (
       <Box>
@@ -64,6 +60,35 @@ export function PairingDisplay({
               {getEmptyMessage()}
             </Typography>
           </Stack>
+          {showManageButton && (
+            <Tooltip title="Manage Pairings" arrow placement="top">
+              <IconButton
+                size="small"
+                onClick={onManageClick}
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': {
+                    color: 'primary.main',
+                    backgroundColor: 'action.hover'
+                  }
+                }}
+              >
+                <Gear size={16} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      </Box>
+    );
+  }
+  
+  return (
+    <Box>
+      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          {type === 'guardian' ? 'Paired Guardian' : 'Paired Veterans'}
+        </Typography>
+        {showManageButton && (
           <Tooltip title="Manage Pairings" arrow placement="top">
             <IconButton
               size="small"
@@ -79,32 +104,7 @@ export function PairingDisplay({
               <Gear size={16} />
             </IconButton>
           </Tooltip>
-        </Stack>
-      </Box>
-    );
-  }
-  
-  return (
-    <Box>
-      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          {type === 'guardian' ? 'Paired Guardian' : 'Paired Veterans'}
-        </Typography>
-        <Tooltip title="Manage Pairings" arrow placement="top">
-          <IconButton
-            size="small"
-            onClick={onManageClick}
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                color: 'primary.main',
-                backgroundColor: 'action.hover'
-              }
-            }}
-          >
-            <Gear size={16} />
-          </IconButton>
-        </Tooltip>
+        )}
       </Stack>
       <Stack spacing={1}>
         {normalizedPairings.map((pairing, index) => (

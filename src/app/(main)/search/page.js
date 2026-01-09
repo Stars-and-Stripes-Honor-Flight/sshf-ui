@@ -19,7 +19,7 @@ import { Option } from '@/components/core/option';
 import { searchColumns } from '@/components/main/search/search-columns';
 import { SearchCardView } from '@/components/main/search/search-card-view';
 import { usePermissions } from '@/hooks/use-permissions';
-import { getFlights } from '@/lib/flights';
+import { getFlights, formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
 
 export default function Page() {
   const router = useRouter();
@@ -180,25 +180,6 @@ export default function Page() {
     }
   }, [searchParams, isInitialized]);
 
-  // Helper function to remove SSHF- prefix from flight names for display
-  const formatFlightNameForDisplay = (flightName) => {
-    if (!flightName || flightName === "All") {
-      return flightName;
-    }
-    return flightName.replace(/^SSHF-/i, '');
-  };
-
-  // Helper function to ensure SSHF- prefix is present for API calls
-  const ensureFlightPrefix = (flightName) => {
-    if (!flightName || flightName === "All") {
-      return flightName;
-    }
-    // If it doesn't start with SSHF-, add it
-    if (!flightName.match(/^SSHF-/i)) {
-      return `SSHF-${flightName}`;
-    }
-    return flightName;
-  };
 
   // Update search filters with flight options when flights load
   React.useEffect(() => {

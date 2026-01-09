@@ -23,6 +23,17 @@ export function FormTextField({
   gridProps = {},
   ...other 
 }) {
+  // Extract InputProps and other props that shouldn't be passed to OutlinedInput
+  // We need to be careful not to pass any unknown props to OutlinedInput
+  const { 
+    InputProps: otherInputProps, 
+    inputProps: otherInputPropsLower,
+    // Explicitly filter out any props that might cause issues
+    ...restOther 
+  } = other;
+  // Combine InputProps from both sources
+  const finalInputProps = inputPropsProp || otherInputProps;
+  
   return (
     <Grid {...gridProps}>
       <Controller
@@ -31,12 +42,6 @@ export function FormTextField({
         render={({ field }) => {
           // Extract ref from field to avoid passing it to OutlinedInput
           const { ref, ...fieldProps } = field;
-          // Extract InputProps from other to prevent it from being passed to DOM
-          const { InputProps: otherInputProps, ...restOther } = other;
-          // Combine InputProps from both sources
-          const finalInputProps = inputPropsProp || otherInputProps;
-          // Ensure InputProps is never in restOther (extra safety)
-          const { InputProps: _, ...safeRestOther } = restOther;
           return (
             <FormControl error={Boolean(error)} fullWidth={fullWidth}>
               <InputLabel required={required}>{label}</InputLabel>
@@ -46,9 +51,10 @@ export function FormTextField({
                 type={type}
                 multiline={multiline}
                 rows={rows}
-                inputProps={inputProps}
+                inputProps={{ ...inputProps, ...otherInputPropsLower }}
                 {...(finalInputProps ? { InputProps: finalInputProps } : {})}
-                {...safeRestOther}
+                // Don't spread restOther - it may contain props that shouldn't be passed to OutlinedInput
+                // If additional props are needed, they should be explicitly passed
               />
               {error ? <FormHelperText>{error.message}</FormHelperText> : null}
             </FormControl>

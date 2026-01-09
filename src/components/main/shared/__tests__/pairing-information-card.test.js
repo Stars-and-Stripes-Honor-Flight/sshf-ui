@@ -44,17 +44,17 @@ describe('PairingInformationCard', () => {
         <PairingInformationCard
           errors={{}}
           cardId="test-pairing-card"
-          title="Guardian Information"
-          pairingType="guardian"
-          preferenceNotesFieldName="guardian.pref_notes"
-          preferenceNotesPlaceholder="Guardian preference notes"
+          title="Veteran Pairing Information"
+          pairingType="veteran"
+          preferenceNotesFieldName="veteran.pref_notes"
+          preferenceNotesPlaceholder="Veteran preference notes"
           onManagePairing={mockOnManagePairing}
           entity={{}}
         />
       </TestWrapper>
     );
 
-    expect(screen.getByText('Guardian Information')).toBeInTheDocument();
+    expect(screen.getByText('Veteran Pairing Information')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /manage pairing/i })).toBeInTheDocument();
   });
 
@@ -67,10 +67,10 @@ describe('PairingInformationCard', () => {
         <PairingInformationCard
           errors={{}}
           cardId="test-pairing-card"
-          title="Guardian Information"
-          pairingType="guardian"
-          preferenceNotesFieldName="guardian.pref_notes"
-          preferenceNotesPlaceholder="Guardian preference notes"
+          title="Veteran Pairing Information"
+          pairingType="veteran"
+          preferenceNotesFieldName="veteran.pref_notes"
+          preferenceNotesPlaceholder="Veteran preference notes"
           onManagePairing={mockOnManagePairing}
           entity={{}}
         />

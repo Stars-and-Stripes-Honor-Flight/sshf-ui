@@ -59,3 +59,31 @@ export const refreshFlights = async () => {
     return getFlights();
   }
 };
+
+/**
+ * Format flight name for display by removing SSHF- prefix
+ * @param {string} flightName - The flight name to format
+ * @returns {string} Formatted flight name without SSHF- prefix
+ */
+export const formatFlightNameForDisplay = (flightName) => {
+  if (!flightName || flightName === "None" || flightName === "All") {
+    return flightName || "None";
+  }
+  return flightName.replace(/^SSHF-/i, '');
+};
+
+/**
+ * Ensure flight name has SSHF- prefix for API calls
+ * @param {string} flightName - The flight name to format
+ * @returns {string} Flight name with SSHF- prefix if needed
+ */
+export const ensureFlightPrefix = (flightName) => {
+  if (!flightName || flightName === "All" || flightName === "None") {
+    return flightName;
+  }
+  // If it doesn't start with SSHF-, add it
+  if (!flightName.match(/^SSHF-/i)) {
+    return `SSHF-${flightName}`;
+  }
+  return flightName;
+};

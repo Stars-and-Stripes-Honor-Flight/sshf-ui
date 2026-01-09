@@ -31,7 +31,8 @@ export function PairingInformationCard({
   preferenceNotesPlaceholder,
   onManagePairing,
   showHiddenFields = false, // Only for veteran form
-  entity // The main entity (veteran or guardian) for accessing pairing data
+  entity, // The main entity (veteran or guardian) for accessing pairing data
+  searchButton // Optional button to render next to preference notes label
 }) {
   const router = useRouter();
   
@@ -83,19 +84,22 @@ export function PairingInformationCard({
             icon={icon} 
             title={title} 
           />
-          <Button
-            startIcon={<Gear size={18} weight="bold" />}
-            variant="outlined"
-            size="small"
-            onClick={onManagePairing}
-            sx={{
-              borderRadius: 1,
-              textTransform: 'none',
-              fontWeight: 'medium'
-            }}
-          >
-            Manage Pairing
-          </Button>
+          {/* Only show Manage Pairing button for veteran pairings (on guardian page), not for guardian pairings (on veteran page) */}
+          {pairingType === 'veteran' && onManagePairing && (
+            <Button
+              startIcon={<Gear size={18} weight="bold" />}
+              variant="outlined"
+              size="small"
+              onClick={onManagePairing}
+              sx={{
+                borderRadius: 1,
+                textTransform: 'none',
+                fontWeight: 'medium'
+              }}
+            >
+              Manage Pairing
+            </Button>
+          )}
         </Stack>
         <Grid container spacing={3}>
           {hasPairings && (
@@ -144,9 +148,12 @@ export function PairingInformationCard({
             </>
           )}
           <Grid xs={12} md={notesGridSize}>
-            <InputLabel sx={{ mb: 2 }}>
-              {preferenceNotesPlaceholder}
-            </InputLabel>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} sx={{ mb: 2 }}>
+              <InputLabel>
+                {preferenceNotesPlaceholder}
+              </InputLabel>
+              {searchButton}
+            </Stack>
             <Controller
               control={control}
               name={preferenceNotesFieldName}

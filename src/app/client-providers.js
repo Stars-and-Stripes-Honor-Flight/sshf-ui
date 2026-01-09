@@ -20,7 +20,10 @@ export function ClientProviders({ children, settings }) {
               <ThemeProvider>
                 {children}
                 <SettingsButton />
-                <Toaster position="bottom-right" />
+                <Toaster 
+                  position="bottom-right"
+                  closeButton
+                />
               </ThemeProvider>
             </I18nProvider>
           </SettingsProvider>

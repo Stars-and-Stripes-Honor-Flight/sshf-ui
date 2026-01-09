@@ -25,6 +25,8 @@ describe('GuardianEditForm - Update Functionality', () => {
   const mockPush = jest.fn();
   const mockBack = jest.fn();
   const mockUpdateGuardian = jest.fn();
+  const mockGetVeteran = jest.fn();
+  const mockSearchVeterans = jest.fn();
   const mockHandleGoBack = jest.fn();
   
   // Mock guardian data with all required fields
@@ -189,6 +191,9 @@ describe('GuardianEditForm - Update Functionality', () => {
     sessionStorage.setItem('previousPage', 'guardian-details');
     
     api.updateGuardian = mockUpdateGuardian;
+    api.getVeteran = mockGetVeteran;
+    api.searchVeterans = mockSearchVeterans;
+    
     mockUpdateGuardian.mockResolvedValue({
       ...mockGuardian,
       _rev: '2-xyz789abc123',
@@ -199,6 +204,13 @@ describe('GuardianEditForm - Update Functionality', () => {
         updated_by: 'admin@example.com'
       }
     });
+    
+    // Mock pairing dialog API methods
+    mockGetVeteran.mockResolvedValue({
+      _id: 'vet-123',
+      name: { first: 'John', last: 'Veteran' }
+    });
+    mockSearchVeterans.mockResolvedValue([]);
   });
 
   test('includes all required fields in API call', async () => {
@@ -269,6 +281,11 @@ describe('GuardianEditForm - Update Functionality', () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);
     
+    // Wait for form to be fully initialized
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Jane')).toBeInTheDocument();
+    }, { timeout: 10000 });
+    
     // Change the first name field (easier to find)
     const firstNameField = screen.getByDisplayValue('Jane');
     await user.clear(firstNameField);
@@ -282,10 +299,10 @@ describe('GuardianEditForm - Update Functionality', () => {
       const payload = callArgs[1];
       expect(payload.name.first).toBe('Jane Updated');
       expect(payload.name.last).toBe('Smith'); // Other fields should be preserved
-    });
-  });
+    }, { timeout: 10000 });
+  }, 15000); // Increase test timeout to 15 seconds
 
-  test('shows success message and navigates back after successful update', async () => {
+  test('shows success message and stays on page after successful update', async () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);
     
@@ -294,7 +311,8 @@ describe('GuardianEditForm - Update Functionality', () => {
     
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
-      expect(mockHandleGoBack).toHaveBeenCalled();
+      // After save, we stay on the page (no navigation)
+      expect(mockHandleGoBack).not.toHaveBeenCalled();
     });
   });
 

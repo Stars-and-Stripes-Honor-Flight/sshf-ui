@@ -17,13 +17,21 @@ import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 import { paths } from '@/paths';
 import { dayjs } from '@/lib/dayjs';
 import { pushNavigationEntry } from '@/lib/navigation-stack';
+import { formatFlightNameForDisplay } from '@/lib/flights';
 
 // Store search URL when navigating to details page
-const handleCardClick = (isVeteran, detailUrl) => {
+const handleCardClick = (isVeteran, detailUrl, veteranId) => {
   if (typeof window !== 'undefined') {
     const searchUrl = window.location.pathname + window.location.search;
     // Store search URL for back navigation
     sessionStorage.setItem('searchUrl', searchUrl);
+    
+    // If veteranId is present and clicking on a guardian, store it in session storage
+    // (instead of URL to avoid extra back button presses)
+    if (!isVeteran && veteranId) {
+      sessionStorage.setItem('pairingVeteranId', veteranId);
+    }
+    
     // Track navigation to detail page
     pushNavigationEntry({
       type: isVeteran ? 'veteran-details' : 'guardian-details',
@@ -31,14 +39,6 @@ const handleCardClick = (isVeteran, detailUrl) => {
       title: 'Back to Search',
     });
   }
-};
-
-// Remove SSHF- prefix from flight names
-const formatFlightName = (flightName) => {
-  if (!flightName || flightName === "None") {
-    return flightName;
-  }
-  return flightName.replace(/^SSHF-/i, '');
 };
 
 // Status color mapping to match edit screens
@@ -57,6 +57,16 @@ const getStatusColor = (status) => {
 };
 
 export function SearchCardView({ rows }) {
+  // Get veteranId from session storage if present (for pairing flow)
+  const [veteranId, setVeteranId] = React.useState(null);
+  
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedVeteranId = sessionStorage.getItem('pairingVeteranId');
+      setVeteranId(storedVeteranId);
+    }
+  }, []);
+
   if (!rows || rows.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
@@ -74,6 +84,9 @@ export function SearchCardView({ rows }) {
         const detailUrl = isVeteran
           ? paths.main.veterans.details(row.id)
           : paths.main.guardians.details(row.id);
+        
+        // If veteranId is present and clicking on a guardian, it's already in session storage
+        // (stored when navigating from veteran page or from search with veteranId)
 
         return (
           <Card 
@@ -88,7 +101,7 @@ export function SearchCardView({ rows }) {
             }}
             component={RouterLink}
             href={detailUrl}
-            onClick={() => handleCardClick(isVeteran, detailUrl)}
+            onClick={() => handleCardClick(isVeteran, detailUrl, veteranId)}
           >
             <CardContent sx={{ 
               pt: 2, 
@@ -155,7 +168,7 @@ export function SearchCardView({ rows }) {
                           weight="fill" 
                         />
                       }
-                      label={formatFlightName(row.flight)}
+                      label={formatFlightNameForDisplay(row.flight)}
                       size="small"
                       variant="outlined"
                       sx={{ alignSelf: 'flex-start' }}
