@@ -52,12 +52,18 @@ describe('EssentialInfoSection', () => {
   });
 
   test('renders essential information section with all cards', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+
     render(
       <TestWrapper>
         <EssentialInfoSection 
           errors={{}} 
           veteran={mockVeteran}
           onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
         />
       </TestWrapper>
     );
@@ -70,12 +76,18 @@ describe('EssentialInfoSection', () => {
   });
 
   test('renders service information fields', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+
     const { container } = render(
       <TestWrapper defaultValues={{ service: { branch: 'Army', rank: 'E5', dates: '1965-1970', activity: 'Infantry' } }}>
         <EssentialInfoSection 
           errors={{}} 
           veteran={mockVeteran}
           onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
         />
       </TestWrapper>
     );
@@ -91,6 +103,11 @@ describe('EssentialInfoSection', () => {
   });
 
   test('displays error messages for service fields', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+
     const errors = {
       service: {
         branch: { message: 'Branch is required' },
@@ -104,6 +121,7 @@ describe('EssentialInfoSection', () => {
           errors={errors} 
           veteran={mockVeteran}
           onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
         />
       </TestWrapper>
     );
@@ -113,12 +131,18 @@ describe('EssentialInfoSection', () => {
   });
 
   test('renders medical information fields', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+
     const { container } = render(
       <TestWrapper defaultValues={{ medical: { level: '2', food_restriction: 'None' } }}>
         <EssentialInfoSection 
           errors={{}} 
           veteran={mockVeteran}
           onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
         />
       </TestWrapper>
     );
@@ -128,6 +152,11 @@ describe('EssentialInfoSection', () => {
   });
 
   test('calls onOpenHistory when history button is clicked', async () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+
     const user = userEvent.setup();
     
     render(
@@ -136,6 +165,7 @@ describe('EssentialInfoSection', () => {
           errors={{}} 
           veteran={mockVeteran}
           onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
         />
       </TestWrapper>
     );
