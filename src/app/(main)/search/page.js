@@ -10,7 +10,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
 
-import { paths } from '@/paths';
 import { config } from '@/config';
 import { initializeCurrentPage } from '@/lib/navigation-stack';
 import { ApiTable } from '@/components/core/table/api-table';
@@ -33,9 +32,6 @@ export default function Page() {
   if (!isInGroup(ROLE_FULL_ACCESS)) {
     return <div>Access Denied</div>;
   }
-
-  const today = new Date();
-  let todayText = today.toISOString();
   
   const searchInputRef = React.useRef(null);
   const [quickSearch, setQuickSearch] = React.useState('');

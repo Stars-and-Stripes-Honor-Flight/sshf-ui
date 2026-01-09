@@ -19,21 +19,11 @@ export function FormTextField({
   multiline = false,
   rows = 1,
   inputProps = {},
-  InputProps: inputPropsProp,
+  InputProps,
   gridProps = {},
   ...other 
 }) {
-  // Extract InputProps and other props that shouldn't be passed to OutlinedInput
-  // We need to be careful not to pass any unknown props to OutlinedInput
-  const { 
-    InputProps: otherInputProps, 
-    inputProps: otherInputPropsLower,
-    // Explicitly filter out any props that might cause issues
-    ...restOther 
-  } = other;
-  // Combine InputProps from both sources
-  const finalInputProps = inputPropsProp || otherInputProps;
-  
+  // Combine inputProps from component
   return (
     <Grid {...gridProps}>
       <Controller
@@ -42,6 +32,8 @@ export function FormTextField({
         render={({ field }) => {
           // Extract ref from field to avoid passing it to OutlinedInput
           const { ref, ...fieldProps } = field;
+          // Merge InputProps with inputProps if InputProps is provided
+          const mergedInputProps = InputProps ? { ...inputProps, ...InputProps } : inputProps;
           return (
             <FormControl error={Boolean(error)} fullWidth={fullWidth}>
               <InputLabel required={required}>{label}</InputLabel>
@@ -51,10 +43,7 @@ export function FormTextField({
                 type={type}
                 multiline={multiline}
                 rows={rows}
-                inputProps={{ ...inputProps, ...otherInputPropsLower }}
-                {...(finalInputProps ? { InputProps: finalInputProps } : {})}
-                // Don't spread restOther - it may contain props that shouldn't be passed to OutlinedInput
-                // If additional props are needed, they should be explicitly passed
+                inputProps={mergedInputProps}
               />
               {error ? <FormHelperText>{error.message}</FormHelperText> : null}
             </FormControl>
