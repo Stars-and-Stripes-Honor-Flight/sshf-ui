@@ -15,7 +15,6 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
-import Chip from '@mui/material/Chip';
 import { 
   Person,
   ArrowUp
@@ -24,6 +23,7 @@ import {
 import { logger } from '@/lib/default-logger';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
+import { getFlights, formatFlightNameForDisplay } from '@/lib/flights';
 import { HistoryDialog } from '@/components/core/history-dialog';
 import { GoodToFlyStatus } from '@/components/main/shared/good-to-fly-status';
 import { StickyHeader } from '@/components/main/shared/sticky-header';
@@ -73,6 +73,9 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   // Scroll state for "Back to Top" link
   const [showBackToTop, setShowBackToTop] = React.useState(false);
   
+  // Flight state
+  const [flightOptions, setFlightOptions] = React.useState([]);
+  
   // Ref for the veteran pairings section
   const veteranPairingsRef = React.useRef(null);
   
@@ -90,6 +93,23 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
+  }, []);
+  
+  // Load and build flight options
+  React.useEffect(() => {
+    const flights = getFlights();
+    
+    // Build flight options - include all flights but mark completed ones as disabled
+    const options = [
+      { label: 'No Flight', value: '', disabled: false },
+      ...flights.map(flight => ({
+        label: formatFlightNameForDisplay(flight.name),
+        value: flight.name, // Save flight name (e.g., 'SSHF-Test01') as it comes from API
+        disabled: flight.completed || false // Disable if flight is completed
+      }))
+    ];
+    
+    setFlightOptions(options);
   }, []);
   
   // Helper function to open history dialog
@@ -522,6 +542,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
               errors={errors}
               guardian={guardian}
               onOpenHistory={handleOpenHistory}
+              flightOptions={flightOptions}
             />
 
             {/* Contact Information Group */}

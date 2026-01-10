@@ -2,10 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
@@ -23,16 +21,15 @@ import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
 import { 
-  Medal,
   Users,
   X,
   ArrowUp
 } from '@phosphor-icons/react';
 
-import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
+import { getFlights, formatFlightNameForDisplay } from '@/lib/flights';
 import { HistoryDialog } from '@/components/core/history-dialog';
 import { GoodToFlyStatus } from '@/components/main/shared/good-to-fly-status';
 import { StickyHeader } from '@/components/main/shared/sticky-header';
@@ -42,7 +39,6 @@ import { EssentialInfoSection } from './essential-info-section';
 import { ContactInfoSection } from './contact-info-section';
 import { AdditionalDetailsSection } from './additional-details-section';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 const getBranchImage = (branch) => {
   const images = {
@@ -94,6 +90,9 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   // Scroll state for "Back to Top" link
   const [showBackToTop, setShowBackToTop] = React.useState(false);
   
+  // Flight state
+  const [flightOptions, setFlightOptions] = React.useState([]);
+  
   // Ref for the guardian pairing section
   const guardianPairingRef = React.useRef(null);
   
@@ -111,6 +110,23 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
+  }, []);
+  
+  // Load and build flight options
+  React.useEffect(() => {
+    const flights = getFlights();
+    
+    // Build flight options - include all flights but mark completed ones as disabled
+    const options = [
+      { label: 'No Flight', value: '', disabled: false },
+      ...flights.map(flight => ({
+        label: formatFlightNameForDisplay(flight.name),
+        value: flight.name, // Save flight name (e.g., 'SSHF-Test01') as it comes from API
+        disabled: flight.completed || false // Disable if flight is completed
+      }))
+    ];
+    
+    setFlightOptions(options);
   }, []);
   
   // Helper function to open history dialog
@@ -625,6 +641,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
               errors={errors}
               veteran={veteran}
               onOpenHistory={handleOpenHistory}
+              flightOptions={flightOptions}
             />
 
             {/* Contact Information Group */}

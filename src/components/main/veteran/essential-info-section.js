@@ -20,7 +20,7 @@ import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { PersonalInformationCard } from '@/components/main/shared/personal-information-card';
 
-export function EssentialInfoSection({ control, errors, veteran, onOpenHistory }) {
+export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, flightOptions }) {
   return (
     <Stack spacing={3}>
       <Typography 
@@ -398,7 +398,18 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory }
                 render={({ field }) => (
                   <FormControl error={Boolean(errors.flight?.id)} fullWidth>
                     <InputLabel>Assigned Flight</InputLabel>
-                    <OutlinedInput {...field} />
+                    <Select {...field} value={field.value || ''}>
+                      {flightOptions.map((option) => (
+                        <Option 
+                          key={option.value} 
+                          value={option.value}
+                          disabled={option.disabled}
+                          sx={option.disabled ? { opacity: 0.5, textDecoration: 'line-through' } : {}}
+                        >
+                          {option.disabled ? `${option.label} (Completed)` : option.label}
+                        </Option>
+                      ))}
+                    </Select>
                     {errors.flight?.id ? <FormHelperText>{errors.flight.id.message}</FormHelperText> : null}
                   </FormControl>
                 )}
