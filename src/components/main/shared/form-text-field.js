@@ -21,6 +21,7 @@ export function FormTextField({
   inputProps = {},
   InputProps,
   gridProps = {},
+  disabled = false,
   ...other 
 }) {
   // Combine inputProps from component
@@ -35,7 +36,7 @@ export function FormTextField({
           // Merge InputProps with inputProps if InputProps is provided
           const mergedInputProps = InputProps ? { ...inputProps, ...InputProps } : inputProps;
           return (
-            <FormControl error={Boolean(error)} fullWidth={fullWidth}>
+            <FormControl error={Boolean(error)} fullWidth={fullWidth} disabled={disabled}>
               <InputLabel required={required}>{label}</InputLabel>
               <OutlinedInput 
                 {...fieldProps}

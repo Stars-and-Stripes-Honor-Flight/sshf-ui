@@ -29,7 +29,8 @@ export function ContactInfoSection({
   onOpenHistory, 
   guardianPairingRef, 
   onManagePairing,
-  watch
+  watch,
+  disabled = false
 }) {
   const router = useRouter();
   
@@ -79,6 +80,7 @@ export function ContactInfoSection({
         control={control} 
         errors={errors}
         emailGridProps={{ xs: 12, md: 4 }}
+        disabled={disabled}
       />
 
       {/* Call Center Information Card */}
@@ -109,7 +111,7 @@ export function ContactInfoSection({
                 control={control}
                 name="call.assigned_to"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth>
+                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth disabled={disabled}>
                     <InputLabel>Call Assigned To</InputLabel>
                     <OutlinedInput {...field} inputProps={{ maxLength: 30 }} />
                     {errors.call?.assigned_to ? <FormHelperText>{errors.call.assigned_to.message}</FormHelperText> : null}
@@ -122,7 +124,7 @@ export function ContactInfoSection({
                 control={control}
                 name="call.notes"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.notes)} fullWidth>
+                  <FormControl error={Boolean(errors.call?.notes)} fullWidth disabled={disabled}>
                     <InputLabel>Call Center Notes</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.call?.notes ? <FormHelperText>{errors.call.notes.message}</FormHelperText> : null}
@@ -137,7 +139,7 @@ export function ContactInfoSection({
                     control={control}
                     name="call.mail_sent"
                     render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
                     )}
                   />
                 }
@@ -151,7 +153,7 @@ export function ContactInfoSection({
                     control={control}
                     name="call.email_sent"
                     render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
                     )}
                   />
                 }
@@ -175,7 +177,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.name"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.name)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.name)} fullWidth disabled={disabled}>
                     <InputLabel>Emergency Contact Name</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.name && <FormHelperText>{errors.emerg_contact.name.message}</FormHelperText>}
@@ -188,7 +190,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.relation"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.relation && <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>}
@@ -201,7 +203,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.street"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.street)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.street)} fullWidth disabled={disabled}>
                     <InputLabel>Street Address</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.street && <FormHelperText>{errors.emerg_contact.address.street.message}</FormHelperText>}
@@ -214,7 +216,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.city"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.city)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.city)} fullWidth disabled={disabled}>
                     <InputLabel>City</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.city && <FormHelperText>{errors.emerg_contact.address.city.message}</FormHelperText>}
@@ -227,7 +229,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.state"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.state)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.state)} fullWidth disabled={disabled}>
                     <InputLabel>State</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.state && <FormHelperText>{errors.emerg_contact.address.state.message}</FormHelperText>}
@@ -240,7 +242,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.zip"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.zip)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.zip)} fullWidth disabled={disabled}>
                     <InputLabel>ZIP Code</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.zip && <FormHelperText>{errors.emerg_contact.address.zip.message}</FormHelperText>}
@@ -253,7 +255,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth disabled={disabled}>
                     <InputLabel>Day Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.phone && <FormHelperText>{errors.emerg_contact.address.phone.message}</FormHelperText>}
@@ -266,7 +268,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone_mbl"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone_mbl)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone_mbl)} fullWidth disabled={disabled}>
                     <InputLabel>Mobile Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.phone_mbl && <FormHelperText>{errors.emerg_contact.address.phone_mbl.message}</FormHelperText>}
@@ -279,7 +281,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.email"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
                     {errors.emerg_contact?.address?.email && <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>}
@@ -304,7 +306,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.name"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.name)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.name)} fullWidth disabled={disabled}>
                     <InputLabel>Alternate Contact Name</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.name && <FormHelperText>{errors.alt_contact.name.message}</FormHelperText>}
@@ -317,7 +319,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.relation"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.relation)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.relation && <FormHelperText>{errors.alt_contact.relation.message}</FormHelperText>}
@@ -330,7 +332,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.street"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.street)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.street)} fullWidth disabled={disabled}>
                     <InputLabel>Street Address</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.street && <FormHelperText>{errors.alt_contact.address.street.message}</FormHelperText>}
@@ -343,7 +345,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.city"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.city)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.city)} fullWidth disabled={disabled}>
                     <InputLabel>City</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.city && <FormHelperText>{errors.alt_contact.address.city.message}</FormHelperText>}
@@ -356,7 +358,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.state"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.state)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.state)} fullWidth disabled={disabled}>
                     <InputLabel>State</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.state && <FormHelperText>{errors.alt_contact.address.state.message}</FormHelperText>}
@@ -369,7 +371,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.zip"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.zip)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.zip)} fullWidth disabled={disabled}>
                     <InputLabel>ZIP Code</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.zip && <FormHelperText>{errors.alt_contact.address.zip.message}</FormHelperText>}
@@ -382,7 +384,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.phone)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.phone)} fullWidth disabled={disabled}>
                     <InputLabel>Day Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.phone && <FormHelperText>{errors.alt_contact.address.phone.message}</FormHelperText>}
@@ -395,7 +397,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.phone_mbl"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.phone_mbl)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.phone_mbl)} fullWidth disabled={disabled}>
                     <InputLabel>Mobile Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.alt_contact?.address?.phone_mbl && <FormHelperText>{errors.alt_contact.address.phone_mbl.message}</FormHelperText>}
@@ -408,7 +410,7 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.email"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.email)} fullWidth>
+                  <FormControl error={Boolean(errors.alt_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
                     {errors.alt_contact?.address?.email && <FormHelperText>{errors.alt_contact.address.email.message}</FormHelperText>}
@@ -470,7 +472,7 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.name"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.name)} fullWidth>
+                  <FormControl error={Boolean(errors.mail_call?.name)} fullWidth disabled={disabled}>
                     <InputLabel>Contact Name</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.mail_call?.name && <FormHelperText>{errors.mail_call.name.message}</FormHelperText>}
@@ -483,7 +485,7 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.relation"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.relation)} fullWidth>
+                  <FormControl error={Boolean(errors.mail_call?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.mail_call?.relation && <FormHelperText>{errors.mail_call.relation.message}</FormHelperText>}
@@ -496,7 +498,7 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.notes"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.notes)} fullWidth>
+                  <FormControl error={Boolean(errors.mail_call?.notes)} fullWidth disabled={disabled}>
                     <InputLabel>Notes</InputLabel>
                     <OutlinedInput {...field} multiline rows={2} />
                     {errors.mail_call?.notes && <FormHelperText>{errors.mail_call.notes.message}</FormHelperText>}
@@ -509,7 +511,7 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.address?.phone)} fullWidth>
+                  <FormControl error={Boolean(errors.mail_call?.address?.phone)} fullWidth disabled={disabled}>
                     <InputLabel>Mail Call Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.mail_call?.address?.phone ? <FormHelperText>{errors.mail_call.address.phone.message}</FormHelperText> : null}
@@ -522,7 +524,7 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.address.email"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.address?.email)} fullWidth>
+                  <FormControl error={Boolean(errors.mail_call?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Mail Call Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
                     {errors.mail_call?.address?.email ? <FormHelperText>{errors.mail_call.address.email.message}</FormHelperText> : null}

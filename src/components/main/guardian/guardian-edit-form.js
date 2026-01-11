@@ -14,6 +14,7 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
 import { Controller, useForm } from 'react-hook-form';
 import { 
   Person,
@@ -318,6 +319,9 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   const watchStatus = watch('flight.status');
   const watchTraining = watch('flight.training');
   const watchMedicalLevel = watch('medical.level');
+  
+  // Determine if form should be disabled (Flown status only for guardians)
+  const isFormDisabled = watchStatus === 'Flown';
 
   // Scroll to section handler
   const handleScrollToSection = React.useCallback((sectionId) => {
@@ -443,7 +447,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                     <PairingDisplay
                       pairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
                       type="veteran"
-                      onManageClick={() => setPairingDialogOpen(true)}
+                      onManageClick={isFormDisabled ? undefined : () => setPairingDialogOpen(true)}
                     />
                   </Stack>
                   {/* Desktop/Tablet: Two-column layout (icon left, training info right) */}
@@ -489,7 +493,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                         <PairingDisplay
                           pairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
                           type="veteran"
-                          onManageClick={() => setPairingDialogOpen(true)}
+                          onManageClick={isFormDisabled ? undefined : () => setPairingDialogOpen(true)}
                         />
                         <Divider />
                         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -497,7 +501,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                             control={control}
                             name="app_date"
                             render={({ field }) => (
-                              <FormControl error={Boolean(errors.app_date)} fullWidth>
+                              <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                                 <InputLabel>Application Date</InputLabel>
                                 <OutlinedInput {...field} type="date" />
                                 {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -515,7 +519,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                     control={control}
                     name="app_date"
                     render={({ field }) => (
-                      <FormControl error={Boolean(errors.app_date)} fullWidth>
+                      <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                         <InputLabel>Application Date</InputLabel>
                         <OutlinedInput {...field} type="date" />
                         {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -543,6 +547,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
               guardian={guardian}
               onOpenHistory={handleOpenHistory}
               flightOptions={flightOptions}
+              disabled={isFormDisabled}
             />
 
             {/* Contact Information Group */}
@@ -553,12 +558,14 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
               veteranPairingsRef={veteranPairingsRef}
               onManagePairing={() => setPairingDialogOpen(true)}
               watch={watch}
+              disabled={isFormDisabled}
             />
 
             {/* Additional Details Group */}
             <AdditionalDetailsSection
               control={control}
               errors={errors}
+              disabled={isFormDisabled}
             />
           </Stack>
         </Grid>
@@ -622,18 +629,25 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            variant="contained"
-            disabled={saving}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 'medium',
-              boxShadow: (theme) => theme.shadows[4]
-            }}
+          <Tooltip 
+            title={isFormDisabled ? "Cannot edit records with 'Flown' status" : ""}
+            placement="top"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+            <span>
+              <Button 
+                type="submit" 
+                variant="contained"
+                disabled={saving || isFormDisabled}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 'medium',
+                  boxShadow: (theme) => theme.shadows[4]
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
       </Box>
       <HistoryDialog

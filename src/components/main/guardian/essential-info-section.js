@@ -20,7 +20,7 @@ import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { PersonalInformationCard } from '@/components/main/shared/personal-information-card';
 
-export function EssentialInfoSection({ control, errors, guardian, onOpenHistory, flightOptions }) {
+export function EssentialInfoSection({ control, errors, guardian, onOpenHistory, flightOptions, disabled = false }) {
   return (
     <Stack spacing={3}>
       <Typography 
@@ -39,6 +39,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
         control={control} 
         errors={errors}
         nicknameGridProps={{ xs: 12, md: 6 }}
+        disabled={disabled}
       />
 
       {/* Medical Information Card */}
@@ -54,7 +55,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="occupation"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.occupation)} fullWidth>
+                  <FormControl error={Boolean(errors.occupation)} fullWidth disabled={disabled}>
                     <InputLabel>Occupation</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.occupation ? <FormHelperText>{errors.occupation.message}</FormHelperText> : null}
@@ -67,7 +68,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="notes.service"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.notes?.service)} fullWidth>
+                  <FormControl error={Boolean(errors.notes?.service)} fullWidth disabled={disabled}>
                     <InputLabel>Are you a veteran?</InputLabel>
                     <Select {...field}>
                       <Option value="N">No</Option>
@@ -83,7 +84,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="medical.level"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.medical?.level)} fullWidth>
+                  <FormControl error={Boolean(errors.medical?.level)} fullWidth disabled={disabled}>
                     <InputLabel>Medical Level</InputLabel>
                     <Select {...field}>
                       <Option value="">None</Option>
@@ -102,7 +103,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="medical.food_restriction"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.medical?.food_restriction)} fullWidth>
+                  <FormControl error={Boolean(errors.medical?.food_restriction)} fullWidth disabled={disabled}>
                     <InputLabel>Food Restrictions</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -122,7 +123,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="notes.other"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.notes?.other)} fullWidth>
+                  <FormControl error={Boolean(errors.notes?.other)} fullWidth disabled={disabled}>
                     <InputLabel>Service Details</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.notes?.other ? <FormHelperText>{errors.notes.other.message}</FormHelperText> : null}
@@ -162,7 +163,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="medical.limitations"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.medical?.limitations)} fullWidth>
+                  <FormControl error={Boolean(errors.medical?.limitations)} fullWidth disabled={disabled}>
                     <InputLabel>Medical Limitations</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.medical?.limitations ? <FormHelperText>{errors.medical.limitations.message}</FormHelperText> : null}
@@ -175,7 +176,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="medical.experience"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.medical?.experience)} fullWidth>
+                  <FormControl error={Boolean(errors.medical?.experience)} fullWidth disabled={disabled}>
                     <InputLabel>Medical Experience</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.medical?.experience ? <FormHelperText>{errors.medical.experience.message}</FormHelperText> : null}
@@ -242,7 +243,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="call.assigned_to"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth>
+                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth disabled={disabled}>
                     <InputLabel>Call Assigned To</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.call?.assigned_to ? <FormHelperText>{errors.call.assigned_to.message}</FormHelperText> : null}
@@ -255,7 +256,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="call.notes"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.notes)} fullWidth>
+                  <FormControl error={Boolean(errors.call?.notes)} fullWidth disabled={disabled}>
                     <InputLabel>Call Notes</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.call?.notes ? <FormHelperText>{errors.call.notes.message}</FormHelperText> : null}
@@ -268,7 +269,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.confirmed_date"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.confirmed_date)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.confirmed_date)} fullWidth disabled={disabled}>
                     <InputLabel>Confirmed Date</InputLabel>
                     <OutlinedInput {...field} type="date" />
                     {errors.flight?.confirmed_date ? <FormHelperText>{errors.flight.confirmed_date.message}</FormHelperText> : null}
@@ -281,7 +282,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.confirmed_by"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.confirmed_by)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.confirmed_by)} fullWidth disabled={disabled}>
                     <InputLabel>Confirmed By</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.flight?.confirmed_by ? <FormHelperText>{errors.flight.confirmed_by.message}</FormHelperText> : null}
@@ -333,7 +334,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.status"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.status)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.status)} fullWidth disabled={disabled}>
                     <InputLabel required>Status</InputLabel>
                     <Select {...field}>
                       <Option value="Active">Active</Option>
@@ -355,7 +356,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.id"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.id)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.id)} fullWidth disabled={disabled}>
                     <InputLabel>Assigned Flight</InputLabel>
                     <Select {...field} value={field.value || ''}>
                       {flightOptions.map((option) => (
@@ -379,7 +380,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.bus"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.bus)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.bus)} fullWidth disabled={disabled}>
                     <InputLabel>Bus Assignment</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -404,7 +405,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.seat"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.seat)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.seat)} fullWidth disabled={disabled}>
                     <InputLabel>Seat Assignment</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.flight?.seat ? <FormHelperText>{errors.flight.seat.message}</FormHelperText> : null}
@@ -453,7 +454,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.training"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.training)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.training)} fullWidth disabled={disabled}>
                     <InputLabel>Training</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -472,7 +473,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.booksOrdered"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.booksOrdered)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.booksOrdered)} fullWidth disabled={disabled}>
                     <InputLabel>Books Ordered</InputLabel>
                     <OutlinedInput {...field} type="number" inputProps={{ min: 0 }} />
                     {errors.flight?.booksOrdered ? <FormHelperText>{errors.flight.booksOrdered.message}</FormHelperText> : null}
@@ -485,7 +486,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.training_notes"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.training_notes)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.training_notes)} fullWidth disabled={disabled}>
                     <InputLabel>Training Notes</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.flight?.training_notes ? <FormHelperText>{errors.flight.training_notes.message}</FormHelperText> : null}
@@ -498,7 +499,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.status_note"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.status_note)} fullWidth>
+                  <FormControl error={Boolean(errors.flight?.status_note)} fullWidth disabled={disabled}>
                     <InputLabel>Status Note</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.flight?.status_note ? <FormHelperText>{errors.flight.status_note.message}</FormHelperText> : null}

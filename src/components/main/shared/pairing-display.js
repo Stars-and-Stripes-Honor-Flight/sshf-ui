@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -43,7 +42,21 @@ export function PairingDisplay({
       : paths.main.veterans.details(id);
   };
   
-  const handlePairingClick = (id) => {
+  const handlePairingClick = (id, event) => {
+    // Prevent default link behavior
+    event.preventDefault();
+    
+    // Check for modifier keys or middle-click
+    const isModifierClick = event.ctrlKey || event.metaKey;
+    const isMiddleClick = event.button === 1;
+    
+    // For middle-click or modifier+click, open in new tab
+    if (isMiddleClick || isModifierClick) {
+      window.open(getDetailsPath(id), '_blank');
+      return;
+    }
+    
+    // For regular left-click, use router
     router.push(getDetailsPath(id));
   };
   
@@ -108,28 +121,36 @@ export function PairingDisplay({
       </Stack>
       <Stack spacing={1}>
         {normalizedPairings.map((pairing, index) => (
-          <Card
+          <a
             key={pairing.id || index}
-            variant="outlined"
-            onClick={() => handlePairingClick(pairing.id)}
-            sx={{
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              '&:hover': {
-                boxShadow: 2,
-                borderColor: 'primary.main'
-              }
+            href={getDetailsPath(pairing.id)}
+            onClick={(event) => handlePairingClick(pairing.id, event)}
+            style={{
+              textDecoration: 'none',
+              display: 'block'
             }}
           >
-            <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
-              <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-                <Typography variant="body2" color="text.primary">
-                  {pairing.name}
-                </Typography>
-                <Eye size={16} color="var(--mui-palette-primary-main)" />
-              </Stack>
-            </CardContent>
-          </Card>
+            <Card
+              variant="outlined"
+              sx={{
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: 2,
+                  borderColor: 'primary.main'
+                }
+              }}
+            >
+              <CardContent sx={{ py: 1, px: 2, '&:last-child': { pb: 1 } }}>
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                  <Typography variant="body2" color="text.primary">
+                    {pairing.name}
+                  </Typography>
+                  <Eye size={16} color="var(--mui-palette-primary-main)" />
+                </Stack>
+              </CardContent>
+            </Card>
+          </a>
         ))}
       </Stack>
     </Box>

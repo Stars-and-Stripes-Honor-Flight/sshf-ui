@@ -17,7 +17,7 @@ import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { FormTextField } from '@/components/main/shared/form-text-field';
 
-export function AdditionalDetailsSection({ control, errors }) {
+export function AdditionalDetailsSection({ control, errors, disabled = false }) {
   return (
     <Stack spacing={3}>
       <Typography 
@@ -45,7 +45,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="shirt.size"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.shirt?.size)} fullWidth>
+                  <FormControl error={Boolean(errors.shirt?.size)} fullWidth disabled={disabled}>
                     <InputLabel>Shirt Size</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -68,7 +68,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.jacket_size"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.apparel?.jacket_size)} fullWidth>
+                  <FormControl error={Boolean(errors.apparel?.jacket_size)} fullWidth disabled={disabled}>
                     <InputLabel>Jacket Size</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -92,7 +92,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.delivery"
                 render={({ field }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth disabled={disabled}>
                     <InputLabel>Delivery Method</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -109,7 +109,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.item"
                 render={({ field }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth disabled={disabled}>
                     <InputLabel>Apparel Items</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -126,7 +126,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.shirt_size"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.apparel?.shirt_size)} fullWidth>
+                  <FormControl error={Boolean(errors.apparel?.shirt_size)} fullWidth disabled={disabled}>
                     <InputLabel>Apparel Shirt Size</InputLabel>
                     <Select {...field}>
                       <Option value="None">None</Option>
@@ -159,7 +159,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.date"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.apparel?.date)} fullWidth>
+                  <FormControl error={Boolean(errors.apparel?.date)} fullWidth disabled={disabled}>
                     <InputLabel>Date Sent</InputLabel>
                     <OutlinedInput {...field} type="date" />
                     {errors.apparel?.date ? <FormHelperText>{errors.apparel.date.message}</FormHelperText> : null}
@@ -172,7 +172,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.by"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.apparel?.by)} fullWidth>
+                  <FormControl error={Boolean(errors.apparel?.by)} fullWidth disabled={disabled}>
                     <InputLabel>Sent By</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.apparel?.by ? <FormHelperText>{errors.apparel.by.message}</FormHelperText> : null}
@@ -185,7 +185,7 @@ export function AdditionalDetailsSection({ control, errors }) {
                 control={control}
                 name="apparel.notes"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.apparel?.notes)} fullWidth>
+                  <FormControl error={Boolean(errors.apparel?.notes)} fullWidth disabled={disabled}>
                     <InputLabel>Apparel Notes</InputLabel>
                     <OutlinedInput {...field} multiline rows={3} />
                     {errors.apparel?.notes ? <FormHelperText>{errors.apparel.notes.message}</FormHelperText> : null}
@@ -210,6 +210,7 @@ export function AdditionalDetailsSection({ control, errors }) {
               name="metadata.created_at"
               label="Created At"
               error={errors.metadata?.created_at}
+              disabled={true}
               InputProps={{ readOnly: true }}
               gridProps={{ xs: 12, md: 6 }}
             />
@@ -218,6 +219,7 @@ export function AdditionalDetailsSection({ control, errors }) {
               name="metadata.created_by"
               label="Created By"
               error={errors.metadata?.created_by}
+              disabled={true}
               InputProps={{ readOnly: true }}
               gridProps={{ xs: 12, md: 6 }}
             />
@@ -226,6 +228,7 @@ export function AdditionalDetailsSection({ control, errors }) {
               name="metadata.updated_at"
               label="Updated At"
               error={errors.metadata?.updated_at}
+              disabled={true}
               InputProps={{ readOnly: true }}
               gridProps={{ xs: 12, md: 6 }}
             />
@@ -234,6 +237,7 @@ export function AdditionalDetailsSection({ control, errors }) {
               name="metadata.updated_by"
               label="Updated By"
               error={errors.metadata?.updated_by}
+              disabled={true}
               InputProps={{ readOnly: true }}
               gridProps={{ xs: 12, md: 6 }}
             />

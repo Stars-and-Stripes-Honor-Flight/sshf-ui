@@ -13,7 +13,8 @@ import { NameFields } from './name-fields';
 export function PersonalInformationCard({ 
   control, 
   errors,
-  nicknameGridProps // Optional: pass nicknameGridProps for guardian form
+  nicknameGridProps, // Optional: pass nicknameGridProps for guardian form
+  disabled = false
 }) {
   return (
     <Card
@@ -33,7 +34,8 @@ export function PersonalInformationCard({
         <Grid container spacing={3}>
           <NameFields 
             control={control} 
-            errors={errors} 
+            errors={errors}
+            disabled={disabled}
             {...(nicknameGridProps && { nicknameGridProps })}
           />
           <FormTextField
@@ -43,6 +45,7 @@ export function PersonalInformationCard({
             error={errors.birth_date}
             required
             type="date"
+            disabled={disabled}
             gridProps={{ xs: 12, md: 6 }}
           />
           <FormSelectField
@@ -51,6 +54,7 @@ export function PersonalInformationCard({
             label="Gender"
             error={errors.gender}
             required
+            disabled={disabled}
             options={[
               { value: 'M', label: 'Male' },
               { value: 'F', label: 'Female' }

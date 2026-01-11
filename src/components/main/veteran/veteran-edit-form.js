@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import Tooltip from '@mui/material/Tooltip';
 import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
@@ -338,6 +339,9 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   const watchVetType = watch('vet_type');
   const watchStatus = watch('flight.status');
   const watchMedicalLevel = watch('medical.level');
+  
+  // Determine if form should be disabled (Flown or Deceased status)
+  const isFormDisabled = watchStatus === 'Flown' || watchStatus === 'Deceased';
 
   // Scroll to section handler
   const handleScrollToSection = React.useCallback((sectionId) => {
@@ -596,7 +600,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                             control={control}
                             name="app_date"
                             render={({ field }) => (
-                              <FormControl error={Boolean(errors.app_date)} fullWidth>
+                              <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                                 <InputLabel>Application Date</InputLabel>
                                 <OutlinedInput {...field} type="date" />
                                 {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -614,7 +618,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                     control={control}
                     name="app_date"
                     render={({ field }) => (
-                      <FormControl error={Boolean(errors.app_date)} fullWidth>
+                      <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                         <InputLabel>Application Date</InputLabel>
                         <OutlinedInput {...field} type="date" />
                         {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -642,6 +646,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
               veteran={veteran}
               onOpenHistory={handleOpenHistory}
               flightOptions={flightOptions}
+              disabled={isFormDisabled}
             />
 
             {/* Contact Information Group */}
@@ -653,12 +658,14 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
               guardianPairingRef={guardianPairingRef}
               onManagePairing={undefined}
               watch={watch}
+              disabled={isFormDisabled}
             />
 
             {/* Additional Details Group */}
             <AdditionalDetailsSection
               control={control}
               errors={errors}
+              disabled={isFormDisabled}
             />
           </Stack>
         </Grid>
@@ -722,18 +729,25 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            variant="contained"
-            disabled={saving}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 'medium',
-              boxShadow: (theme) => theme.shadows[4]
-            }}
+          <Tooltip 
+            title={isFormDisabled ? "Cannot edit records with 'Flown' or 'Deceased' status" : ""}
+            placement="top"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+            <span>
+              <Button 
+                type="submit" 
+                variant="contained"
+                disabled={saving || isFormDisabled}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 'medium',
+                  boxShadow: (theme) => theme.shadows[4]
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
       </Box>
       <HistoryDialog 
