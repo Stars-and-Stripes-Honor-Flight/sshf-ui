@@ -12,6 +12,7 @@ import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/s
 import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 import { LinkBreak } from '@phosphor-icons/react/dist/ssr/LinkBreak';
 import { formatFlightNameForDisplay } from '@/lib/flights';
+import { paths } from '@/paths';
 
 // Status color mapping to match edit screens
 const getStatusColor = (status) => {
@@ -78,16 +79,24 @@ export const searchColumns = [
         width: '200px',
         formatter: (row) => 
         {
+            const detailUrl = row.type === 'Veteran' 
+                ? paths.main.veterans.details(row.id)
+                : paths.main.guardians.details(row.id);
+            
             return (
-                <Typography 
-                    variant='subtitle1' 
-                    sx={{ 
-                        color: 'primary.main',
-                        fontWeight: 'medium'
+                <a 
+                    href={detailUrl}
+                    style={{
+                        color: 'var(--mui-palette-primary-main)',
+                        fontWeight: '500',
+                        textDecoration: 'none',
+                        cursor: 'pointer'
                     }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                 >
                     {row.name}
-                </Typography>
+                </a>
             );
         }
     },

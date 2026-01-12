@@ -15,7 +15,8 @@ import { FormSectionHeader } from './form-section-header';
 export function AddressInformationCard({ 
   control, 
   errors, 
-  emailGridProps = { xs: 12, md: 4 } // Default to veteran style, can override for guardian
+  emailGridProps = { xs: 12, md: 4 }, // Default to veteran style, can override for guardian
+  disabled = false
 }) {
   return (
     <Card id="address-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
@@ -30,7 +31,7 @@ export function AddressInformationCard({
               control={control}
               name="address.street"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.street)} fullWidth>
+                <FormControl error={Boolean(errors.address?.street)} fullWidth disabled={disabled}>
                   <InputLabel required>Street Address</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.street && <FormHelperText>{errors.address.street.message}</FormHelperText>}
@@ -43,7 +44,7 @@ export function AddressInformationCard({
               control={control}
               name="address.city"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.city)} fullWidth>
+                <FormControl error={Boolean(errors.address?.city)} fullWidth disabled={disabled}>
                   <InputLabel required>City</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.city && <FormHelperText>{errors.address.city.message}</FormHelperText>}
@@ -56,7 +57,7 @@ export function AddressInformationCard({
               control={control}
               name="address.county"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.county)} fullWidth>
+                <FormControl error={Boolean(errors.address?.county)} fullWidth disabled={disabled}>
                   <InputLabel required>County</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.county && <FormHelperText>{errors.address.county.message}</FormHelperText>}
@@ -69,7 +70,7 @@ export function AddressInformationCard({
               control={control}
               name="address.state"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.state)} fullWidth>
+                <FormControl error={Boolean(errors.address?.state)} fullWidth disabled={disabled}>
                   <InputLabel required>State</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.state && <FormHelperText>{errors.address.state.message}</FormHelperText>}
@@ -82,7 +83,7 @@ export function AddressInformationCard({
               control={control}
               name="address.zip"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.zip)} fullWidth>
+                <FormControl error={Boolean(errors.address?.zip)} fullWidth disabled={disabled}>
                   <InputLabel required>ZIP Code</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.zip && <FormHelperText>{errors.address.zip.message}</FormHelperText>}
@@ -95,7 +96,7 @@ export function AddressInformationCard({
               control={control}
               name="address.phone_day"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.phone_day)} fullWidth>
+                <FormControl error={Boolean(errors.address?.phone_day)} fullWidth disabled={disabled}>
                   <InputLabel required>Day Phone</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.phone_day && <FormHelperText>{errors.address.phone_day.message}</FormHelperText>}
@@ -108,7 +109,7 @@ export function AddressInformationCard({
               control={control}
               name="address.phone_mbl"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.phone_mbl)} fullWidth>
+                <FormControl error={Boolean(errors.address?.phone_mbl)} fullWidth disabled={disabled}>
                   <InputLabel>Mobile Phone</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.phone_mbl && <FormHelperText>{errors.address.phone_mbl.message}</FormHelperText>}
@@ -121,7 +122,7 @@ export function AddressInformationCard({
               control={control}
               name="address.email"
               render={({ field }) => (
-                <FormControl error={Boolean(errors.address?.email)} fullWidth>
+                <FormControl error={Boolean(errors.address?.email)} fullWidth disabled={disabled}>
                   <InputLabel>Email</InputLabel>
                   <OutlinedInput {...field} />
                   {errors.address?.email && <FormHelperText>{errors.address.email.message}</FormHelperText>}

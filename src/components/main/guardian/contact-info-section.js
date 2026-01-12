@@ -22,7 +22,8 @@ export function ContactInfoSection({
   guardian, 
   veteranPairingsRef, 
   onManagePairing,
-  watch
+  watch,
+  disabled = false
 }) {
   // Create entity object with form state for pairings
   const entityWithFormState = React.useMemo(() => {
@@ -55,6 +56,7 @@ export function ContactInfoSection({
         control={control} 
         errors={errors}
         emailGridProps={{ xs: 12 }}
+        disabled={disabled}
       />
 
       {/* Emergency Contact Card */}
@@ -70,7 +72,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.name"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.name)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.name)} fullWidth disabled={disabled}>
                     <InputLabel>Emergency Contact Name</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.name && <FormHelperText>{errors.emerg_contact.name.message}</FormHelperText>}
@@ -83,7 +85,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.relation"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.relation && <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>}
@@ -96,7 +98,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth disabled={disabled}>
                     <InputLabel>Phone</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.phone && <FormHelperText>{errors.emerg_contact.address.phone.message}</FormHelperText>}
@@ -109,7 +111,7 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.email"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth>
+                  <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} />
                     {errors.emerg_contact?.address?.email && <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>}
@@ -132,7 +134,7 @@ export function ContactInfoSection({
         pairingType="veteran"
         preferenceNotesFieldName="veteran.pref_notes"
         preferenceNotesPlaceholder="Veteran Preference Notes"
-        onManagePairing={onManagePairing}
+        onManagePairing={disabled ? undefined : onManagePairing}
         showHiddenFields={false}
         entity={entityWithFormState}
       />

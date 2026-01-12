@@ -149,6 +149,29 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
+  // Poll for flights being loaded into localStorage
+  React.useEffect(() => {
+    // Check for flights periodically since they may still be loading
+    const checkFlights = () => {
+      const cachedFlights = getFlights();
+      if (cachedFlights.length > 0) {
+        setFlights(cachedFlights);
+      }
+    };
+    
+    // Check immediately
+    checkFlights();
+    
+    // Then check every 200ms for up to 5 seconds to catch when flights are loaded
+    const timer = setInterval(checkFlights, 200);
+    const timeout = setTimeout(() => clearInterval(timer), 5000);
+    
+    return () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
+    };
+  }, []);
+
   // Sync quick search input when lastName is cleared from URL (e.g., via Clear filters button)
   // This ensures the input field reflects the URL state when filters are cleared
   React.useEffect(() => {
@@ -215,7 +238,7 @@ export default function Page() {
     if (searchFilters.length > 0) {
       setReadyToFetch(true);
     }
-  }, [searchFilters])
+  }, [searchFilters.length])
 
   return (
     <React.Suspense>

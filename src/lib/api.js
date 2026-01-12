@@ -1,10 +1,27 @@
 // API client for interacting with the backend API
 import { toast } from '@/components/core/toaster';
 import { tokenManager } from '@/lib/auth/domain/tokenManager';
+import { paths } from '@/paths';
 
 class ApiClient {
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sshf-api-330507742215.us-central1.run.app';
+  }
+
+  // Handle unauthorized errors by clearing tokens and redirecting to login
+  handleUnauthorized() {
+    try {
+      tokenManager.clearTokens();
+      // Clear user and flights data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-data');
+        localStorage.removeItem('flights-list');
+        // Redirect to login page
+        window.location.href = paths.auth.domain.signIn;
+      }
+    } catch (error) {
+      console.error('Error handling unauthorized:', error);
+    }
   }
 
   // Get the authentication token using token manager
@@ -49,25 +66,38 @@ class ApiClient {
       
       if (!response.ok) {
         // If unauthorized and we have a refresh token, try to refresh and retry
-        if (response.status === 401 && tokenManager.getRefreshToken()) {
-          const newToken = await tokenManager.refreshToken();
+        if (response.status === 401) {
+          const hasRefreshToken = tokenManager.getRefreshToken();
           
-          // If token refresh successful, retry the request
-          if (newToken) {
-            config.headers['Authorization'] = `Bearer ${newToken}`;
-            const retryResponse = await fetch(url, config);
+          if (hasRefreshToken) {
+            const newToken = await tokenManager.refreshToken();
             
-            if (!retryResponse.ok) {
-              const errorData = await retryResponse.json().catch(() => ({}));
-              throw new Error(errorData.message || `API request failed with status ${retryResponse.status}`);
+            // If token refresh successful, retry the request
+            if (newToken) {
+              config.headers['Authorization'] = `Bearer ${newToken}`;
+              const retryResponse = await fetch(url, config);
+              
+              if (!retryResponse.ok) {
+                // Still failing after refresh - handle as unauthorized
+                this.handleUnauthorized();
+                const errorData = await retryResponse.json().catch(() => ({}));
+                const error = new Error(errorData.message || `API request failed with status ${retryResponse.status}`);
+                error.status = retryResponse.status;
+                throw error;
+              }
+              
+              return retryResponse;
             }
-            
-            return retryResponse;
           }
+          
+          // No refresh token or refresh failed - handle as unauthorized
+          this.handleUnauthorized();
         }
         
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `API request failed with status ${response.status}`);
+        const error = new Error(errorData.message || `API request failed with status ${response.status}`);
+        error.status = response.status;
+        throw error;
       }
 
       return response;

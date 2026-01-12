@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import Tooltip from '@mui/material/Tooltip';
 import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import Chip from '@mui/material/Chip';
@@ -79,6 +80,9 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
+  
+  // Local state to track current veteran data (including history) for display
+  const [currentVeteran, setCurrentVeteran] = React.useState(veteran);
   
   // History dialog state
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
@@ -152,12 +156,13 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   // Note: We keep a reference to baseHandleGoBack for use after successful save
   const handleGoBack = onNavigate || baseHandleGoBack;
 
-  // Update _rev when veteran prop changes
+  // Update _rev and currentVeteran when veteran prop changes
   React.useEffect(() => {
     if (veteran._rev) {
       setVeteranRev(veteran._rev);
     }
-  }, [veteran._rev]);
+    setCurrentVeteran(veteran);
+  }, [veteran]);
   
 
   // Default values based on API structure
@@ -318,6 +323,9 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
         const updatedVeteran = await api.updateVeteran(data._id, payload);
         toast.success('Veteran updated successfully');
         
+        // Update local veteran state with the response (includes updated history)
+        setCurrentVeteran(updatedVeteran);
+        
         // Reset form state to mark as clean - this clears the dirty bit
         reset(updatedVeteran);
         
@@ -338,6 +346,9 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   const watchVetType = watch('vet_type');
   const watchStatus = watch('flight.status');
   const watchMedicalLevel = watch('medical.level');
+  
+  // Determine if form should be disabled (Flown or Deceased status)
+  const isFormDisabled = watchStatus === 'Flown' || watchStatus === 'Deceased';
 
   // Scroll to section handler
   const handleScrollToSection = React.useCallback((sectionId) => {
@@ -347,12 +358,12 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
     }
   }, []);
 
-  const nickname = watch('name.nickname') || veteran.name?.nickname;
+  const nickname = watch('name.nickname') || currentVeteran.name?.nickname;
   const fullName = nickname 
     ? nickname 
-    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${veteran.name?.first || ''} ${veteran.name?.last || ''}`.trim();
+    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${currentVeteran.name?.first || ''} ${currentVeteran.name?.last || ''}`.trim();
   const displayName = nickname 
-    ? `${watch('name.first') || veteran.name?.first || ''} ${watch('name.last') || veteran.name?.last || ''}`.trim()
+    ? `${watch('name.first') || currentVeteran.name?.first || ''} ${watch('name.last') || currentVeteran.name?.last || ''}`.trim()
     : null;
   const additionalInfo = watchBranch ? `${watchBranch}${watchRank ? ` • ${watchRank}` : ''}` : null;
 
@@ -365,8 +376,8 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
         name={fullName}
         nickname={nickname}
         fullName={displayName}
-        status={watchStatus || veteran.flight?.status}
-        statusColor={getStatusColor(watchStatus || veteran.flight?.status)}
+        status={watchStatus || currentVeteran.flight?.status}
+        statusColor={getStatusColor(watchStatus || currentVeteran.flight?.status)}
         additionalInfo={additionalInfo}
         type="veteran"
       />
@@ -435,7 +446,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                     justifyContent="space-between"
                   >
                     <Stack spacing={0.5}>
-                      {watch('name.nickname') || veteran.name?.nickname ? (
+                      {watch('name.nickname') || currentVeteran.name?.nickname ? (
                         <>
                           <Typography 
                             variant="h4"
@@ -444,7 +455,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                               color: 'primary.main'
                             }}
                           >
-                            {watch('name.nickname') || veteran.name?.nickname}
+                            {watch('name.nickname') || currentVeteran.name?.nickname}
                           </Typography>
                           <Typography 
                             variant="body2"
@@ -453,7 +464,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                               fontStyle: 'italic'
                             }}
                           >
-                            {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
+                            {watch('name.first') || currentVeteran.name?.first} {watch('name.last') || currentVeteran.name?.last}
                           </Typography>
                         </>
                       ) : (
@@ -464,7 +475,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                             color: 'text.primary'
                           }}
                         >
-                          {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
+                          {watch('name.first') || currentVeteran.name?.first} {watch('name.last') || currentVeteran.name?.last}
                         </Typography>
                       )}
                     </Stack>
@@ -596,7 +607,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                             control={control}
                             name="app_date"
                             render={({ field }) => (
-                              <FormControl error={Boolean(errors.app_date)} fullWidth>
+                              <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                                 <InputLabel>Application Date</InputLabel>
                                 <OutlinedInput {...field} type="date" />
                                 {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -614,7 +625,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                     control={control}
                     name="app_date"
                     render={({ field }) => (
-                      <FormControl error={Boolean(errors.app_date)} fullWidth>
+                      <FormControl error={Boolean(errors.app_date)} fullWidth disabled={isFormDisabled}>
                         <InputLabel>Application Date</InputLabel>
                         <OutlinedInput {...field} type="date" />
                         {errors.app_date ? <FormHelperText>{errors.app_date.message}</FormHelperText> : null}
@@ -639,26 +650,29 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
             <EssentialInfoSection 
               control={control}
               errors={errors}
-              veteran={veteran}
+              veteran={currentVeteran}
               onOpenHistory={handleOpenHistory}
               flightOptions={flightOptions}
+              disabled={isFormDisabled}
             />
 
             {/* Contact Information Group */}
             <ContactInfoSection
               control={control}
               errors={errors}
-              veteran={veteran}
+              veteran={currentVeteran}
               onOpenHistory={handleOpenHistory}
               guardianPairingRef={guardianPairingRef}
               onManagePairing={undefined}
               watch={watch}
+              disabled={isFormDisabled}
             />
 
             {/* Additional Details Group */}
             <AdditionalDetailsSection
               control={control}
               errors={errors}
+              disabled={isFormDisabled}
             />
           </Stack>
         </Grid>
@@ -722,18 +736,25 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            variant="contained"
-            disabled={saving}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 'medium',
-              boxShadow: (theme) => theme.shadows[4]
-            }}
+          <Tooltip 
+            title={isFormDisabled ? "Cannot edit records with 'Flown' or 'Deceased' status" : ""}
+            placement="top"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+            <span>
+              <Button 
+                type="submit" 
+                variant="contained"
+                disabled={saving || isFormDisabled}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 'medium',
+                  boxShadow: (theme) => theme.shadows[4]
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
       </Box>
       <HistoryDialog 
@@ -808,7 +829,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                   whiteSpace: 'pre-wrap'
                 }}
               >
-                {watch('guardian.pref_notes') || veteran.guardian?.pref_notes || 'No preference notes entered.'}
+                {watch('guardian.pref_notes') || currentVeteran.guardian?.pref_notes || 'No preference notes entered.'}
               </Typography>
             </Box>
           </Stack>

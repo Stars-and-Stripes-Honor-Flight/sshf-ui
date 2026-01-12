@@ -18,6 +18,7 @@ export function FormSelectField({
   fullWidth = true,
   options = [],
   gridProps = {},
+  disabled = false,
   ...other 
 }) {
   return (
@@ -26,7 +27,7 @@ export function FormSelectField({
         control={control}
         name={name}
         render={({ field }) => (
-          <FormControl error={Boolean(error)} fullWidth={fullWidth}>
+          <FormControl error={Boolean(error)} fullWidth={fullWidth} disabled={disabled}>
             <InputLabel required={required}>{label}</InputLabel>
             <Select {...field} {...other}>
               {options.map((option) => (
