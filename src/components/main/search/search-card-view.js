@@ -16,28 +16,15 @@ import { Users } from '@phosphor-icons/react/dist/ssr/Users';
 
 import { paths } from '@/paths';
 import { dayjs } from '@/lib/dayjs';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 import { formatFlightNameForDisplay } from '@/lib/flights';
 
-// Store search URL when navigating to details page
+// Navigate to details page
 const handleCardClick = (isVeteran, detailUrl, veteranId) => {
   if (typeof window !== 'undefined') {
-    const searchUrl = window.location.pathname + window.location.search;
-    // Store search URL for back navigation
-    sessionStorage.setItem('searchUrl', searchUrl);
-    
     // If veteranId is present and clicking on a guardian, store it in session storage
-    // (instead of URL to avoid extra back button presses)
     if (!isVeteran && veteranId) {
       sessionStorage.setItem('pairingVeteranId', veteranId);
     }
-    
-    // Track navigation to detail page
-    pushNavigationEntry({
-      type: isVeteran ? 'veteran-details' : 'guardian-details',
-      url: detailUrl,
-      title: 'Back to Search',
-    });
   }
 };
 

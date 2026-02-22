@@ -17,7 +17,6 @@ import Typography from '@mui/material/Typography';
 import { Gear, Eye, Users } from '@phosphor-icons/react';
 import { paths } from '@/paths';
 import { FormSectionHeader } from './form-section-header';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 export function PairingInformationCard({
   control,
@@ -114,7 +113,6 @@ export function PairingInformationCard({
                         key={pairing.id || index}
                         variant="outlined"
                         onClick={() => {
-                          pushNavigationEntry(navDetails);
                           router.push(navDetails.url);
                         }}
                         sx={{

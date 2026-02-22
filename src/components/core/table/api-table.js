@@ -28,7 +28,6 @@ import { DataTable } from '@/components/core/data-table';
 import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
 import { paths } from '@/paths';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 import { formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
 
 import { api } from '@/lib/api';
@@ -501,28 +500,12 @@ export function ApiTable({
                         rows={rows}
                         hover={true}
                         onClick={(event, row) => {
-                            // Store search URL with filters for back navigation
-                            if (typeof window !== 'undefined') {
-                                const searchUrl = window.location.pathname + window.location.search;
-                                sessionStorage.setItem('searchUrl', searchUrl);
-                            }
-                            
                             // Navigate to detail page based on row type
                             if (row.type === 'Veteran') {
                                 const detailUrl = paths.main.veterans.details(row.id);
-                                pushNavigationEntry({
-                                    type: 'veteran-details',
-                                    url: detailUrl,
-                                    title: 'Back to Search',
-                                });
                                 router.push(detailUrl);
                             } else if (row.type === 'Guardian') {
                                 const detailUrl = paths.main.guardians.details(row.id);
-                                pushNavigationEntry({
-                                    type: 'guardian-details',
-                                    url: detailUrl,
-                                    title: 'Back to Search',
-                                });
                                 router.push(detailUrl);
                             }
                         }}

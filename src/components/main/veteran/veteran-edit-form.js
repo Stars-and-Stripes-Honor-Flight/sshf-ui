@@ -81,9 +81,6 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   const [saving, setSaving] = React.useState(false);
   const [veteranRev, setVeteranRev] = React.useState(veteran._rev || '');
   
-  // Local state to track current veteran data (including history) for display
-  const [currentVeteran, setCurrentVeteran] = React.useState(veteran);
-  
   // History dialog state
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
   const [historyDialogData, setHistoryDialogData] = React.useState({ title: '', history: [] });
@@ -156,13 +153,12 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   // Note: We keep a reference to baseHandleGoBack for use after successful save
   const handleGoBack = onNavigate || baseHandleGoBack;
 
-  // Update _rev and currentVeteran when veteran prop changes
+  // Update _rev when veteran prop changes
   React.useEffect(() => {
     if (veteran._rev) {
       setVeteranRev(veteran._rev);
     }
-    setCurrentVeteran(veteran);
-  }, [veteran]);
+  }, [veteran._rev]);
   
 
   // Default values based on API structure
@@ -323,9 +319,6 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
         const updatedVeteran = await api.updateVeteran(data._id, payload);
         toast.success('Veteran updated successfully');
         
-        // Update local veteran state with the response (includes updated history)
-        setCurrentVeteran(updatedVeteran);
-        
         // Reset form state to mark as clean - this clears the dirty bit
         reset(updatedVeteran);
         
@@ -358,12 +351,12 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
     }
   }, []);
 
-  const nickname = watch('name.nickname') || currentVeteran.name?.nickname;
+  const nickname = watch('name.nickname') || veteran.name?.nickname;
   const fullName = nickname 
     ? nickname 
-    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${currentVeteran.name?.first || ''} ${currentVeteran.name?.last || ''}`.trim();
+    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${veteran.name?.first || ''} ${veteran.name?.last || ''}`.trim();
   const displayName = nickname 
-    ? `${watch('name.first') || currentVeteran.name?.first || ''} ${watch('name.last') || currentVeteran.name?.last || ''}`.trim()
+    ? `${watch('name.first') || veteran.name?.first || ''} ${watch('name.last') || veteran.name?.last || ''}`.trim()
     : null;
   const additionalInfo = watchBranch ? `${watchBranch}${watchRank ? ` • ${watchRank}` : ''}` : null;
 
@@ -376,8 +369,8 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
         name={fullName}
         nickname={nickname}
         fullName={displayName}
-        status={watchStatus || currentVeteran.flight?.status}
-        statusColor={getStatusColor(watchStatus || currentVeteran.flight?.status)}
+        status={watchStatus || veteran.flight?.status}
+        statusColor={getStatusColor(watchStatus || veteran.flight?.status)}
         additionalInfo={additionalInfo}
         type="veteran"
       />
@@ -446,7 +439,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                     justifyContent="space-between"
                   >
                     <Stack spacing={0.5}>
-                      {watch('name.nickname') || currentVeteran.name?.nickname ? (
+                      {watch('name.nickname') || veteran.name?.nickname ? (
                         <>
                           <Typography 
                             variant="h4"
@@ -455,7 +448,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                               color: 'primary.main'
                             }}
                           >
-                            {watch('name.nickname') || currentVeteran.name?.nickname}
+                            {watch('name.nickname') || veteran.name?.nickname}
                           </Typography>
                           <Typography 
                             variant="body2"
@@ -464,7 +457,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                               fontStyle: 'italic'
                             }}
                           >
-                            {watch('name.first') || currentVeteran.name?.first} {watch('name.last') || currentVeteran.name?.last}
+                            {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
                           </Typography>
                         </>
                       ) : (
@@ -475,7 +468,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                             color: 'text.primary'
                           }}
                         >
-                          {watch('name.first') || currentVeteran.name?.first} {watch('name.last') || currentVeteran.name?.last}
+                          {watch('name.first') || veteran.name?.first} {watch('name.last') || veteran.name?.last}
                         </Typography>
                       )}
                     </Stack>
@@ -650,7 +643,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
             <EssentialInfoSection 
               control={control}
               errors={errors}
-              veteran={currentVeteran}
+              veteran={veteran}
               onOpenHistory={handleOpenHistory}
               flightOptions={flightOptions}
               disabled={isFormDisabled}
@@ -660,7 +653,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
             <ContactInfoSection
               control={control}
               errors={errors}
-              veteran={currentVeteran}
+              veteran={veteran}
               onOpenHistory={handleOpenHistory}
               guardianPairingRef={guardianPairingRef}
               onManagePairing={undefined}
@@ -829,7 +822,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
                   whiteSpace: 'pre-wrap'
                 }}
               >
-                {watch('guardian.pref_notes') || currentVeteran.guardian?.pref_notes || 'No preference notes entered.'}
+                {watch('guardian.pref_notes') || veteran.guardian?.pref_notes || 'No preference notes entered.'}
               </Typography>
             </Box>
           </Stack>
