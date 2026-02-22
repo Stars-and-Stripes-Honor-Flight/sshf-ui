@@ -11,7 +11,6 @@ import Typography from '@mui/material/Typography';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
 
 import { config } from '@/config';
-import { initializeCurrentPage } from '@/lib/navigation-stack';
 import { ApiTable } from '@/components/core/table/api-table';
 import { Option } from '@/components/core/option';
 
@@ -86,12 +85,6 @@ export default function Page() {
     // ApiTable will automatically read the filter value from the URL
     const newUrl = params.toString() ? `?${params.toString()}` : '/search';
     router.replace(newUrl, { scroll: false });
-    
-    // Update stored search URL for back navigation
-    if (typeof window !== 'undefined') {
-      const searchUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
-      sessionStorage.setItem('searchUrl', searchUrl);
-    }
   }, [debouncedSearch, isInitialized, router]);
 
   const updatesearchFilters = (newsearchFilter) => {
@@ -112,10 +105,10 @@ export default function Page() {
       // Update URL with the new status
       const params = new URLSearchParams(window.location.search);
       params.set('status', 'All');
-      const newUrl = params.toString() ? `?${params.toString()}` : '/search';
-      router.replace(newUrl, { scroll: false });
-      
-      setSearchFilters(updatedFilters);
+            const newUrl = params.toString() ? `?${params.toString()}` : '/search';
+            router.replace(newUrl, { scroll: false });
+            
+            setSearchFilters(updatedFilters);
     }
   }, [searchFilters.find(f => f.property === 'flight')?.value, searchFilters.length]);
 
@@ -138,13 +131,6 @@ export default function Page() {
     // Auto-focus the search input
     if (searchInputRef.current) {
       searchInputRef.current.focus();
-    }
-    
-    // Initialize search page in navigation stack and store search URL with filters
-    if (typeof window !== 'undefined') {
-      const searchUrl = window.location.pathname + window.location.search;
-      sessionStorage.setItem('searchUrl', searchUrl);
-      initializeCurrentPage('search', 'Search');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -172,32 +158,8 @@ export default function Page() {
     };
   }, []);
 
-  // Sync quick search input when lastName is cleared from URL (e.g., via Clear filters button)
-  // This ensures the input field reflects the URL state when filters are cleared
-  React.useEffect(() => {
-    if (!isInitialized) return; // Skip on initial mount
-    
-    const urlLastName = searchParams.get('lastName') || '';
-    const currentSearch = debouncedSearch || '';
-    
-    // Only update if the URL value differs from our current state
-    // This handles the case when Clear filters removes lastName from URL
-    if (urlLastName !== currentSearch) {
-      setQuickSearch(urlLastName);
-      setDebouncedSearch(urlLastName);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, isInitialized]); // debouncedSearch intentionally excluded to prevent loops - we check it inside the effect
-
-  // Update stored search URL whenever URL parameters change (for back navigation)
-  React.useEffect(() => {
-    if (!isInitialized) return; // Skip on initial mount
-    
-    if (typeof window !== 'undefined') {
-      const searchUrl = window.location.pathname + window.location.search;
-      sessionStorage.setItem('searchUrl', searchUrl);
-    }
-  }, [searchParams, isInitialized]);
+  // Note: Removed redundant searchUrl sessionStorage storage
+  // The navigation stack now handles URL preservation for back navigation
 
 
   // Update search filters with flight options when flights load

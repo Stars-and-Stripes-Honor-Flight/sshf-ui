@@ -2,24 +2,20 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Custom hook for handling unsaved changes confirmation before navigation
- * @param {Object} options - Configuration options
- * @param {boolean} options.isDirty - Whether the form has unsaved changes
- * @param {Function} options.onNavigate - Function to call when navigation should proceed
- * @param {string} options.entityType - Type of entity being edited (e.g., 'guardian', 'veteran')
- * @param {boolean} options.interceptRouter - Whether to intercept Next.js router navigation (default: false)
- * @returns {Object} Object containing dialog state and navigation handler
+ * Hook for handling unsaved changes on both app navigation and browser back
  */
 export function useUnsavedChanges({ isDirty, onNavigate, entityType = 'record', interceptRouter = false }) {
   const router = useRouter();
   const [unsavedChangesDialogOpen, setUnsavedChangesDialogOpen] = React.useState(false);
   const [pendingNavigation, setPendingNavigation] = React.useState(null);
-  const isNavigatingRef = React.useRef(false); // Flag to prevent popstate loop
-  const isBrowserBackRef = React.useRef(false); // Flag to track if navigation is from browser back
+  const [isFromBrowserBack, setIsFromBrowserBack] = React.useState(false);
+  const historyStateRef = React.useRef(null);
+  const isDiscardingRef = React.useRef(false); // Track if we're in the middle of discarding
 
-  // Wrapper to check for unsaved changes before navigating
+  // For app navigation (buttons/links in the UI)
   const handleNavigation = React.useCallback(() => {
     if (isDirty) {
+      setIsFromBrowserBack(false);
       setPendingNavigation(() => onNavigate);
       setUnsavedChangesDialogOpen(true);
     } else {
@@ -27,90 +23,80 @@ export function useUnsavedChanges({ isDirty, onNavigate, entityType = 'record', 
     }
   }, [isDirty, onNavigate]);
 
-  // Handle discarding changes and navigating
+  // User clicked "Discard Changes"
   const handleDiscardChanges = React.useCallback(() => {
     setUnsavedChangesDialogOpen(false);
-    isNavigatingRef.current = true; // Set flag to prevent popstate from triggering again
-    if (pendingNavigation) {
-      // If this was triggered by browser back button, we need to go back twice
-      // (once to undo our pushState, once to actually navigate)
-      if (isBrowserBackRef.current) {
-        // First, go back to undo our pushState
+    isDiscardingRef.current = true; // Mark that we're discarding
+    
+    if (isFromBrowserBack) {
+      // We pushed state to prevent back, now we need to go back twice:
+      // 1. First back undoes our pushState
+      // 2. Second back goes to the actual previous page
+      window.history.back();
+      setTimeout(() => {
         window.history.back();
-        // Then use the navigation handler to actually navigate
+        // After navigation completes, reset the flag
         setTimeout(() => {
-          onNavigate();
-          setPendingNavigation(null);
-          isBrowserBackRef.current = false;
-          // Reset flag after navigation
-          setTimeout(() => {
-            isNavigatingRef.current = false;
-          }, 200);
-        }, 50);
-      } else {
-        // For programmatic navigation, just call the pending function
-        setTimeout(() => {
-          pendingNavigation();
-          setPendingNavigation(null);
-          // Reset flag after a short delay to allow navigation to complete
-          setTimeout(() => {
-            isNavigatingRef.current = false;
-          }, 100);
-        }, 0);
+          isDiscardingRef.current = false;
+        }, 100);
+      }, 100);
+    } else {
+      // For app navigation, just call the pending navigation
+      if (pendingNavigation) {
+        pendingNavigation();
       }
+      // Reset flag after navigation
+      setTimeout(() => {
+        isDiscardingRef.current = false;
+      }, 100);
     }
-  }, [pendingNavigation, onNavigate]);
+    
+    setPendingNavigation(null);
+    setIsFromBrowserBack(false);
+  }, [isFromBrowserBack, pendingNavigation]);
 
-  // Handle closing dialog without navigating
+  // User closed dialog - stay on current page
   const handleCloseDialog = React.useCallback(() => {
     setUnsavedChangesDialogOpen(false);
     setPendingNavigation(null);
+    setIsFromBrowserBack(false);
   }, []);
 
-  // Handle browser back button via popstate
+  // Intercept browser back button
   React.useEffect(() => {
     if (!interceptRouter || typeof window === 'undefined') return;
 
-    const handlePopState = (event) => {
-      // Don't show dialog if we're already navigating (user clicked discard)
-      if (isNavigatingRef.current) {
-        return;
-      }
-      
+    const handlePopState = () => {
       if (isDirty) {
-        // Mark that this is a browser back navigation
-        isBrowserBackRef.current = true;
-        // Push current state back to prevent navigation
+        // User clicked browser back with unsaved changes
+        // Push state to prevent the back from happening
+        historyStateRef.current = history.length;
         window.history.pushState(null, '', window.location.href);
-        // Set pending navigation (will use router.back() in handleDiscardChanges)
-        setPendingNavigation(() => () => {
-          // This won't be called directly, handleDiscardChanges handles it
-        });
+        
+        // Show dialog
+        setIsFromBrowserBack(true);
         setUnsavedChangesDialogOpen(true);
       }
     };
 
-    // Push initial state to enable popstate detection
-    window.history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', handlePopState);
-
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, [isDirty, interceptRouter]);
 
-  // Handle browser back/refresh - warn on page unload
+  // Warn on page unload (refresh, close tab) - but NOT if we're discarding
   React.useEffect(() => {
     const handleBeforeUnload = (event) => {
-      if (isDirty) {
+      // Don't show warning if we're in the middle of discarding changes
+      if (isDirty && !isDiscardingRef.current) {
         event.preventDefault();
-        event.returnValue = ''; // Chrome requires returnValue to be set
-        return ''; // For older browsers
+        event.returnValue = '';
+        return '';
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };

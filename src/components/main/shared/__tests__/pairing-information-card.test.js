@@ -5,11 +5,9 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import '@testing-library/jest-dom';
 import { PairingInformationCard } from '../pairing-information-card';
-import { pushNavigationEntry } from '@/lib/navigation-stack';
 
 // Mock dependencies
 jest.mock('next/navigation');
-jest.mock('@/lib/navigation-stack');
 jest.mock('../form-section-header', () => ({
   FormSectionHeader: ({ title, icon: Icon }) => (
     <div data-testid="form-section-header">
@@ -138,37 +136,6 @@ describe('PairingInformationCard', () => {
     expect(screen.getByText('Currently Paired Veterans')).toBeInTheDocument();
     expect(screen.getByText('Veteran One')).toBeInTheDocument();
     expect(screen.getByText('Veteran Two')).toBeInTheDocument();
-  });
-
-  test('navigates to guardian details when guardian pairing is clicked', async () => {
-    const user = userEvent.setup();
-    const entity = {
-      guardian: {
-        id: 'guardian-123',
-        name: 'John Guardian'
-      }
-    };
-
-    render(
-      <TestWrapper>
-        <PairingInformationCard
-          errors={{}}
-          cardId="test-pairing-card"
-          title="Guardian Information"
-          pairingType="guardian"
-          preferenceNotesFieldName="guardian.pref_notes"
-          preferenceNotesPlaceholder="Guardian preference notes"
-          onManagePairing={jest.fn()}
-          entity={entity}
-        />
-      </TestWrapper>
-    );
-
-    const pairingCard = screen.getByText('John Guardian').closest('div[class*="MuiCard"]');
-    await user.click(pairingCard);
-
-    expect(pushNavigationEntry).toHaveBeenCalled();
-    expect(mockPush).toHaveBeenCalled();
   });
 
   test('displays preference notes field', () => {

@@ -64,9 +64,6 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   const [saving, setSaving] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
   
-  // Local state to track current guardian data (including history) for display
-  const [currentGuardian, setCurrentGuardian] = React.useState(guardian);
-  
   // History dialog state
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
   const [historyDialogData, setHistoryDialogData] = React.useState({ title: '', history: [] });
@@ -134,13 +131,12 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   // Note: We keep a reference to baseHandleGoBack for use after successful save
   const handleGoBack = onNavigate || baseHandleGoBack;
 
-  // Update _rev and currentGuardian when guardian prop changes
+  // Update _rev when guardian prop changes
   React.useEffect(() => {
     if (guardian._rev) {
       setGuardianRev(guardian._rev);
     }
-    setCurrentGuardian(guardian);
-  }, [guardian]);
+  }, [guardian._rev]);
 
 
   // Default values based on API structure
@@ -306,9 +302,6 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         const updatedGuardian = await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
         
-        // Update local guardian state with the response (includes updated history)
-        setCurrentGuardian(updatedGuardian);
-        
         // Reset form state to mark as clean - this clears the dirty bit
         reset(updatedGuardian);
         
@@ -338,12 +331,12 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     }
   }, []);
 
-  const nickname = watch('name.nickname') || currentGuardian.name?.nickname;
+  const nickname = watch('name.nickname') || guardian.name?.nickname;
   const fullName = nickname 
     ? nickname 
-    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${currentGuardian.name?.first || ''} ${currentGuardian.name?.last || ''}`.trim();
+    : `${watch('name.first') || ''} ${watch('name.last') || ''}`.trim() || `${guardian.name?.first || ''} ${guardian.name?.last || ''}`.trim();
   const displayName = nickname 
-    ? `${watch('name.first') || currentGuardian.name?.first || ''} ${watch('name.last') || currentGuardian.name?.last || ''}`.trim()
+    ? `${watch('name.first') || guardian.name?.first || ''} ${watch('name.last') || guardian.name?.last || ''}`.trim()
     : null;
   const additionalInfo = null;
 
@@ -356,8 +349,8 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         name={fullName}
         nickname={nickname}
         fullName={displayName}
-        status={watchStatus || currentGuardian.flight?.status}
-        statusColor={getStatusColor(watchStatus || currentGuardian.flight?.status)}
+        status={watchStatus || guardian.flight?.status}
+        statusColor={getStatusColor(watchStatus || guardian.flight?.status)}
         additionalInfo={additionalInfo}
         type="guardian"
       />
@@ -405,7 +398,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                     justifyContent="space-between"
                   >
                     <Stack spacing={0.5}>
-                      {watch('name.nickname') || currentGuardian.name?.nickname ? (
+                      {watch('name.nickname') || guardian.name?.nickname ? (
                         <>
                           <Typography 
                             variant="h4"
@@ -414,7 +407,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                               color: 'primary.main'
                             }}
                           >
-                            {watch('name.nickname') || currentGuardian.name?.nickname}
+                            {watch('name.nickname') || guardian.name?.nickname}
                           </Typography>
                           <Typography 
                             variant="body2"
@@ -423,7 +416,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                               fontStyle: 'italic'
                             }}
                           >
-                            {watch('name.first') || currentGuardian.name?.first} {watch('name.last') || currentGuardian.name?.last}
+                            {watch('name.first') || guardian.name?.first} {watch('name.last') || guardian.name?.last}
                           </Typography>
                         </>
                       ) : (
@@ -434,7 +427,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                             color: 'text.primary'
                           }}
                         >
-                          {watch('name.first') || currentGuardian.name?.first} {watch('name.last') || currentGuardian.name?.last}
+                          {watch('name.first') || guardian.name?.first} {watch('name.last') || guardian.name?.last}
                         </Typography>
                       )}
                     </Stack>
@@ -498,7 +491,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
                         <Divider />
                         {/* Veteran Pairings Display - Desktop */}
                         <PairingDisplay
-                          pairings={watch('veteran.pairings') || currentGuardian.veteran?.pairings || []}
+                          pairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
                           type="veteran"
                           onManageClick={isFormDisabled ? undefined : () => setPairingDialogOpen(true)}
                         />
@@ -551,7 +544,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
             <EssentialInfoSection
               control={control}
               errors={errors}
-              guardian={currentGuardian}
+              guardian={guardian}
               onOpenHistory={handleOpenHistory}
               flightOptions={flightOptions}
               disabled={isFormDisabled}
@@ -561,7 +554,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
             <ContactInfoSection
               control={control}
               errors={errors}
-              guardian={currentGuardian}
+              guardian={guardian}
               veteranPairingsRef={veteranPairingsRef}
               onManagePairing={() => setPairingDialogOpen(true)}
               watch={watch}
@@ -667,8 +660,8 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         open={pairingDialogOpen}
         onClose={() => setPairingDialogOpen(false)}
         onApply={handleApplyPairings}
-        currentPairings={watch('veteran.pairings') || currentGuardian.veteran?.pairings || []}
-        preferenceNotes={watch('veteran.pref_notes') || currentGuardian.veteran?.pref_notes || ''}
+        currentPairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
+        preferenceNotes={watch('veteran.pref_notes') || guardian.veteran?.pref_notes || ''}
       />
     </form>
   );
