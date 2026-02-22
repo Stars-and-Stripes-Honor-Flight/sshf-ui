@@ -19,7 +19,7 @@ export function AddressInformationCard({
   disabled = false
 }) {
   return (
-    <Card id="address-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+    <Card id="address-section" elevation={2}>
       <CardContent>
         <FormSectionHeader 
           icon={EnvelopeSimple} 

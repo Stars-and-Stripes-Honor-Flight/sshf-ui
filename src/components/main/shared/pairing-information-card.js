@@ -14,9 +14,11 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import { Gear, Eye, Users } from '@phosphor-icons/react';
 import { paths } from '@/paths';
 import { FormSectionHeader } from './form-section-header';
+import { HistoryButton } from '@/components/main/shared/history-button';
 
 export function PairingInformationCard({
   control,
@@ -29,6 +31,7 @@ export function PairingInformationCard({
   preferenceNotesFieldName, // e.g., 'guardian.pref_notes' or 'veteran.pref_notes'
   preferenceNotesPlaceholder,
   onManagePairing,
+  onOpenHistory, // Optional callback to open history dialog
   showHiddenFields = false, // Only for veteran form
   entity, // The main entity (veteran or guardian) for accessing pairing data
   searchButton // Optional button to render next to preference notes label
@@ -74,7 +77,6 @@ export function PairingInformationCard({
     <Card 
       id={cardId} 
       elevation={2} 
-      sx={{ '&:hover': { transform: 'translateY(-2px)' } }} 
       ref={cardRef}
     >
       <CardContent>
@@ -83,22 +85,38 @@ export function PairingInformationCard({
             icon={icon} 
             title={title} 
           />
-          {/* Only show Manage Pairing button for veteran pairings (on guardian page), not for guardian pairings (on veteran page) */}
-          {pairingType === 'veteran' && onManagePairing && (
-            <Button
-              startIcon={<Gear size={18} weight="bold" />}
-              variant="outlined"
-              size="small"
-              onClick={onManagePairing}
-              sx={{
-                borderRadius: 1,
-                textTransform: 'none',
-                fontWeight: 'medium'
-              }}
-            >
-              Manage Pairing
-            </Button>
-          )}
+          <Stack direction="row" spacing={1}>
+            {/* History button for pairing history */}
+            {onOpenHistory && (
+              <HistoryButton
+                title="Pairing"
+                history={pairingType === 'guardian' 
+                  ? (entity?.guardian?.history || [])
+                  : (entity?.veteran?.history || [])}
+                onOpenHistory={onOpenHistory}
+              />
+            )}
+            {/* Only show Manage Pairing button for veteran pairings (on guardian page), not for guardian pairings (on veteran page) */}
+            {pairingType === 'veteran' && onManagePairing && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={onManagePairing}
+                sx={{
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  fontWeight: 'medium',
+                  minWidth: { xs: '40px', sm: 'auto' },
+                  padding: { xs: '6px', sm: '6px 8px' }
+                }}
+              >
+                <Gear size={18} weight="bold" sx={{ display: { xs: 'block', sm: 'none' } }} />
+                <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Manage Pairing
+                </Box>
+              </Button>
+            )}
+          </Stack>
         </Stack>
         <Grid container spacing={3}>
           {hasPairings && (

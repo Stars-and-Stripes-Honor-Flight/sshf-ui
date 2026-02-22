@@ -15,9 +15,10 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { FirstAid, Airplane, Headset, Clock } from '@phosphor-icons/react';
+import { FirstAid, Airplane, Headset } from '@phosphor-icons/react';
 import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
+import { HistoryButton } from '@/components/main/shared/history-button';
 import { PersonalInformationCard } from '@/components/main/shared/personal-information-card';
 
 export function EssentialInfoSection({ control, errors, guardian, onOpenHistory, flightOptions, disabled = false }) {
@@ -43,7 +44,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
       />
 
       {/* Medical Information Card */}
-      <Card id="medical-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card id="medical-section" elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={FirstAid} 
@@ -216,26 +217,18 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
       </Card>
 
       {/* Call Center Information Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
             <FormSectionHeader 
               icon={Headset} 
               title="Call Center Information" 
             />
-            <Button
-              startIcon={<Clock size={18} weight="bold" />}
-              variant="outlined"
-              size="small"
-              onClick={() => onOpenHistory('Call Center', guardian?.call?.history || [])}
-              sx={{
-                borderRadius: 1,
-                textTransform: 'none',
-                fontWeight: 'medium'
-              }}
-            >
-              History ({guardian?.call?.history?.length || 0})
-            </Button>
+            <HistoryButton
+              title="Call Center"
+              history={guardian?.call?.history || []}
+              onOpenHistory={onOpenHistory}
+            />
           </Stack>
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
@@ -307,26 +300,18 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
       </Card>
 
       {/* Flight Status Card */}
-      <Card id="flight-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card id="flight-section" elevation={2}>
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
             <FormSectionHeader 
               icon={Airplane} 
               title="Flight Status" 
             />
-            <Button
-              startIcon={<Clock size={18} weight="bold" />}
-              variant="outlined"
-              size="small"
-              onClick={() => onOpenHistory('Flight Status', guardian?.flight?.history || [])}
-              sx={{
-                borderRadius: 1,
-                textTransform: 'none',
-                fontWeight: 'medium'
-              }}
-            >
-              History ({guardian?.flight?.history?.length || 0})
-            </Button>
+            <HistoryButton
+              title="Flight Status"
+              history={guardian?.flight?.history || []}
+              onOpenHistory={onOpenHistory}
+            />
           </Stack>
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>

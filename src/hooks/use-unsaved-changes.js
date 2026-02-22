@@ -76,6 +76,10 @@ export function useUnsavedChanges({ isDirty, onNavigate, entityType = 'record', 
         // Show dialog
         setIsFromBrowserBack(true);
         setUnsavedChangesDialogOpen(true);
+      } else {
+        // No unsaved changes, allow normal back navigation
+        // Call the onNavigate handler to use custom navigation
+        onNavigate();
       }
     };
 
@@ -83,7 +87,7 @@ export function useUnsavedChanges({ isDirty, onNavigate, entityType = 'record', 
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [isDirty, interceptRouter]);
+  }, [isDirty, interceptRouter, onNavigate]);
 
   // Warn on page unload (refresh, close tab) - but NOT if we're discarding
   React.useEffect(() => {

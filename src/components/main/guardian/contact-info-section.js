@@ -22,6 +22,7 @@ export function ContactInfoSection({
   guardian, 
   veteranPairingsRef, 
   onManagePairing,
+  onOpenHistory,
   watch,
   disabled = false
 }) {
@@ -60,7 +61,7 @@ export function ContactInfoSection({
       />
 
       {/* Emergency Contact Card */}
-      <Card id="emergency-contact-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card id="emergency-contact-section" elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={Phone} 
@@ -135,6 +136,7 @@ export function ContactInfoSection({
         preferenceNotesFieldName="veteran.pref_notes"
         preferenceNotesPlaceholder="Veteran Preference Notes"
         onManagePairing={disabled ? undefined : onManagePairing}
+        onOpenHistory={onOpenHistory}
         showHiddenFields={false}
         entity={entityWithFormState}
       />

@@ -16,10 +16,11 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { Phone, Headset, EnvelopeSimple, Clock, Users, MagnifyingGlass } from '@phosphor-icons/react';
+import { Phone, Headset, EnvelopeSimple, Users, MagnifyingGlass } from '@phosphor-icons/react';
 import { paths } from '@/paths';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
+import { HistoryButton } from '@/components/main/shared/history-button';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 
 export function ContactInfoSection({ 
@@ -84,26 +85,18 @@ export function ContactInfoSection({
       />
 
       {/* Call Center Information Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
             <FormSectionHeader 
               icon={Headset} 
               title="Call Center Information" 
             />
-            <Button
-              startIcon={<Clock size={18} weight="bold" />}
-              variant="outlined"
-              size="small"
-              onClick={() => onOpenHistory('Call Center', veteran?.call?.history || [])}
-              sx={{
-                borderRadius: 1,
-                textTransform: 'none',
-                fontWeight: 'medium'
-              }}
-            >
-              History ({veteran?.call?.history?.length || 0})
-            </Button>
+            <HistoryButton
+              title="Call Center"
+              history={veteran?.call?.history || []}
+              onOpenHistory={onOpenHistory}
+            />
           </Stack>
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
@@ -165,7 +158,7 @@ export function ContactInfoSection({
       </Card>
 
       {/* Emergency Contact Card */}
-      <Card id="emergency-contact-section" elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card id="emergency-contact-section" elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={Phone} 
@@ -294,7 +287,7 @@ export function ContactInfoSection({
       </Card>
 
       {/* Alternate Contact Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={Phone} 
@@ -435,6 +428,7 @@ export function ContactInfoSection({
           preferenceNotesFieldName="guardian.pref_notes"
           preferenceNotesPlaceholder="Guardian Preference Notes"
           onManagePairing={onManagePairing}
+          onOpenHistory={onOpenHistory}
           showHiddenFields={true}
           entity={veteran}
           watch={watch}
@@ -460,7 +454,7 @@ export function ContactInfoSection({
       </Box>
 
       {/* Mail Call Information Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={EnvelopeSimple} 
