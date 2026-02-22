@@ -33,7 +33,7 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
       </Typography>
 
       {/* Apparel Information Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={TShirt} 
@@ -201,7 +201,7 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
       </Card>
 
       {/* Homecoming Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={House} 
@@ -226,7 +226,7 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
       </Card>
 
       {/* Media Permissions Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={Camera} 
@@ -270,7 +270,7 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
       </Card>
 
       {/* Metadata Card */}
-      <Card elevation={2} sx={{ '&:hover': { transform: 'translateY(-2px)' } }}>
+      <Card elevation={2}>
         <CardContent>
           <FormSectionHeader 
             icon={Clock} 

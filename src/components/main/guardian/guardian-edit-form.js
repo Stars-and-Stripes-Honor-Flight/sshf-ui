@@ -557,6 +557,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
               guardian={guardian}
               veteranPairingsRef={veteranPairingsRef}
               onManagePairing={() => setPairingDialogOpen(true)}
+              onOpenHistory={handleOpenHistory}
               watch={watch}
               disabled={isFormDisabled}
             />

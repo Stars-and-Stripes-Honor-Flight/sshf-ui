@@ -19,12 +19,6 @@ export function PersonalInformationCard({
   return (
     <Card
       elevation={2}
-      sx={{
-        transition: 'transform 0.2s',
-        '&:hover': {
-          transform: 'translateY(-2px)'
-        }
-      }}
     >
       <CardContent>
         <FormSectionHeader 
