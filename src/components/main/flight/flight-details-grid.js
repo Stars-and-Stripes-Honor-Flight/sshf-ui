@@ -386,7 +386,7 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
               <EditableField
                 value={guardian.seat || ''}
                 onBlur={(newValue) => handleSeatChange(newValue, guardian.id, 'Guardian')}
-                placeholder="e.g., B1"
+                placeholder="e.g., A2"
                 maxWidth={100}
               />
             )}
