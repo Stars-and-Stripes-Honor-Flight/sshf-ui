@@ -95,14 +95,12 @@ function FlightRosterExportPage() {
               <Stack spacing={3}>
                 <TextField
                   select
-                  label="Flight (Optional)"
+                  label="Flight"
                   value={selectedFlight}
                   onChange={(e) => setSelectedFlight(e.target.value)}
                   fullWidth
                   disabled={isLoading || isExporting}
-                  helperText="Leave blank to export all flights"
                 >
-                  <MenuItem value="">All Flights</MenuItem>
                   {flights.map((flight) => (
                     <MenuItem key={flight._id} value={flight.name}>
                       {flight.name}
