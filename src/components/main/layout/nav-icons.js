@@ -30,8 +30,11 @@ import { WarningDiamond as WarningDiamondIcon } from '@phosphor-icons/react/dist
 import { LightningA as LightningAIcon } from '@phosphor-icons/react/dist/ssr/LightningA';
 import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
+import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
+import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 
 export const icons = {
+  'airplane': AirplaneTiltIcon,
   'guardian': UserIcon,
   'veteran': MedalMilitaryIcon,
   'address-book': AddressBookIcon,
@@ -64,4 +67,5 @@ export const icons = {
   upload: UploadIcon,
   gear: GearIcon,
   users: UsersIcon,
+  download: DownloadIcon,
 };

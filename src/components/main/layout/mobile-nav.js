@@ -12,6 +12,7 @@ import { CaretRight as CaretRightIcon } from '@phosphor-icons/react/dist/ssr/Car
 
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
+import { useNavItemsState } from '@/hooks/use-nav-items-state';
 import { Logo } from '@/components/core/logo';
 
 import { icons } from './nav-icons';
@@ -105,7 +106,7 @@ function renderNavItems({ depth = 0, items = [], onClose, pathname }) {
     const forceOpen = Boolean(childItems);
 
     acc.push(
-      <NavItem depth={depth} forceOpen={forceOpen} key={key} onClose={onClose} pathname={pathname} {...item}>
+      <NavItem depth={depth} forceOpen={forceOpen} itemKey={key} key={key} onClose={onClose} pathname={pathname} {...item}>
         {childItems ? renderNavItems({ depth: depth + 1, items: childItems, onClose, pathname }) : null}
       </NavItem>
     );
@@ -128,13 +129,14 @@ function NavItem({
   forceOpen = false,
   href,
   icon,
+  itemKey,
   label,
   matcher,
   onClose,
   pathname,
   title,
 }) {
-  const [open, setOpen] = React.useState(forceOpen);
+  const [open, setOpen] = useNavItemsState(itemKey, forceOpen);
   const active = isNavItemActive({ disabled, external, href, matcher, pathname });
   const Icon = icon ? icons[icon] : null;
   const ExpandIcon = open ? CaretDownIcon : CaretRightIcon;

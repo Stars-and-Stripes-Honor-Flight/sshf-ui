@@ -16,8 +16,14 @@ export const paths = {
       team: '/settings/team',
     },
     search: {
-      list: '/search'
-    },   
+      list: '/search',
+      flights: '/search-flights'
+    },
+    flights: {
+      list: '/flights',
+      create: '/flights/create',
+      details: (flightId) => `/flights/details?id=${flightId}`
+    },
     veterans: {
       list: '/veterans',
       create: '/veterans/create',
@@ -29,6 +35,11 @@ export const paths = {
       create: '/guardians/create',
       details: (guardianId) => `/guardians/details?id=${guardianId}`
     },
+    exports: {
+      flight: '/exports/flight',
+      callCenterFollowup: '/exports/callcenterfollowup',
+      tourLead: '/exports/tourlead'
+    }
   },
   notAuthorized: '/errors/not-authorized/',
   notFound: '/errors/not-found/',

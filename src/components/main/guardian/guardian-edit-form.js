@@ -279,6 +279,14 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     // No toast notification - changes will be saved when user clicks Save Changes
   }, [setValue]);
 
+  // Handle detecting unsaved changes in pairing dialog
+  const handlePairingHasChanges = React.useCallback((hasChanges) => {
+    if (hasChanges) {
+      // Mark form as dirty if there are unsaved changes
+      setValue('veteran.pairings', watch('veteran.pairings') || [], { shouldDirty: true });
+    }
+  }, [setValue, watch]);
+
   const onSubmit = React.useCallback(
     async (data) => {
       try {
@@ -661,6 +669,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         open={pairingDialogOpen}
         onClose={() => setPairingDialogOpen(false)}
         onApply={handleApplyPairings}
+        onHasChanges={handlePairingHasChanges}
         currentPairings={watch('veteran.pairings') || guardian.veteran?.pairings || []}
         preferenceNotes={watch('veteran.pref_notes') || guardian.veteran?.pref_notes || ''}
       />
