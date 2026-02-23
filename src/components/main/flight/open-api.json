@@ -1,0 +1,2475 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SSHF API",
+    "version": "1.0.0",
+    "description": "API for managing veterans documents with Google authentication"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "API Server" },
+    { "url": "http://localhost:8080", "description": "Force local API Server" },
+    { "url": "https://sshf-api-330507742215.us-central1.run.app", "description": "Force Dev Environment API Server" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "GoogleAuth": {
+        "type": "oauth2",
+        "flows": {
+          "implicit": {
+            "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+            "scopes": {
+              "openid": "OpenID Connect scope",
+              "email": "Email scope",
+              "profile": "Profile scope",
+              "https://www.googleapis.com/auth/admin.directory.group.readonly": "Group Read Only Scope"
+            }
+          }
+        },
+        "x-init": { "appName": "SSHF API" }
+      }
+    },
+    "schemas": {
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "limit": { "type": "integer", "default": 25, "description": "Maximum number of results to return" },
+          "lastname": { "type": "string", "default": "", "description": "Last name to search for" },
+          "status": {
+            "type": "string",
+            "default": "Active",
+            "enum": [
+              "All",
+              "Active",
+              "Flown",
+              "Deceased",
+              "Removed",
+              "Future-Spring",
+              "Future-Fall",
+              "Future-PostRestriction"
+            ],
+            "description": "Status filter for the search"
+          },
+          "flight": { "type": "string", "default": "All", "description": "Flight ID filter for the search" }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "description": "Type of the document" },
+          "name": { "type": "string", "description": "Name of the person" },
+          "city": { "type": "string", "description": "City of residence" },
+          "appdate": { "type": "string", "description": "Application date" },
+          "flight": { "type": "string", "description": "Flight assignment" },
+          "status": { "type": "string", "description": "Current status" },
+          "pairing": { "type": "string", "description": "Name of paired person" },
+          "pairingId": { "type": "string", "description": "ID of paired person" }
+        }
+      },
+      "SearchResults": {
+        "type": "object",
+        "properties": {
+          "total_rows": { "type": "integer", "description": "Total number of rows in the result set" },
+          "offset": { "type": "integer", "description": "Starting offset of the result set" },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "description": "Document ID" },
+                "key": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Search key used for this result"
+                },
+                "value": { "$ref": "#/components/schemas/SearchResult" }
+              }
+            }
+          }
+        }
+      },
+      "Error": { "type": "object", "properties": { "message": { "type": "string" } } },
+      "Veteran": {
+        "type": "object",
+        "required": ["name", "type", "address"],
+        "properties": {
+          "_id": { "type": "string", "description": "Document ID" },
+          "_rev": { "type": "string", "description": "Document revision" },
+          "type": { "type": "string", "enum": ["Veteran"], "description": "Document type, must be \"Veteran\"" },
+          "name": {
+            "type": "object",
+            "required": ["first", "last"],
+            "properties": {
+              "first": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. ]{2,}$",
+                "description": "First name (letters, periods, apostrophes and spaces only, min 2 chars)"
+              },
+              "middle": {
+                "type": "string",
+                "pattern": "^[a-zA-Z' ]*$",
+                "description": "Middle name (letters, apostrophes and spaces only)"
+              },
+              "last": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. -]{2,}$",
+                "description": "Last name (letters, periods, apostrophes, hyphens and spaces only, min 2 chars)"
+              },
+              "nickname": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. ]*$",
+                "description": "Nickname (letters, periods, apostrophes and spaces only)"
+              }
+            }
+          },
+          "birth_date": { "type": "string" },
+          "gender": { "type": "string", "enum": ["M", "F"], "description": "Veteran gender" },
+          "address": {
+            "type": "object",
+            "required": ["street", "city", "state", "zip", "county", "phone_day"],
+            "properties": {
+              "street": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9.,# /-]{2,}$",
+                "description": "Street address (letters, numbers, basic punctuation, min 2 chars)"
+              },
+              "city": {
+                "type": "string",
+                "pattern": "^[a-zA-Z. -]{2,}$",
+                "description": "City name (letters, periods, hyphens and spaces only, min 2 chars)"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[a-zA-Z]{2}$",
+                "description": "State code (exactly 2 letters)"
+              },
+              "zip": { "type": "string", "pattern": "^[0-9 -]{5,}$", "description": "ZIP code (at least 5 digits)" },
+              "county": {
+                "type": "string",
+                "pattern": "^[a-zA-Z. ]{2,}$",
+                "description": "County name (letters, periods and spaces only, min 2 chars)"
+              },
+              "phone_day": {
+                "type": "string",
+                "pattern": "^[0-9 -]{12,}$",
+                "description": "Day phone (at least 12 digits/characters)"
+              },
+              "phone_eve": {
+                "type": "string",
+                "pattern": "^[0-9 -]*$",
+                "description": "Evening phone (numbers, spaces and hyphens only)"
+              },
+              "phone_mbl": {
+                "type": "string",
+                "pattern": "^[0-9 -]*$",
+                "description": "Mobile phone (numbers, spaces and hyphens only)"
+              },
+              "email": { "type": "string", "format": "email", "description": "Email address" }
+            }
+          },
+          "service": {
+            "type": "object",
+            "properties": {
+              "branch": {
+                "type": "string",
+                "enum": ["Unknown", "Army", "Air Force", "Navy", "Marines", "Coast Guard"],
+                "description": "Military branch of service"
+              },
+              "rank": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9.,# /-]*$",
+                "description": "Military rank (letters, numbers, basic punctuation)"
+              },
+              "dates": { "type": "string" },
+              "activity": { "type": "string" }
+            }
+          },
+          "flight": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "default": "None",
+                "description": "Flight ID. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight" }
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "All",
+                  "Active",
+                  "Flown",
+                  "Deceased",
+                  "Removed",
+                  "Future-Spring",
+                  "Future-Fall",
+                  "Future-PostRestriction"
+                ],
+                "default": "Active",
+                "description": "Current flight status. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "status" }
+              },
+              "group": {
+                "type": "string",
+                "description": "Flight group. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "group" }
+              },
+              "bus": {
+                "type": "string",
+                "default": "None",
+                "enum": [
+                  "None",
+                  "Alpha1",
+                  "Alpha2",
+                  "Alpha3",
+                  "Alpha4",
+                  "Alpha5",
+                  "Bravo1",
+                  "Bravo2",
+                  "Bravo3",
+                  "Bravo4",
+                  "Bravo5"
+                ],
+                "description": "Assigned bus. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "bus" }
+              },
+              "seat": {
+                "type": "string",
+                "description": "Assigned seat. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "seat" }
+              },
+              "confirmed_date": {
+                "type": "string",
+                "description": "Date the flight was confirmed. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "confirmed date" }
+              },
+              "confirmed_by": { "type": "string", "description": "Person who confirmed the flight" },
+              "status_note": { "type": "string", "description": "Notes about flight status" },
+              "waiver": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates liability waiver is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight waiver received" }
+              },
+              "mediaWaiver": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates media waiver is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "media waiver received" }
+              },
+              "vaccinated": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates veteran is vaccinated. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "vaccinated" }
+              },
+              "infection_test": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates infection test is completed. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "infection test" }
+              },
+              "nofly": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates veteran is not flying. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight nofly" }
+              },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of changes to flight-related fields. Records changes to: flight.id, flight.bus, flight.status, flight.seat, flight.confirmed_date, flight.group, flight.waiver, flight.mediaWaiver, flight.vaccinated, flight.infection_test, flight.nofly, medical.release, medical.form.\n"
+              }
+            }
+          },
+          "medical": {
+            "type": "object",
+            "properties": {
+              "form": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates medical form is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "medical form received" }
+              },
+              "release": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates medical release is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "medical release received" }
+              },
+              "level": { "type": "string", "enum": ["1", "2", "3", "3.5", "4"], "description": "Medical level" },
+              "limitations": { "type": "string" },
+              "food_restriction": {
+                "type": "string",
+                "enum": ["None", "Gluten Free", "Vegetarian", "Vegan"],
+                "default": "None",
+                "description": "Dietary restrictions"
+              },
+              "usesCane": { "type": "boolean", "default": false },
+              "usesWalker": { "type": "boolean", "default": false },
+              "usesWheelchair": { "type": "boolean", "default": false },
+              "usesScooter": { "type": "boolean", "default": false },
+              "requiresOxygen": { "type": "boolean", "default": false },
+              "isWheelchairBound": { "type": "boolean", "default": false },
+              "alt_level": {
+                "type": "string",
+                "enum": ["1", "2", "3", "3.5", "4"],
+                "description": "Alternative medical level"
+              },
+              "examRequired": { "type": "boolean", "default": false },
+              "review": { "type": "string" }
+            }
+          },
+          "guardian": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Paired guardian ID" },
+              "name": { "type": "string", "description": "Paired guardian name" },
+              "pref_notes": { "type": "string", "description": "Guardian preference notes" },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of guardian pairing changes. Records pairing events: \"paired to: {guardianName} by: {userName}\" and \"unpaired from: {guardianName} by: {userName}\".\n"
+              }
+            }
+          },
+          "app_date": { "type": "string" },
+          "vet_type": {
+            "type": "string",
+            "default": "WWII",
+            "enum": ["WWII", "Korea", "Vietnam", "Afghanistan", "Iraq", "Other"],
+            "description": "Type of veteran/war conflict served"
+          },
+          "shirt": {
+            "type": "object",
+            "properties": {
+              "size": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"]
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "created_at": { "type": "string", "format": "date-time" },
+              "created_by": { "type": "string" },
+              "updated_at": { "type": "string", "format": "date-time" },
+              "updated_by": { "type": "string" }
+            }
+          },
+          "weight": { "type": "string", "pattern": "^\\d{1,3}$", "description": "Weight in pounds (1-999) (Obsolete)" },
+          "alt_contact": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-zA-Z'. -]{2,}$", "description": "Alternate contact name" },
+              "relation": { "type": "string" },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "street": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9.,# /-]{2,}$",
+                    "description": "Street address (letters, numbers, basic punctuation, min 2 chars)"
+                  },
+                  "city": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z. -]{2,}$",
+                    "description": "City name (letters, periods, hyphens and spaces only, min 2 chars)"
+                  },
+                  "state": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z]{2}$",
+                    "description": "State code (exactly 2 letters)"
+                  },
+                  "zip": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]{5,}$",
+                    "description": "ZIP code (at least 5 digits)"
+                  },
+                  "county": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z. ]{2,}$",
+                    "description": "County name (letters, periods and spaces only, min 2 chars)"
+                  },
+                  "phone_day": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]{12,}$",
+                    "description": "Day phone (at least 12 digits/characters)"
+                  },
+                  "phone_eve": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]*$",
+                    "description": "Evening phone (numbers, spaces and hyphens only)"
+                  },
+                  "phone_mbl": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]*$",
+                    "description": "Mobile phone (numbers, spaces and hyphens only)"
+                  },
+                  "email": { "type": "string", "format": "email", "description": "Email address" }
+                }
+              }
+            }
+          },
+          "emerg_contact": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-zA-Z'. -]{2,}$", "description": "Emergency contact name" },
+              "relation": { "type": "string" },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "street": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9.,# /-]{2,}$",
+                    "description": "Street address (letters, numbers, basic punctuation, min 2 chars)"
+                  },
+                  "city": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z. -]{2,}$",
+                    "description": "City name (letters, periods, hyphens and spaces only, min 2 chars)"
+                  },
+                  "state": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z]{2}$",
+                    "description": "State code (exactly 2 letters)"
+                  },
+                  "zip": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]{5,}$",
+                    "description": "ZIP code (at least 5 digits)"
+                  },
+                  "county": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z. ]{2,}$",
+                    "description": "County name (letters, periods and spaces only, min 2 chars)"
+                  },
+                  "phone_day": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]{12,}$",
+                    "description": "Day phone (at least 12 digits/characters)"
+                  },
+                  "phone_eve": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]*$",
+                    "description": "Evening phone (numbers, spaces and hyphens only)"
+                  },
+                  "phone_mbl": {
+                    "type": "string",
+                    "pattern": "^[0-9 -]*$",
+                    "description": "Mobile phone (numbers, spaces and hyphens only)"
+                  },
+                  "email": { "type": "string", "format": "email", "description": "Email address" }
+                }
+              }
+            }
+          },
+          "mail_call": {
+            "type": "object",
+            "properties": {
+              "received": {
+                "type": "string",
+                "description": "Date mail call was received. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "mail call received" }
+              },
+              "name": { "type": "string", "pattern": "^[a-zA-Z'. -]{2,}$", "description": "Mail call contact name" },
+              "notes": { "type": "string", "description": "Mail call notes" },
+              "adopt": {
+                "type": "string",
+                "description": "Mail call adopt status. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "mail call adopt" }
+              },
+              "relation": { "type": "string", "description": "Relation to veteran" },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "pattern": "^[0-9 -]{12,}$", "description": "Mail call phone" },
+                  "email": { "type": "string", "format": "email", "description": "Mail call email" }
+                }
+              }
+            }
+          },
+          "media_interview_ok": { "type": "string", "enum": ["Yes", "No", "Unknown"], "default": "Unknown" },
+          "media_newspaper_ok": { "type": "string", "enum": ["Yes", "No", "Unknown"], "default": "Unknown" },
+          "apparel": {
+            "type": "object",
+            "properties": {
+              "item": {
+                "type": "string",
+                "enum": ["None", "Jacket", "Polo", "Both"],
+                "default": "None",
+                "description": "Type of apparel items ordered"
+              },
+              "jacket_size": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"]
+              },
+              "shirt_size": {
+                "type": "string",
+                "default": "None",
+                "enum": [
+                  "None",
+                  "WXS",
+                  "WS",
+                  "WM",
+                  "WL",
+                  "WXL",
+                  "W2XL",
+                  "W3XL",
+                  "W4XL",
+                  "W5XL",
+                  "XS",
+                  "S",
+                  "M",
+                  "L",
+                  "XL",
+                  "2XL",
+                  "3XL",
+                  "4XL",
+                  "5XL"
+                ]
+              },
+              "delivery": { "type": "string", "default": "None", "enum": ["None", "Mailed", "Pickup", "Delivered"] },
+              "notes": { "type": "string" },
+              "date": { "type": "string" },
+              "by": { "type": "string" }
+            }
+          },
+          "call": {
+            "type": "object",
+            "properties": {
+              "fm_number": {
+                "type": "string",
+                "description": "Family Member number (obsolete). Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "FM #" }
+              },
+              "notes": { "type": "string", "description": "Call notes" },
+              "email_sent": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether email has been sent. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "mail call email sent" }
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "VET member assigned to call. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "assigned caller" }
+              },
+              "mail_sent": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether mail has been sent. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "veteran mail sent" }
+              },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of changes to call-related fields. Records changes to: call.assigned_to, call.fm_number, call.mail_sent, call.email_sent, mail_call.received, mail_call.adopt.\n"
+              }
+            }
+          },
+          "homecoming": {
+            "type": "object",
+            "properties": { "destination": { "type": "string", "description": "Homecoming destination" } }
+          }
+        }
+      },
+      "Guardian": {
+        "type": "object",
+        "required": ["name", "type", "address"],
+        "properties": {
+          "_id": { "type": "string", "description": "Document ID" },
+          "_rev": { "type": "string", "description": "Document revision" },
+          "type": { "type": "string", "enum": ["Guardian"], "description": "Document type, must be \"Guardian\"" },
+          "name": {
+            "type": "object",
+            "required": ["first", "last"],
+            "properties": {
+              "first": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. ]{2,}$",
+                "description": "First name (letters, periods, apostrophes and spaces only, min 2 chars)"
+              },
+              "middle": {
+                "type": "string",
+                "pattern": "^[a-zA-Z' ]*$",
+                "description": "Middle name (letters, apostrophes and spaces only)"
+              },
+              "last": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. -]{2,}$",
+                "description": "Last name (letters, periods, apostrophes, hyphens and spaces only, min 2 chars)"
+              },
+              "nickname": {
+                "type": "string",
+                "pattern": "^[a-zA-Z'. ]*$",
+                "description": "Nickname (letters, periods, apostrophes and spaces only)"
+              }
+            }
+          },
+          "birth_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Birth date in YYYY-MM-DD format"
+          },
+          "gender": { "type": "string", "enum": ["M", "F"], "default": "M", "description": "Guardian gender" },
+          "address": {
+            "type": "object",
+            "required": ["street", "city", "state", "zip", "county", "phone_day"],
+            "properties": {
+              "street": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9.,# /-]{2,}$",
+                "description": "Street address (letters, numbers, basic punctuation, min 2 chars)"
+              },
+              "city": {
+                "type": "string",
+                "pattern": "^[a-zA-Z. -]{2,}$",
+                "description": "City name (letters, periods, hyphens and spaces only, min 2 chars)"
+              },
+              "state": {
+                "type": "string",
+                "pattern": "^[a-zA-Z]{2}$",
+                "description": "State code (exactly 2 letters)"
+              },
+              "zip": { "type": "string", "pattern": "^[0-9 -]{5,}$", "description": "ZIP code (at least 5 digits)" },
+              "county": {
+                "type": "string",
+                "pattern": "^[a-zA-Z. ]{2,}$",
+                "description": "County name (letters, periods and spaces only, min 2 chars)"
+              },
+              "phone_day": {
+                "type": "string",
+                "pattern": "^[0-9 -]{12,}$",
+                "description": "Day phone (at least 12 digits/characters)"
+              },
+              "phone_eve": {
+                "type": "string",
+                "pattern": "^[0-9 -]*$",
+                "description": "Evening phone (numbers, spaces and hyphens only)"
+              },
+              "phone_mbl": {
+                "type": "string",
+                "pattern": "^[0-9 -]*$",
+                "description": "Mobile phone (numbers, spaces and hyphens only)"
+              },
+              "email": { "type": "string", "format": "email", "description": "Email address" }
+            }
+          },
+          "flight": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "default": "None",
+                "description": "Flight ID. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight" }
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Active",
+                  "Flown",
+                  "Deceased",
+                  "Removed",
+                  "Future-Spring",
+                  "Future-Fall",
+                  "Future-PostRestriction",
+                  "Copied"
+                ],
+                "default": "Active",
+                "description": "Current flight status. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "status" }
+              },
+              "group": { "type": "string", "description": "Flight group" },
+              "bus": {
+                "type": "string",
+                "default": "None",
+                "enum": [
+                  "None",
+                  "Alpha1",
+                  "Alpha2",
+                  "Alpha3",
+                  "Alpha4",
+                  "Alpha5",
+                  "Bravo1",
+                  "Bravo2",
+                  "Bravo3",
+                  "Bravo4",
+                  "Bravo5"
+                ],
+                "description": "Assigned bus. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "bus" }
+              },
+              "seat": {
+                "type": "string",
+                "description": "Assigned seat. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "seat" }
+              },
+              "confirmed_date": {
+                "type": "string",
+                "description": "Date the flight was confirmed. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "confirmed date" }
+              },
+              "confirmed_by": { "type": "string", "description": "Person who confirmed the flight" },
+              "status_note": { "type": "string", "description": "Notes about flight status" },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of changes to flight-related fields. Records changes to: flight.id, flight.bus, flight.status, flight.seat, flight.confirmed_date, flight.training, flight.paid, flight.training_see_doc, flight.training_complete, flight.waiver, flight.mediaWaiver, flight.vaccinated, flight.infection_test, flight.nofly, flight.exempt, flight.booksOrdered, medical.release, medical.form.\n"
+              },
+              "nofly": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian is not flying. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight nofly" }
+              },
+              "vaccinated": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian is vaccinated. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "vaccinated" }
+              },
+              "mediaWaiver": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates media waiver is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "media waiver received" }
+              },
+              "infection_test": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates infection test is completed. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "infection test" }
+              },
+              "waiver": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates liability waiver is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "flight waiver received" }
+              },
+              "training": {
+                "type": "string",
+                "enum": ["None", "Main", "Previous", "Phone", "Web", "Make-up"],
+                "description": "Type of training completed. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "training" }
+              },
+              "training_notes": { "type": "string", "description": "Notes about guardian training" },
+              "training_see_doc": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian needs to see a doctor at training. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "training see doctor" }
+              },
+              "training_complete": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian has completed training. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "training complete" }
+              },
+              "paid": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian has paid. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "paid" }
+              },
+              "exempt": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian is exempt from payment. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "exempt" }
+              },
+              "booksOrdered": {
+                "type": "integer",
+                "default": 0,
+                "description": "Number of books ordered. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "books ordered" }
+              }
+            }
+          },
+          "medical": {
+            "type": "object",
+            "properties": {
+              "form": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates medical form is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "medical form received" }
+              },
+              "release": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates medical release is received. Changes are recorded in flight.history.",
+                "x-historyTracked": { "historyArray": "flight.history", "displayName": "medical release received" }
+              },
+              "level": { "type": "string", "pattern": "^[A-D]$", "description": "Medical level (A, B, C, or D)" },
+              "limitations": { "type": "string", "description": "Medical limitations" },
+              "food_restriction": {
+                "type": "string",
+                "enum": ["None", "Gluten Free", "Vegetarian", "Vegan"],
+                "default": "None",
+                "description": "Dietary restrictions"
+              },
+              "experience": { "type": "string", "description": "Medical experience" },
+              "can_push": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian can push a wheelchair"
+              },
+              "can_lift": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates guardian can lift 100 pounds"
+              }
+            }
+          },
+          "veteran": {
+            "type": "object",
+            "properties": {
+              "pref_notes": { "type": "string", "description": "Veteran preference notes" },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of veteran pairing changes. Records pairing events: \"paired to: {veteranName} by: {userName}\" and \"unpaired from: {veteranName} by: {userName}\".\n"
+              },
+              "pairings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "description": "Veteran ID" },
+                    "name": { "type": "string", "description": "Veteran name" }
+                  }
+                },
+                "description": "Paired veterans"
+              }
+            }
+          },
+          "app_date": { "type": "string", "description": "Application date" },
+          "shirt": {
+            "type": "object",
+            "properties": {
+              "size": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+                "description": "Shirt size"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+              "created_by": { "type": "string", "description": "User who created the record" },
+              "updated_at": { "type": "string", "format": "date-time", "description": "Last update timestamp" },
+              "updated_by": { "type": "string", "description": "User who last updated the record" }
+            }
+          },
+          "weight": { "type": "string", "pattern": "^\\d{1,3}$", "description": "Weight in pounds (60-450)" },
+          "emerg_contact": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-zA-Z'. -]{2,}$", "description": "Emergency contact name" },
+              "relation": { "type": "string", "description": "Relationship to guardian" },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "pattern": "^[0-9 -]{12,}$", "description": "Emergency contact phone" },
+                  "email": { "type": "string", "format": "email", "description": "Emergency contact email" }
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "object",
+            "properties": {
+              "other": { "type": "string", "description": "Other notes" },
+              "service": {
+                "type": "string",
+                "enum": ["Y", "N"],
+                "default": "N",
+                "description": "Indicates if guardian is a veteran"
+              }
+            }
+          },
+          "occupation": { "type": "string", "description": "Guardian occupation" },
+          "accommodations": {
+            "type": "object",
+            "properties": {
+              "departure_time": { "type": "string", "description": "Departure time" },
+              "arrival_date": { "type": "string", "description": "Arrival date" },
+              "notes": { "type": "string", "description": "Accommodation notes" },
+              "departure_date": { "type": "string", "description": "Departure date" },
+              "arrival_flight": { "type": "string", "description": "Arrival flight information" },
+              "attend_banquette": { "type": "string", "description": "Banquet attendance" },
+              "departure_flight": { "type": "string", "description": "Departure flight information" },
+              "arrival_time": { "type": "string", "description": "Arrival time" },
+              "banquette_guest": { "type": "string", "description": "Banquet guest information" },
+              "room_type": {
+                "type": "string",
+                "enum": ["None", "Double", "Single"],
+                "default": "None",
+                "description": "Hotel room type"
+              },
+              "hotel_name": { "type": "string", "description": "Hotel name" }
+            }
+          },
+          "mail_call": {
+            "type": "object",
+            "properties": {
+              "received": { "type": "string", "description": "Date mail call was received" },
+              "name": { "type": "string", "pattern": "^[a-zA-Z'. -]{2,}$", "description": "Mail call contact name" },
+              "notes": { "type": "string", "description": "Mail call notes" },
+              "relation": { "type": "string", "description": "Relation to guardian" },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "pattern": "^[0-9 -]{12,}$", "description": "Mail call phone" },
+                  "email": { "type": "string", "format": "email", "description": "Mail call email" }
+                }
+              }
+            }
+          },
+          "call": {
+            "type": "object",
+            "properties": {
+              "fm_number": {
+                "type": "string",
+                "description": "Family Member number. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "FM #" }
+              },
+              "notes": { "type": "string", "description": "Call notes" },
+              "email_sent": {
+                "type": "boolean",
+                "default": false,
+                "description": "Indicates if email has been sent. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "guardian email sent" }
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "Staff member assigned to call. Changes are recorded in call.history.",
+                "x-historyTracked": { "historyArray": "call.history", "displayName": "assigned caller" }
+              },
+              "mail_sent": { "type": "boolean", "default": false, "description": "Indicates if mail has been sent" },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "date-time", "description": "Timestamp of the change" },
+                    "change": { "type": "string", "description": "Description of what changed" }
+                  }
+                },
+                "description": "History of changes to call-related fields. Records changes to: call.assigned_to, call.fm_number, call.email_sent.\n"
+              }
+            }
+          },
+          "apparel": {
+            "type": "object",
+            "properties": {
+              "jacket_size": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+                "description": "Jacket size"
+              },
+              "notes": { "type": "string", "description": "Apparel notes" },
+              "delivery": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "Mailed", "Training", "Home"],
+                "description": "Delivery method"
+              },
+              "item": {
+                "type": "string",
+                "default": "None",
+                "enum": ["None", "Jacket", "Polo", "Both"],
+                "description": "Apparel items"
+              },
+              "shirt_size": {
+                "type": "string",
+                "default": "None",
+                "enum": [
+                  "None",
+                  "WXS",
+                  "WS",
+                  "WM",
+                  "WL",
+                  "WXL",
+                  "W2XL",
+                  "W3XL",
+                  "W4XL",
+                  "W5XL",
+                  "XS",
+                  "S",
+                  "M",
+                  "L",
+                  "XL",
+                  "2XL",
+                  "3XL",
+                  "4XL",
+                  "5XL"
+                ],
+                "description": "Shirt size"
+              },
+              "date": { "type": "string", "description": "Date apparel was sent" },
+              "by": { "type": "string", "description": "Person who sent the apparel" }
+            }
+          }
+        }
+      },
+      "Flight": {
+        "type": "object",
+        "required": ["name", "flight_date", "capacity", "type"],
+        "properties": {
+          "_id": { "type": "string", "description": "Document ID" },
+          "_rev": { "type": "string", "description": "Document revision" },
+          "type": { "type": "string", "enum": ["Flight"], "description": "Document type, must be \"Flight\"" },
+          "name": { "type": "string", "minLength": 1, "description": "Flight name (required, non-empty)" },
+          "flight_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Flight date in YYYY-MM-DD format"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Flight capacity (required, positive integer)"
+          },
+          "completed": { "type": "boolean", "default": false, "description": "Whether the flight is completed" },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "created_at": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+              "created_by": { "type": "string", "description": "User who created the record" },
+              "updated_at": { "type": "string", "format": "date-time", "description": "Last update timestamp" },
+              "updated_by": { "type": "string", "description": "User who last updated the record" }
+            }
+          }
+        }
+      },
+      "FlightAssignment": {
+        "type": "object",
+        "description": "Flight assignment data including flight info, counts, and veteran-guardian pairs",
+        "properties": {
+          "flight": {
+            "type": "object",
+            "description": "Flight metadata",
+            "properties": {
+              "id": { "type": "string", "description": "Flight document ID" },
+              "rev": { "type": "string", "description": "Flight document revision" },
+              "name": { "type": "string", "description": "Flight name" },
+              "capacity": { "type": "integer", "description": "Flight capacity" },
+              "flight_date": { "type": "string", "format": "date", "description": "Flight date in YYYY-MM-DD format" }
+            }
+          },
+          "counts": {
+            "type": "object",
+            "description": "Counts of veterans, guardians, and remaining capacity",
+            "properties": {
+              "veterans": { "type": "integer", "description": "Number of veterans assigned (excluding nofly)" },
+              "guardians": { "type": "integer", "description": "Number of guardians assigned (excluding nofly)" },
+              "veteransConfirmed": { "type": "integer", "description": "Number of confirmed veterans" },
+              "guardiansConfirmed": { "type": "integer", "description": "Number of confirmed guardians" },
+              "remaining": { "type": "integer", "description": "Remaining capacity on the flight" }
+            }
+          },
+          "pairs": {
+            "type": "array",
+            "description": "List of veteran-guardian pairs",
+            "items": { "$ref": "#/components/schemas/AssignmentPair" }
+          }
+        }
+      },
+      "AssignmentPair": {
+        "type": "object",
+        "description": "A veteran-guardian pairing",
+        "properties": {
+          "pairId": { "type": "string", "description": "Unique identifier for the pair" },
+          "group": { "type": "string", "description": "Veteran group name (if any)" },
+          "appDate": { "type": "string", "format": "date", "description": "Application date" },
+          "missingPerson": {
+            "type": "boolean",
+            "description": "True if the pair is missing a person (veteran has paired_with but only 1 person)"
+          },
+          "people": {
+            "type": "array",
+            "description": "List of people in the pair (veteran and/or guardian)",
+            "items": { "$ref": "#/components/schemas/AssignmentPerson" }
+          }
+        }
+      },
+      "AssignmentPerson": {
+        "type": "object",
+        "description": "An individual person (veteran or guardian) in a flight assignment",
+        "properties": {
+          "type": { "type": "string", "enum": ["Veteran", "Guardian"], "description": "Person type" },
+          "id": { "type": "string", "description": "Document ID" },
+          "name_first": { "type": "string", "description": "First name" },
+          "name_last": { "type": "string", "description": "Last name" },
+          "city": { "type": "string", "description": "City" },
+          "appdate": { "type": "string", "format": "date", "description": "Application date" },
+          "group": { "type": "string", "description": "Group name (if any)" },
+          "nofly": { "type": "boolean", "description": "Whether person is marked as no-fly" },
+          "fm_number": { "type": "string", "description": "FM number for caller assignment" },
+          "assigned_to": { "type": "string", "description": "Assigned caller" },
+          "mail_sent": { "type": "boolean", "description": "Whether mail has been sent" },
+          "email_sent": { "type": "boolean", "description": "Whether email has been sent" },
+          "confirmed": { "type": "string", "description": "Confirmation status" },
+          "paired_with": { "type": "string", "description": "ID of paired person" }
+        }
+      },
+      "AddVeteransResult": {
+        "type": "object",
+        "description": "Result of adding veterans to a flight",
+        "properties": {
+          "added": {
+            "type": "object",
+            "properties": {
+              "veterans": { "type": "integer", "description": "Number of veterans added" },
+              "guardians": { "type": "integer", "description": "Number of guardians added" }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of errors encountered during processing"
+          }
+        }
+      },
+      "UnpairedVeteranResult": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Full name of the veteran (first + last)" },
+          "city": { "type": "string", "description": "City and state of residence (city, state)" },
+          "flight": { "type": "string", "description": "Flight ID assignment" },
+          "prefs": { "type": "string", "description": "Guardian preference notes" }
+        }
+      },
+      "UnpairedVeteranResults": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "description": "Document ID" },
+            "name": { "type": "string", "description": "Full name of the veteran (first + last)" },
+            "city": { "type": "string", "description": "City and state of residence (city, state)" },
+            "flight": { "type": "string", "description": "Flight ID assignment" },
+            "prefs": { "type": "string", "description": "Guardian preference notes" }
+          }
+        }
+      },
+      "RecentActivityEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique identifier for the document" },
+          "type": {
+            "type": "string",
+            "enum": ["Veteran", "Guardian"],
+            "description": "Type of applicant - either Veteran or Guardian"
+          },
+          "name": { "type": "string", "description": "Name of the applicant" },
+          "city": { "type": "string", "description": "City and state of residence" },
+          "appdate": { "type": "string", "description": "Date the application was received" },
+          "recdate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time the change occurred (UTC ISO string)"
+          },
+          "recby": { "type": "string", "description": "User who made the change" },
+          "change": { "type": "string", "description": "Short summary of the change" }
+        },
+        "required": ["id", "type", "name", "city", "appdate", "recdate", "recby", "change"]
+      },
+      "FlightDetailResult": {
+        "type": "object",
+        "description": "Flight detail data including flight info, statistics, and seat/bus assignments",
+        "properties": {
+          "flight": {
+            "type": "object",
+            "description": "Flight metadata",
+            "properties": {
+              "id": { "type": "string", "description": "Flight document ID" },
+              "name": { "type": "string", "description": "Flight name" },
+              "capacity": { "type": "integer", "description": "Flight capacity" },
+              "flight_date": { "type": "string", "format": "date", "description": "Flight date in YYYY-MM-DD format" }
+            }
+          },
+          "stats": {
+            "type": "object",
+            "description": "Statistics for the flight",
+            "properties": {
+              "buses": {
+                "type": "object",
+                "description": "Count of people per bus",
+                "properties": {
+                  "None": { "type": "integer" },
+                  "Alpha1": { "type": "integer" },
+                  "Alpha2": { "type": "integer" },
+                  "Alpha3": { "type": "integer" },
+                  "Alpha4": { "type": "integer" },
+                  "Alpha5": { "type": "integer" },
+                  "Bravo1": { "type": "integer" },
+                  "Bravo2": { "type": "integer" },
+                  "Bravo3": { "type": "integer" },
+                  "Bravo4": { "type": "integer" },
+                  "Bravo5": { "type": "integer" }
+                }
+              },
+              "tours": {
+                "type": "object",
+                "description": "Count of people per tour (Alpha = Alpha1-5, Bravo = Bravo1-5)",
+                "properties": {
+                  "Alpha": { "type": "integer" },
+                  "Bravo": { "type": "integer" },
+                  "None": { "type": "integer" }
+                }
+              },
+              "flight": {
+                "type": "object",
+                "description": "Count of people per tour excluding nofly entries",
+                "properties": {
+                  "Alpha": { "type": "integer" },
+                  "Bravo": { "type": "integer" },
+                  "None": { "type": "integer" }
+                }
+              }
+            }
+          },
+          "pairs": {
+            "type": "array",
+            "description": "List of veteran-guardian pairs with seat/bus assignments",
+            "items": { "$ref": "#/components/schemas/FlightDetailPair" }
+          }
+        }
+      },
+      "FlightDetailPair": {
+        "type": "object",
+        "description": "A veteran-guardian pairing with mismatch detection",
+        "properties": {
+          "pairId": {
+            "type": "string",
+            "description": "Unique identifier for the pair (veteran's ID or guardian's ID if unpaired)"
+          },
+          "busMismatch": {
+            "type": "boolean",
+            "description": "True if people in the pair have different bus assignments"
+          },
+          "missingPairedPerson": { "type": "boolean", "description": "True if a paired person is not on this flight" },
+          "people": {
+            "type": "array",
+            "description": "List of people in the pair (veteran and/or guardian)",
+            "items": { "$ref": "#/components/schemas/FlightDetailPerson" }
+          }
+        }
+      },
+      "FlightDetailPerson": {
+        "type": "object",
+        "description": "An individual person (veteran or guardian) in the flight detail",
+        "properties": {
+          "type": { "type": "string", "enum": ["Veteran", "Guardian"], "description": "Person type" },
+          "id": { "type": "string", "description": "Document ID" },
+          "name_first": { "type": "string", "description": "First name" },
+          "name_last": { "type": "string", "description": "Last name" },
+          "city": { "type": "string", "description": "City and state" },
+          "bus": {
+            "type": "string",
+            "enum": [
+              "None",
+              "Alpha1",
+              "Alpha2",
+              "Alpha3",
+              "Alpha4",
+              "Alpha5",
+              "Bravo1",
+              "Bravo2",
+              "Bravo3",
+              "Bravo4",
+              "Bravo5"
+            ],
+            "description": "Bus assignment"
+          },
+          "seat": { "type": "string", "description": "Seat assignment (e.g., \"14A\")" },
+          "shirt": { "type": "string", "description": "Shirt size" },
+          "nofly": { "type": "boolean", "description": "Whether person is marked as no-fly" },
+          "confirmed": { "type": "boolean", "description": "Whether person is confirmed for the flight" },
+          "med_limits": { "type": "string", "description": "Medical limitations (Veterans only)" },
+          "group": { "type": "string", "description": "Group name (Veterans only)" },
+          "med_exprnc": { "type": "string", "description": "Medical experience (Guardians only)" },
+          "training": { "type": "string", "description": "Training status (Guardians only)" },
+          "training_complete": { "type": "boolean", "description": "Whether training is complete (Guardians only)" }
+        }
+      }
+    }
+  },
+  "security": [{ "GoogleAuth": ["openid", "email", "profile"] }],
+  "paths": {
+    "/exports/flight": {
+      "get": {
+        "summary": "Export flight roster data as CSV",
+        "description": "Proxies the CouchDB `flight-csv` list export and returns a CSV file.\nThis export accepts a flight name and an optional role filter.\nThe response is served as a downloadable CSV attachment.\n",
+        "tags": ["Exports"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "flightName",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Flight name to export."
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": { "type": "string", "enum": ["All", "Veterans", "Guardians"], "default": "All" },
+            "description": "Optional role-based filter for the flight export."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV export generated successfully",
+            "content": { "text/csv": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "400": {
+            "description": "Missing or invalid query parameters",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Failed to retrieve export data",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "503": {
+            "description": "Database session could not be established",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/exports/callcenterfollowup": {
+      "get": {
+        "summary": "Export call center follow-up list as CSV",
+        "description": "Proxies the CouchDB `callcenterfollowup-csv` list export and returns\na CSV file for the selected flight.\n",
+        "tags": ["Exports"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "flightName",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Flight name to export."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV export generated successfully",
+            "content": { "text/csv": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "400": {
+            "description": "Missing required query parameters",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Failed to retrieve export data",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "503": {
+            "description": "Database session could not be established",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/exports/tourlead": {
+      "get": {
+        "summary": "Export tour lead data as CSV",
+        "description": "Proxies the CouchDB `tourlead-csv` list export and returns\na CSV file for the selected flight.\n",
+        "tags": ["Exports"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "flightName",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Flight name to export."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV export generated successfully",
+            "content": { "text/csv": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "400": {
+            "description": "Missing required query parameters",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Failed to retrieve export data",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "503": {
+            "description": "Database session could not be established",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/flights/{id}/assignments": {
+      "get": {
+        "summary": "Retrieve flight assignment data",
+        "description": "Retrieves the current assignment data for a specified flight including:\n- Flight metadata (name, capacity, date)\n- List of veteran-guardian pairs assigned to the flight\n- Counts of veterans, guardians, confirmed, and remaining capacity\n\nVeterans and guardians marked as nofly are excluded from counts.\nPairs are sorted by group (if present) then by application date.\n",
+        "tags": ["Flight Assignments"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Flight document ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flight assignment data retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FlightAssignment" } } }
+          },
+          "400": { "description": "Document is not a flight record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Flight not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "post": {
+        "summary": "Add veterans from waitlist to flight",
+        "description": "Adds a specified number of veterans from the waitlist to the flight.\n\nThe selection follows these rules:\n- Veterans are taken in order of application date\n- When a veteran in a group is selected, all group members are added\n- Veterans with paired guardians have their guardian added automatically\n- Flight history entries are recorded for each assignment\n\nThe veteranCount must be between 1 and 100.\n",
+        "tags": ["Flight Assignments"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Flight document ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["veteranCount"],
+                "properties": {
+                  "veteranCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Number of veterans to add from waitlist"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Veterans added successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddVeteransResult" } } }
+          },
+          "400": { "description": "Invalid request (bad veteranCount or not a flight record)" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Flight not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/flights/{id}/detail": {
+      "get": {
+        "summary": "Retrieve flight detail data with seat and bus assignments",
+        "description": "Retrieves detailed seat and bus assignment data for a specified flight including:\n- Flight metadata (name, capacity, date)\n- Statistics:\n  - Bus counts (None, Alpha1-5, Bravo1-5)\n  - Tour counts (Alpha, Bravo, None)\n  - Flight counts (excludes nofly entries)\n- List of veteran-guardian pairs with seat/bus assignments\n\nEach pair includes mismatch flags:\n- busMismatch: true if people in the pair have different bus assignments\n- missingPairedPerson: true if a paired person is not on this flight\n\nGuardians paired with multiple veterans are deduplicated within each pair.\n",
+        "tags": ["Flight Detail"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Flight document ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flight detail data retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FlightDetailResult" } } }
+          },
+          "400": { "description": "Document is not a flight record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Flight not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/flights": {
+      "get": {
+        "summary": "Retrieve a list of all flights",
+        "description": "Retrieves all flights from the database using the CouchDB \"Flights\" view.\nReturns an array of flight objects containing name, flight_date, capacity, and completed fields.\n",
+        "tags": ["Flights"],
+        "security": [{ "GoogleAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of flights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "_id": { "type": "string", "description": "Flight document ID" },
+                      "name": { "type": "string", "description": "Flight name" },
+                      "flight_date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Flight date in YYYY-MM-DD format"
+                      },
+                      "capacity": { "type": "integer", "description": "Flight capacity" },
+                      "completed": { "type": "boolean", "description": "Whether the flight is completed" }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "_id": "422fc05d0401190a7a13ad7ffde62d3c",
+                    "name": "SSHF-Nov2011",
+                    "flight_date": "2011-11-05",
+                    "capacity": 448,
+                    "completed": true
+                  }
+                ]
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new flight record",
+        "tags": ["Flights"],
+        "security": [{ "GoogleAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flight" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Flight record created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flight" } } }
+          },
+          "400": {
+            "description": "Invalid flight data",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/flights/{id}": {
+      "get": {
+        "summary": "Retrieve a flight record by ID",
+        "tags": ["Flights"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Flight record ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flight record retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flight" } } }
+          },
+          "400": { "description": "Document is not a flight record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Flight not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "put": {
+        "summary": "Update a flight record",
+        "tags": ["Flights"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Flight record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flight" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Flight record updated successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flight" } } }
+          },
+          "400": { "description": "Invalid flight data or document is not a flight record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Flight not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/guardians": {
+      "post": {
+        "summary": "Create a new guardian record",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Guardian" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Guardian record created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Guardian" } } }
+          },
+          "400": {
+            "description": "Invalid guardian data",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/guardians/{id}": {
+      "get": {
+        "summary": "Retrieve a guardian record by ID",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Guardian record ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guardian record retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Guardian" } } }
+          },
+          "400": { "description": "Document is not a guardian record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Guardian not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "put": {
+        "summary": "Update a guardian record",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Guardian record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Guardian" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Guardian record updated successfully. When veteran.pairings array is modified, the affected veteran records are automatically updated to reflect the pairing changes. History entries are added to both guardian and veteran records.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Guardian" } } }
+          },
+          "400": { "description": "Invalid guardian data or document is not a guardian record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Guardian not found" },
+          "500": { "description": "Server error" }
+        },
+        "x-code-samples": [
+          {
+            "lang": "JavaScript",
+            "label": "Example: Adding a veteran pairing",
+            "source": "// When updating veteran.pairings, the system automatically:\n// 1. Updates the veteran's guardian.id and guardian.name\n// 2. Adds history entries to both guardian and veteran records\nconst response = await fetch('/guardians/guardian-id', {\n  method: 'PUT',\n  body: JSON.stringify({\n    veteran: {\n      pairings: [{ id: 'veteran-id', name: 'Veteran Name' }]\n    }\n  })\n});\n"
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a guardian record",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Guardian record ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guardian record deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" }, "id": { "type": "string" }, "rev": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Document is not a guardian record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Guardian not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/guardians/{id}/seat": {
+      "patch": {
+        "summary": "Update a guardian's seat assignment",
+        "description": "Quickly updates only the seat assignment for a guardian without loading the full model.\nAdds a history entry for the change.\n",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Guardian record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["value"],
+                "properties": { "value": { "type": "string", "description": "New seat assignment (e.g., \"14A\")" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seat updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" },
+                    "rev": { "type": "string" },
+                    "seat": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid request or document is not a guardian record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Guardian not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/guardians/{id}/bus": {
+      "patch": {
+        "summary": "Update a guardian's bus assignment",
+        "description": "Quickly updates only the bus assignment for a guardian without loading the full model.\nAdds a history entry for the change.\nBus must be one of: None, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5, Bravo1, Bravo2, Bravo3, Bravo4, Bravo5\n",
+        "tags": ["Guardians"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Guardian record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "None",
+                      "Alpha1",
+                      "Alpha2",
+                      "Alpha3",
+                      "Alpha4",
+                      "Alpha5",
+                      "Bravo1",
+                      "Bravo2",
+                      "Bravo3",
+                      "Bravo4",
+                      "Bravo5"
+                    ],
+                    "description": "New bus assignment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bus updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" },
+                    "rev": { "type": "string" },
+                    "bus": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid request, invalid bus value, or document is not a guardian record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Guardian not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/recent-activity": {
+      "get": {
+        "summary": "Retrieve recent activity entries",
+        "description": "Retrieves paginated recent activity entries from the database.\nShows various categories of recent changes from most recent to oldest.\nThe type parameter determines which category of changes to retrieve.\n",
+        "tags": ["Recent Activity"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": { "type": "string", "enum": ["modified", "added", "call", "flight", "pairing"] },
+            "description": "Type of recent activity to retrieve:\n- modified: Recently modified records\n- added: Recently added records\n- call: Recent call changes\n- flight: Recent flight changes\n- pairing: Recent pairing changes\n"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Zero-based offset for pagination (number of records to skip)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Maximum number of results to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent activity entries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecentActivityEntry" } },
+                "example": [
+                  {
+                    "id": "0ccf1cdbac2279ae3e2de3791209c357",
+                    "type": "Guardian",
+                    "name": "Catherine Manaspas",
+                    "city": "Chippewa Falls, WI",
+                    "appdate": "2025-11-18",
+                    "recdate": "2025-12-29T01:04:40Z",
+                    "recby": "Steve Schmechel",
+                    "change": "changed flight from: None to: SSHF-Test01"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing type parameter",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "type": "string" } } },
+                "example": { "error": "type parameter is required" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "503": {
+            "description": "Database session error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "summary": "Search for veterans and guardians",
+        "description": "Searches for veterans and guardians based on provided criteria.\nThe search can be filtered by status or flight, but not both simultaneously.\nIf status is not 'All', flight filter will be ignored.\n",
+        "tags": ["Search"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 25 },
+            "description": "Maximum number of results to return"
+          },
+          {
+            "in": "query",
+            "name": "lastname",
+            "schema": { "type": "string" },
+            "description": "Last name to search for (partial match)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "All",
+                "Active",
+                "Flown",
+                "Deceased",
+                "Removed",
+                "Future-Spring",
+                "Future-Fall",
+                "Future-PostRestriction"
+              ],
+              "default": "Active"
+            },
+            "description": "Status filter for the search"
+          },
+          {
+            "in": "query",
+            "name": "flight",
+            "schema": { "type": "string", "default": "All" },
+            "description": "Flight ID filter for the search (ignored if status is not 'All')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search completed successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResults" },
+                "example": {
+                  "total_rows": 2,
+                  "offset": 0,
+                  "rows": [
+                    {
+                      "id": "doc1",
+                      "key": ["Active", "Smith"],
+                      "value": {
+                        "type": "Veteran",
+                        "name": "John Smith",
+                        "city": "Chicago",
+                        "appdate": "2024-01-15",
+                        "flight": "F23",
+                        "status": "Active",
+                        "pairing": "Jane Doe",
+                        "pairingId": "guard1"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          }
+        }
+      }
+    },
+    "/veterans": {
+      "post": {
+        "summary": "Create a new veteran record",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Veteran" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Veteran record created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Veteran" } } }
+          },
+          "400": {
+            "description": "Invalid veteran data",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/veterans/{id}": {
+      "get": {
+        "summary": "Retrieve a veteran record by ID",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Veteran record ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Veteran record retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Veteran" } } }
+          },
+          "400": { "description": "Document is not a veteran record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Veteran not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "put": {
+        "summary": "Update a veteran record",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Veteran record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Veteran" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Veteran record updated successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Veteran" } } }
+          },
+          "400": { "description": "Invalid veteran data or document is not a veteran record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Veteran not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a veteran record",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Veteran record ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Veteran record deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" }, "id": { "type": "string" }, "rev": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Document is not a veteran record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Veteran not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/veterans/search": {
+      "get": {
+        "summary": "Search for unpaired veterans",
+        "description": "Searches for unpaired veterans based on provided criteria.\nCurrently only supports searching for unpaired veterans (paired=false).\nThe search uses the unpaired_veterans_by_last_name view which filters\nveterans where guardian.id is empty.\n",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "paired",
+            "schema": { "type": "boolean", "default": false },
+            "description": "Whether to search for paired veterans (currently not implemented)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Active",
+                "Flown",
+                "Deceased",
+                "Removed",
+                "Future-Spring",
+                "Future-Fall",
+                "Future-PostRestriction"
+              ],
+              "default": "Active"
+            },
+            "description": "Flight status filter for the search"
+          },
+          {
+            "in": "query",
+            "name": "lastname",
+            "schema": { "type": "string" },
+            "description": "Last name to search for (partial match, case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 25 },
+            "description": "Maximum number of results to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search completed successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UnpairedVeteranResults" },
+                "example": [
+                  {
+                    "id": "doc1",
+                    "name": "John Smith",
+                    "city": "Chicago, IL",
+                    "flight": "F23",
+                    "prefs": "Prefers window seat"
+                  },
+                  { "id": "doc2", "name": "Jane Doe", "city": "New York, NY", "flight": "F24", "prefs": "" }
+                ]
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "501": {
+            "description": "Not Implemented - paired=true is not yet supported",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          }
+        }
+      }
+    },
+    "/veterans/{id}/seat": {
+      "patch": {
+        "summary": "Update a veteran's seat assignment",
+        "description": "Quickly updates only the seat assignment for a veteran without loading the full model.\nAdds a history entry for the change.\n",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Veteran record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["value"],
+                "properties": { "value": { "type": "string", "description": "New seat assignment (e.g., \"14A\")" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seat updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" },
+                    "rev": { "type": "string" },
+                    "seat": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid request or document is not a veteran record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Veteran not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/veterans/{id}/bus": {
+      "patch": {
+        "summary": "Update a veteran's bus assignment",
+        "description": "Quickly updates only the bus assignment for a veteran without loading the full model.\nAdds a history entry for the change.\nBus must be one of: None, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5, Bravo1, Bravo2, Bravo3, Bravo4, Bravo5\n",
+        "tags": ["Veterans"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Veteran record ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "None",
+                      "Alpha1",
+                      "Alpha2",
+                      "Alpha3",
+                      "Alpha4",
+                      "Alpha5",
+                      "Bravo1",
+                      "Bravo2",
+                      "Bravo3",
+                      "Bravo4",
+                      "Bravo5"
+                    ],
+                    "description": "New bus assignment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bus updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" },
+                    "rev": { "type": "string" },
+                    "bus": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid request, invalid bus value, or document is not a veteran record" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Veteran not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/waitlist": {
+      "get": {
+        "summary": "Retrieve waitlist entries for veterans or guardians",
+        "description": "Retrieves paginated waitlist entries from the database.\nThe veteran waitlist shows veterans waiting to be assigned to a flight.\nThe guardian waitlist shows unpaired guardians waiting to be matched with a veteran.\nResults are returned in waitlist order as defined by the database views.\n",
+        "tags": ["Waitlist"],
+        "security": [{ "GoogleAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": { "type": "string", "enum": ["veterans", "guardians"] },
+            "description": "Type of waitlist to retrieve"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Zero-based offset for pagination (number of records to skip)"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Maximum number of results to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Waitlist entries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [{ "$ref": "#/components/schemas/Veteran" }, { "$ref": "#/components/schemas/Guardian" }]
+                  }
+                },
+                "examples": {
+                  "veterans": {
+                    "summary": "Veteran waitlist response",
+                    "value": [
+                      {
+                        "_id": "vet123",
+                        "type": "Veteran",
+                        "name": { "first": "John", "last": "Smith" },
+                        "address": { "city": "Chicago", "state": "IL" }
+                      }
+                    ]
+                  },
+                  "guardians": {
+                    "summary": "Guardian waitlist response",
+                    "value": [
+                      {
+                        "_id": "guard456",
+                        "type": "Guardian",
+                        "name": { "first": "Jane", "last": "Doe" },
+                        "address": { "city": "Springfield", "state": "IL" }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing type parameter",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "type": "string" } } },
+                "example": { "error": "type parameter is required" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          },
+          "503": {
+            "description": "Database session error",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

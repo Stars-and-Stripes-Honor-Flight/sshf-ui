@@ -416,6 +416,26 @@ class ApiClient {
     }
   }
 
+  // Get recent activity
+  async getRecentActivity({ type = 'modified', offset = 0, limit = 20 } = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (type) queryParams.append('type', type);
+      queryParams.append('offset', offset);
+      queryParams.append('limit', limit);
+
+      const response = await this.request(`/recent-activity?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch recent activity: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Export flight roster as CSV
   async exportFlightRoster(flightName = '', filter = 'All') {
     try {
@@ -431,6 +451,84 @@ class ApiClient {
       return response;
     } catch (error) {
       console.error(`Failed to export flight roster: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Get waitlist
+  async getWaitlist({ type = 'veterans', offset = 0, limit = 20 } = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      queryParams.append('type', type);
+      queryParams.append('offset', offset);
+      queryParams.append('limit', limit);
+
+      const response = await this.request(`/waitlist?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      const data = await response.json();
+      
+      // Transform the response to simplify fields for list display
+      const transformedData = Array.isArray(data) ? data : (data.rows || []);
+      
+      return transformedData.map(entry => {
+        // For guardians, combine notes.other and medical.experience
+        // For veterans, combine call.notes and flight.status_note
+        let prefs = '';
+        if (type === 'guardians') {
+          const notesOther = entry.notes?.other || '';
+          const medicalExp = entry.medical?.experience || '';
+          prefs = [notesOther, medicalExp].filter(Boolean).join(' | ');
+        } else {
+          const callNotes = entry.call?.notes || '';
+          const statusNote = entry.flight?.status_note || '';
+          prefs = [callNotes, statusNote].filter(Boolean).join(' | ');
+        }
+
+        // Format name: if nickname exists, use "Nickname: First Middle Last", otherwise just "First Middle Last"
+        // For veterans, add vet_type in parentheses
+        let formattedName = entry.name;
+        if (typeof entry.name === 'object') {
+          const fullName = `${entry.name?.first || ''} ${entry.name?.middle ? `${entry.name.middle} ` : ''}${entry.name?.last || ''}`.trim();
+          if (entry.name?.nickname) {
+            formattedName = `${entry.name.nickname}: ${fullName}`;
+          } else {
+            formattedName = fullName;
+          }
+        }
+        
+        // Add vet_type for veterans
+        if (type === 'veterans' && entry.vet_type) {
+          formattedName = `${formattedName} (${entry.vet_type})`;
+        }
+
+        // Calculate age from birth_date
+        let age = null;
+        if (entry.birth_date) {
+          const birthDate = new Date(entry.birth_date);
+          const today = new Date();
+          let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            calculatedAge--;
+          }
+          age = calculatedAge;
+        }
+
+        return {
+          id: entry._id || entry.id,
+          name: formattedName,
+          age,
+          city: entry.address?.city || '',
+          appdate: entry.app_date || '',
+          birth_date: entry.birth_date || '',
+          prefs,
+        };
+      });
+    } catch (error) {
+      toast.error(`Failed to fetch waitlist: ${error.message}`);
       throw error;
     }
   }

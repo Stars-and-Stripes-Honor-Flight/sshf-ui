@@ -35,6 +35,12 @@ export const paths = {
       create: '/guardians/create',
       details: (guardianId) => `/guardians/details?id=${guardianId}`
     },
+    activity: {
+      list: '/activity'
+    },
+    waitlist: {
+      list: '/waitlist'
+    },
     exports: {
       flight: '/exports/flight',
       callCenterFollowup: '/exports/callcenterfollowup',

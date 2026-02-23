@@ -65,6 +65,32 @@ export const layoutConfig = {
           ],
         },
         {
+          key: 'activity',
+          title: 'Recent Activity',
+          icon: 'history',
+          items: [
+            { 
+              key: 'activity:list', 
+              title: 'Activity Log', 
+              href: paths.main.activity.list,
+              matcher: { type: 'startsWith', href: '/activity' }
+            }
+          ],
+        },
+        {
+          key: 'waitlist',
+          title: 'Waitlist',
+          icon: 'users',
+          items: [
+            { 
+              key: 'waitlist:list', 
+              title: 'Waitlist', 
+              href: paths.main.waitlist.list,
+              matcher: { type: 'startsWith', href: '/waitlist' }
+            }
+          ],
+        },
+        {
           key: 'flights',
           title: 'Flights',
           icon: 'airplane',
