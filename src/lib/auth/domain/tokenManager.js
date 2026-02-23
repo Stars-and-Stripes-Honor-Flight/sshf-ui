@@ -7,8 +7,8 @@ class TokenManager {
     this.accessTokenKey = 'google-access-token';
     this.tokenExpiryKey = 'google-token-expiry';
     
-    // Default token refresh buffer (5 minutes before expiry)
-    this.refreshBuffer = 5 * 60 * 1000;
+    // Refresh token 10 minutes before expiry (was 5 minutes)
+    this.refreshBuffer = 10 * 60 * 1000;
     
     // Token refresh is in progress flag
     this.isRefreshing = false;
@@ -27,10 +27,10 @@ class TokenManager {
   startPeriodicRefresh() {
     if (typeof window === 'undefined') return;
     
-    // Check every minute
+    // Check every 30 seconds (was 60 seconds) for faster token refresh
     this.refreshTimer = setInterval(() => {
       this.checkAndRefreshToken();
-    }, 60 * 1000);
+    }, 30 * 1000);
   }
 
   // Stop periodic refresh checking
@@ -122,6 +122,7 @@ class TokenManager {
     const refreshToken = this.getRefreshToken();
     
     if (!refreshToken) {
+      console.warn('No refresh token available');
       this.clearTokens();
       return null;
     }
@@ -145,10 +146,15 @@ class TokenManager {
       });
       
       if (!response.ok) {
-        throw new Error('Token refresh failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Token refresh failed with status ${response.status}`);
       }
       
       const { accessToken, expiresIn } = await response.json();
+      
+      if (!accessToken || !expiresIn) {
+        throw new Error('Invalid token refresh response');
+      }
       
       // Store the new token data
       this.storeTokenData(accessToken, null, expiresIn);
@@ -166,6 +172,11 @@ class TokenManager {
       // Reject all pending promises
       this.refreshQueue.forEach(resolve => resolve(null));
       this.refreshQueue = [];
+      
+      // Dispatch event to notify app of auth failure
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:tokenRefreshFailed', { detail: error }));
+      }
       
       return null;
     } finally {

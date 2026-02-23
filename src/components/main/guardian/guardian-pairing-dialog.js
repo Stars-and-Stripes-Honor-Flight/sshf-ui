@@ -39,13 +39,15 @@ import { formatFlightNameForDisplay } from '@/lib/flights';
  * @param {Function} props.onApply - Callback when pairings are applied (receives selectedVeterans array)
  * @param {Array} props.currentPairings - Current pairings from the form
  * @param {string} props.preferenceNotes - Veteran preference notes to display
+ * @param {Function} props.onHasChanges - Callback to notify parent when changes are detected
  */
 export function GuardianPairingDialog({ 
   open, 
   onClose, 
   onApply,
   currentPairings = [],
-  preferenceNotes = ''
+  preferenceNotes = '',
+  onHasChanges
 }) {
   // Veteran search state
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -56,6 +58,8 @@ export function GuardianPairingDialog({
   
   // Ref to track if we've auto-selected from sessionStorage
   const hasAutoSelectedRef = React.useRef(false);
+  const initialPairingsRef = React.useRef(null);
+  const lastNotifiedChangeRef = React.useRef(null);
 
   // Debounce search query
   React.useEffect(() => {
@@ -97,17 +101,36 @@ export function GuardianPairingDialog({
     performSearch();
   }, [debouncedSearchQuery, open]);
 
-  // Initialize selected veterans from current pairings when dialog opens
+  // Initialize selected veterans ONLY when dialog opens
   React.useEffect(() => {
-    if (open) {
-      // Capture currentPairings when dialog opens
+    if (open && !initialPairingsRef.current) {
+      // Only initialize when dialog first opens
       setSelectedVeterans([...currentPairings]);
+      initialPairingsRef.current = currentPairings;
       setSearchQuery('');
       setSearchResults([]);
       // Reset the auto-select flag when dialog opens so it can work again if needed
       hasAutoSelectedRef.current = false;
+    } else if (!open) {
+      // Reset the ref when dialog closes so it can initialize again next time
+      initialPairingsRef.current = null;
     }
   }, [open, currentPairings]);
+
+  // Notify parent when there are unsaved changes in the dialog
+  React.useEffect(() => {
+    if (open) {
+      // Check if selectedVeterans differs from currentPairings
+      const hasChanges = selectedVeterans.length !== currentPairings.length || 
+        selectedVeterans.some((vet, idx) => vet.id !== currentPairings[idx]?.id);
+      
+      // Only call callback if the state has actually changed
+      if (hasChanges !== lastNotifiedChangeRef.current && onHasChanges) {
+        lastNotifiedChangeRef.current = hasChanges;
+        onHasChanges(hasChanges);
+      }
+    }
+  }, [selectedVeterans, open, currentPairings.length]); // Only depend on length, not the whole array
 
   // Handle session storage veteranId for auto-selecting veteran
   React.useEffect(() => {
@@ -204,10 +227,16 @@ export function GuardianPairingDialog({
 
   // Handle closing dialog
   const handleClose = React.useCallback(() => {
+    // Notify parent about changes before closing
+    if (onHasChanges) {
+      const hasChanges = selectedVeterans.length !== currentPairings.length || 
+        selectedVeterans.some((vet, idx) => vet.id !== currentPairings[idx]?.id);
+      onHasChanges(hasChanges);
+    }
     setSearchQuery('');
     setSearchResults([]);
     onClose();
-  }, [onClose]);
+  }, [onClose, onHasChanges, selectedVeterans, currentPairings]);
 
   return (
     <Dialog
