@@ -192,6 +192,20 @@ class ApiClient {
     }
   }
 
+  // Update a veteran's seat assignment
+  async updateVeteranSeat(id, seat) {
+    try {
+      const response = await this.request(`/veterans/${id}/seat`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: seat }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update veteran seat: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Delete a veteran
   async deleteVeteran(id) {
     try {
@@ -246,6 +260,20 @@ class ApiClient {
     }
   }
 
+  // Update a guardian's seat assignment
+  async updateGuardianSeat(id, seat) {
+    try {
+      const response = await this.request(`/guardians/${id}/seat`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: seat }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update guardian seat: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Delete a guardian
   async deleteGuardian(id) {
     try {
@@ -268,6 +296,66 @@ class ApiClient {
       return await response.json();
     } catch (error) {
       toast.error(`Failed to fetch flight: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Get flight details (with pairs, stats, etc.)
+  async getFlightDetails(id) {
+    try {
+      const response = await this.request(`/flights/${id}/detail`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch flight details: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Get flight assignments (veterans, guardians, counts)
+  async getFlightAssignments(id) {
+    try {
+      const response = await this.request(`/flights/${id}/assignments`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch flight assignments: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Add veterans from waitlist to flight
+  async addVeteransToFlight(id, veteranCount) {
+    try {
+      const response = await this.request(`/flights/${id}/assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ veteranCount }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to add veterans to flight: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Fix bus mismatches for pairs in a flight
+  async fixBusMismatches(id, fixes) {
+    try {
+      const response = await this.request(`/flights/${id}/fix-bus-mismatches`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fixes }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fix bus mismatches: ${error.message}`);
       throw error;
     }
   }
@@ -328,6 +416,7 @@ class ApiClient {
     }
   }
 
+<<<<<<< 92-recent-changes-ui
   // Get recent activity
   async getRecentActivity({ type = 'modified', offset = 0, limit = 20 } = {}) {
     try {
@@ -344,10 +433,28 @@ class ApiClient {
       return await response.json();
     } catch (error) {
       toast.error(`Failed to fetch recent activity: ${error.message}`);
+=======
+  // Export flight roster as CSV
+  async exportFlightRoster(flightName = '', filter = 'All') {
+    try {
+      const queryParams = new URLSearchParams();
+      if (flightName) queryParams.append('flightName', flightName);
+      if (filter) queryParams.append('filter', filter);
+
+      const response = await this.request(`/exports/flight?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      // Return the response object so caller can handle blob download
+      return response;
+    } catch (error) {
+      console.error(`Failed to export flight roster: ${error.message}`);
+>>>>>>> main
       throw error;
     }
   }
 
+<<<<<<< 92-recent-changes-ui
   // Get waitlist
   async getWaitlist({ type = 'veterans', offset = 0, limit = 20 } = {}) {
     try {
@@ -422,6 +529,38 @@ class ApiClient {
       });
     } catch (error) {
       toast.error(`Failed to fetch waitlist: ${error.message}`);
+=======
+  // Export call center follow-up as CSV
+  async exportCallCenterFollowup(flightName = '') {
+    try {
+      const queryParams = new URLSearchParams();
+      if (flightName) queryParams.append('flightName', flightName);
+
+      const response = await this.request(`/exports/callcenterfollowup?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      return response;
+    } catch (error) {
+      console.error(`Failed to export call center follow-up: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Export tour lead as CSV
+  async exportTourLead(flightName = '') {
+    try {
+      const queryParams = new URLSearchParams();
+      if (flightName) queryParams.append('flightName', flightName);
+
+      const response = await this.request(`/exports/tourlead?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      return response;
+    } catch (error) {
+      console.error(`Failed to export tour lead: ${error.message}`);
+>>>>>>> main
       throw error;
     }
   }

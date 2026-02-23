@@ -16,7 +16,13 @@ export const layoutConfig = {
               key: 'search', 
               title: 'Veterans & Guardians', 
               href: paths.main.search.list,
-              matcher: { type: 'startsWith', href: '/search' }
+              matcher: { type: 'equals', href: '/search' }
+            },
+            { 
+              key: 'search:flights', 
+              title: 'Flights', 
+              href: paths.main.search.flights,
+              matcher: { type: 'equals', href: '/search-flights' }
             }
           ],
         },
@@ -59,6 +65,7 @@ export const layoutConfig = {
           ],
         },
         {
+<<<<<<< 92-recent-changes-ui
           key: 'activity',
           title: 'Recent Activity',
           icon: 'history',
@@ -81,6 +88,48 @@ export const layoutConfig = {
               title: 'Waitlist', 
               href: paths.main.waitlist.list,
               matcher: { type: 'startsWith', href: '/waitlist' }
+=======
+          key: 'flights',
+          title: 'Flights',
+          icon: 'airplane',
+          items: [
+            { 
+              key: 'flights:details', 
+              title: 'Flight Details', 
+              href: paths.main.flights.list,
+              matcher: { type: 'startsWith', href: '/flights/detail' }
+            },
+            { 
+              key: 'flights:create', 
+              title: 'Create Flight', 
+              href: paths.main.flights.create,
+              matcher: { type: 'startsWith', href: '/flights/create' }
+            }
+          ],
+        },
+        {
+          key: 'exports',
+          title: 'Exports',
+          icon: 'download',
+          items: [
+            {
+              key: 'exports:flight',
+              title: 'Flight Roster',
+              href: paths.main.exports.flight,
+              matcher: { type: 'equals', href: '/exports/flight' }
+            },
+            {
+              key: 'exports:callcenter',
+              title: 'Call Center Follow-up',
+              href: paths.main.exports.callCenterFollowup,
+              matcher: { type: 'equals', href: '/exports/callcenterfollowup' }
+            },
+            {
+              key: 'exports:tourlead',
+              title: 'Tour Lead',
+              href: paths.main.exports.tourLead,
+              matcher: { type: 'equals', href: '/exports/tourlead' }
+>>>>>>> main
             }
           ],
         },
