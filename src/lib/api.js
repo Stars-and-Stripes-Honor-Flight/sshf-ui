@@ -327,6 +327,26 @@ class ApiClient {
       throw error;
     }
   }
+
+  // Get recent activity
+  async getRecentActivity({ type = 'modified', offset = 0, limit = 20 } = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (type) queryParams.append('type', type);
+      queryParams.append('offset', offset);
+      queryParams.append('limit', limit);
+
+      const response = await this.request(`/recent-activity?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch recent activity: ${error.message}`);
+      throw error;
+    }
+  }
 }
 
 export const api = new ApiClient(); 

@@ -59,6 +59,19 @@ export const layoutConfig = {
           ],
         },
         {
+          key: 'activity',
+          title: 'Recent Activity',
+          icon: 'history',
+          items: [
+            { 
+              key: 'activity:list', 
+              title: 'Activity Log', 
+              href: paths.main.activity.list,
+              matcher: { type: 'startsWith', href: '/activity' }
+            }
+          ],
+        },
+        {
           key: 'settings',
           title: 'Settings',
           href: paths.main.settings.account,

@@ -29,6 +29,9 @@ export const paths = {
       create: '/guardians/create',
       details: (guardianId) => `/guardians/details?id=${guardianId}`
     },
+    activity: {
+      list: '/activity'
+    },
   },
   notAuthorized: '/errors/not-authorized/',
   notFound: '/errors/not-found/',
