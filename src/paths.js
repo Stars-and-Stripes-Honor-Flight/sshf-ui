@@ -32,6 +32,9 @@ export const paths = {
     activity: {
       list: '/activity'
     },
+    waitlist: {
+      list: '/waitlist'
+    },
   },
   notAuthorized: '/errors/not-authorized/',
   notFound: '/errors/not-found/',

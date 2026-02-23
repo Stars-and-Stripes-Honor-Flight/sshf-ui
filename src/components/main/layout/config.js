@@ -72,6 +72,19 @@ export const layoutConfig = {
           ],
         },
         {
+          key: 'waitlist',
+          title: 'Waitlist',
+          icon: 'users',
+          items: [
+            { 
+              key: 'waitlist:list', 
+              title: 'Waitlist', 
+              href: paths.main.waitlist.list,
+              matcher: { type: 'startsWith', href: '/waitlist' }
+            }
+          ],
+        },
+        {
           key: 'settings',
           title: 'Settings',
           href: paths.main.settings.account,
