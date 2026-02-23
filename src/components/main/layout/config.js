@@ -65,7 +65,6 @@ export const layoutConfig = {
           ],
         },
         {
-<<<<<<< 92-recent-changes-ui
           key: 'activity',
           title: 'Recent Activity',
           icon: 'history',
@@ -88,7 +87,10 @@ export const layoutConfig = {
               title: 'Waitlist', 
               href: paths.main.waitlist.list,
               matcher: { type: 'startsWith', href: '/waitlist' }
-=======
+            }
+          ],
+        },
+        {
           key: 'flights',
           title: 'Flights',
           icon: 'airplane',
@@ -129,7 +131,6 @@ export const layoutConfig = {
               title: 'Tour Lead',
               href: paths.main.exports.tourLead,
               matcher: { type: 'equals', href: '/exports/tourlead' }
->>>>>>> main
             }
           ],
         },

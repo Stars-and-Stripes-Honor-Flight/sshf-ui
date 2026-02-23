@@ -416,7 +416,6 @@ class ApiClient {
     }
   }
 
-<<<<<<< 92-recent-changes-ui
   // Get recent activity
   async getRecentActivity({ type = 'modified', offset = 0, limit = 20 } = {}) {
     try {
@@ -433,7 +432,10 @@ class ApiClient {
       return await response.json();
     } catch (error) {
       toast.error(`Failed to fetch recent activity: ${error.message}`);
-=======
+      throw error;
+    }
+  }
+
   // Export flight roster as CSV
   async exportFlightRoster(flightName = '', filter = 'All') {
     try {
@@ -449,12 +451,10 @@ class ApiClient {
       return response;
     } catch (error) {
       console.error(`Failed to export flight roster: ${error.message}`);
->>>>>>> main
       throw error;
     }
   }
 
-<<<<<<< 92-recent-changes-ui
   // Get waitlist
   async getWaitlist({ type = 'veterans', offset = 0, limit = 20 } = {}) {
     try {
@@ -529,7 +529,10 @@ class ApiClient {
       });
     } catch (error) {
       toast.error(`Failed to fetch waitlist: ${error.message}`);
-=======
+      throw error;
+    }
+  }
+
   // Export call center follow-up as CSV
   async exportCallCenterFollowup(flightName = '') {
     try {
@@ -560,7 +563,6 @@ class ApiClient {
       return response;
     } catch (error) {
       console.error(`Failed to export tour lead: ${error.message}`);
->>>>>>> main
       throw error;
     }
   }
