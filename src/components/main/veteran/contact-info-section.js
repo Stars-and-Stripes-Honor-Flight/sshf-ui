@@ -16,11 +16,10 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { Phone, Headset, EnvelopeSimple, Users, MagnifyingGlass } from '@phosphor-icons/react';
+import { Phone, EnvelopeSimple, Users, MagnifyingGlass } from '@phosphor-icons/react';
 import { paths } from '@/paths';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
-import { HistoryButton } from '@/components/main/shared/history-button';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 
 export function ContactInfoSection({ 
@@ -83,79 +82,6 @@ export function ContactInfoSection({
         emailGridProps={{ xs: 12, md: 4 }}
         disabled={disabled}
       />
-
-      {/* Call Center Information Card */}
-      <Card elevation={2}>
-        <CardContent>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
-            <FormSectionHeader 
-              icon={Headset} 
-              title="Call Center Information" 
-            />
-            <HistoryButton
-              title="Call Center"
-              history={veteran?.call?.history || []}
-              onOpenHistory={onOpenHistory}
-            />
-          </Stack>
-          <Grid container spacing={3}>
-            <Grid xs={12} md={6}>
-              <Controller
-                control={control}
-                name="call.assigned_to"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth disabled={disabled}>
-                    <InputLabel>Call Assigned To</InputLabel>
-                    <OutlinedInput {...field} inputProps={{ maxLength: 30 }} />
-                    {errors.call?.assigned_to ? <FormHelperText>{errors.call.assigned_to.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12}>
-              <Controller
-                control={control}
-                name="call.notes"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.call?.notes)} fullWidth disabled={disabled}>
-                    <InputLabel>Call Center Notes</InputLabel>
-                    <OutlinedInput {...field} multiline rows={3} />
-                    {errors.call?.notes ? <FormHelperText>{errors.call.notes.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="call.mail_sent"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
-                label="Veteran Mail Sent"
-              />
-            </Grid>
-            <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="call.email_sent"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
-                label="Email Veteran"
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
 
       {/* Emergency Contact Card */}
       <Card id="emergency-contact-section" elevation={2}>

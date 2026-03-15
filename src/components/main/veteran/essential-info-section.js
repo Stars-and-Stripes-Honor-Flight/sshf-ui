@@ -15,7 +15,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Medal, Airplane, FirstAid } from '@phosphor-icons/react';
+import { Medal, Airplane, FirstAid, Headset } from '@phosphor-icons/react';
 import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { HistoryButton } from '@/components/main/shared/history-button';
@@ -336,6 +336,105 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
         </CardContent>
       </Card>
 
+      {/* Call Center Information Card */}
+      <Card elevation={2}>
+        <CardContent>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+            <FormSectionHeader 
+              icon={Headset} 
+              title="Call Center Information" 
+            />
+            <HistoryButton
+              title="Call Center"
+              history={veteran?.call?.history || []}
+              onOpenHistory={onOpenHistory}
+            />
+          </Stack>
+          <Grid container spacing={3}>
+            <Grid xs={12} md={6}>
+              <Controller
+                control={control}
+                name="call.assigned_to"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.call?.assigned_to)} fullWidth disabled={disabled}>
+                    <InputLabel>Call Assigned To</InputLabel>
+                    <OutlinedInput {...field} inputProps={{ maxLength: 30 }} />
+                    {errors.call?.assigned_to ? <FormHelperText>{errors.call.assigned_to.message}</FormHelperText> : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12}>
+              <Controller
+                control={control}
+                name="call.notes"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.call?.notes)} fullWidth disabled={disabled}>
+                    <InputLabel>Call Center Notes</InputLabel>
+                    <OutlinedInput {...field} multiline rows={3} />
+                    {errors.call?.notes ? <FormHelperText>{errors.call.notes.message}</FormHelperText> : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <Controller
+                control={control}
+                name="flight.confirmed_date"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.flight?.confirmed_date)} fullWidth disabled={disabled}>
+                    <InputLabel>Confirmed Date</InputLabel>
+                    <OutlinedInput {...field} type="date" />
+                    {errors.flight?.confirmed_date ? <FormHelperText>{errors.flight.confirmed_date.message}</FormHelperText> : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <Controller
+                control={control}
+                name="flight.confirmed_by"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.flight?.confirmed_by)} fullWidth disabled={disabled}>
+                    <InputLabel>Confirmed By</InputLabel>
+                    <OutlinedInput {...field} inputProps={{ maxLength: 30 }} />
+                    {errors.flight?.confirmed_by ? <FormHelperText>{errors.flight.confirmed_by.message}</FormHelperText> : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Controller
+                    control={control}
+                    name="call.mail_sent"
+                    render={({ field }) => (
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
+                    )}
+                  />
+                }
+                label="Veteran Mail Sent"
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Controller
+                    control={control}
+                    name="call.email_sent"
+                    render={({ field }) => (
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
+                    )}
+                  />
+                }
+                label="Email Veteran"
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
       {/* Flight Status Card */}
       <Card id="flight-section" elevation={2}>
         <CardContent>
@@ -443,32 +542,6 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                       <Option value="Bravo5">Bravo5</Option>
                     </Select>
                     {errors.flight?.bus ? <FormHelperText>{errors.flight.bus.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={6}>
-              <Controller
-                control={control}
-                name="flight.confirmed_date"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.confirmed_date)} fullWidth disabled={disabled}>
-                    <InputLabel>Confirmed Date</InputLabel>
-                    <OutlinedInput {...field} type="date" />
-                    {errors.flight?.confirmed_date ? <FormHelperText>{errors.flight.confirmed_date.message}</FormHelperText> : null}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={6}>
-              <Controller
-                control={control}
-                name="flight.confirmed_by"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.confirmed_by)} fullWidth disabled={disabled}>
-                    <InputLabel>Confirmed By</InputLabel>
-                    <OutlinedInput {...field} inputProps={{ maxLength: 30 }} />
-                    {errors.flight?.confirmed_by ? <FormHelperText>{errors.flight.confirmed_by.message}</FormHelperText> : null}
                   </FormControl>
                 )}
               />
