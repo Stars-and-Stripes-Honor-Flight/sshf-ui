@@ -72,7 +72,35 @@ describe('EssentialInfoSection', () => {
     expect(screen.getByTestId('personal-information-card')).toBeInTheDocument();
     expect(screen.getByText('Service Information')).toBeInTheDocument();
     expect(screen.getByText('Medical Information')).toBeInTheDocument();
+    expect(screen.getByText('Call Center Information')).toBeInTheDocument();
     expect(screen.getByText('Flight Status')).toBeInTheDocument();
+  });
+
+  test('renders call center information fields and confirmed date/by', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+      { value: 'FL124', label: 'Flight 124', disabled: false },
+    ];
+    const mockVeteranWithCall = {
+      ...mockVeteran,
+      call: { assigned_to: 'Staff', notes: 'Notes', history: [] },
+    };
+    const { container } = render(
+      <TestWrapper defaultValues={{ call: { assigned_to: 'Staff', notes: 'Notes' }, flight: { confirmed_date: '', confirmed_by: '' } }}>
+        <EssentialInfoSection 
+          errors={{}} 
+          veteran={mockVeteranWithCall}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Call Center Information')).toBeInTheDocument();
+    expect(screen.getByText('Confirmed Date')).toBeInTheDocument();
+    expect(screen.getByText('Confirmed By')).toBeInTheDocument();
+    expect(container.querySelector('input[name="call.assigned_to"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="call.notes"]') || container.querySelector('textarea[name="call.notes"]')).toBeInTheDocument();
   });
 
   test('renders service information fields', () => {

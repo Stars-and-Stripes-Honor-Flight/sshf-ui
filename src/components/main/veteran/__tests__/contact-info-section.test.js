@@ -81,24 +81,7 @@ describe('ContactInfoSection', () => {
 
     expect(screen.getByText('Contact Information')).toBeInTheDocument();
     expect(screen.getByTestId('address-information-card')).toBeInTheDocument();
-    expect(screen.getByText('Call Center Information')).toBeInTheDocument();
     expect(screen.getByText('Emergency Contact')).toBeInTheDocument();
-  });
-
-  test('renders call center information fields', () => {
-    const { container } = render(
-      <TestWrapper defaultValues={{ call: { assigned_to: 'Staff', notes: 'Notes' } }}>
-        <ContactInfoSection 
-          errors={{}} 
-          veteran={mockVeteran}
-          onOpenHistory={mockOnOpenHistory}
-          onManagePairing={mockOnManagePairing}
-        />
-      </TestWrapper>
-    );
-
-    expect(container.querySelector('input[name="call.assigned_to"]')).toBeInTheDocument();
-    expect(container.querySelector('input[name="call.notes"]') || container.querySelector('textarea[name="call.notes"]')).toBeInTheDocument();
   });
 
   test('renders emergency contact fields', () => {
@@ -119,9 +102,6 @@ describe('ContactInfoSection', () => {
 
   test('displays error messages for contact fields', () => {
     const errors = {
-      call: {
-        assigned_to: { message: 'Assigned to is required' }
-      },
       emerg_contact: {
         name: { message: 'Name is required' }
       }
@@ -138,7 +118,6 @@ describe('ContactInfoSection', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Assigned to is required')).toBeInTheDocument();
     expect(screen.getByText('Name is required')).toBeInTheDocument();
   });
 
