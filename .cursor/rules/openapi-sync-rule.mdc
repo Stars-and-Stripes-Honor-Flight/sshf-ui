@@ -6,8 +6,8 @@ alwaysApply: true
 
 # OpenAPI sync workflow
 
-`docs/openapi.json` is the single source of truth for the backend contract. When the data
-the UI sends or reads changes, update the spec and consumers in the same task.
+`docs/openapi.json` is the single source of truth for the backend contract.
+It is generated and owned by the API and can not be modified in this project.
 
 1. Treat `docs/openapi.json` as canonical; do not create or rely on duplicate copies elsewhere in the repo.
 2. When an `api` method's request/response fields change, reconcile them with the matching schema in `docs/openapi.json`.
