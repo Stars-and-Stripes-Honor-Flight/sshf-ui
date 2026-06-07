@@ -20,6 +20,8 @@ import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { HistoryButton } from '@/components/main/shared/history-button';
 import { PersonalInformationCard } from '@/components/main/shared/personal-information-card';
+import { FormSelectField } from '@/components/main/shared/form-select-field';
+import { howHeardAboutOptions } from '@/schemas/call';
 
 export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, flightOptions, disabled = false }) {
   return (
@@ -364,6 +366,15 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                 )}
               />
             </Grid>
+            <FormSelectField
+              control={control}
+              name="call.how_heard_about"
+              label="How Heard About SSHF"
+              error={errors.call?.how_heard_about}
+              options={howHeardAboutOptions}
+              disabled={disabled}
+              gridProps={{ xs: 12, md: 6 }}
+            />
             <Grid xs={12}>
               <Controller
                 control={control}

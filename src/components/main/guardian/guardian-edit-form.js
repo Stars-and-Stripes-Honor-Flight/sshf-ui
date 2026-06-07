@@ -190,10 +190,13 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
       paid: false,
       exempt: false
     },
-    call: guardian.call || {
+    call: {
       assigned_to: '',
       notes: '',
-      email_sent: false
+      how_heard_about: 'Unknown',
+      email_sent: false,
+      ...(guardian.call || {}),
+      how_heard_about: guardian.call?.how_heard_about ?? 'Unknown',
     },
     emerg_contact: guardian.emerg_contact || { 
       name: '', 

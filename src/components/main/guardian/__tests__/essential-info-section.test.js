@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import '@testing-library/jest-dom';
@@ -112,6 +112,49 @@ describe('EssentialInfoSection', () => {
 
     expect(container.querySelector('input[name="call.assigned_to"]')).toBeInTheDocument();
     expect(container.querySelector('input[name="call.notes"]') || container.querySelector('textarea[name="call.notes"]')).toBeInTheDocument();
+  });
+
+  test('renders how heard about SSHF dropdown in call center section', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+    ];
+    const { container } = render(
+      <TestWrapper defaultValues={{ call: { assigned_to: '', notes: '', how_heard_about: 'Unknown' } }}>
+        <EssentialInfoSection
+          errors={{}}
+          guardian={mockGuardian}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('How Heard About SSHF')).toBeInTheDocument();
+    expect(container.querySelector('[name="call.how_heard_about"]')).toBeInTheDocument();
+  });
+
+  test('allows selecting how heard about value', async () => {
+    const user = userEvent.setup();
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+    ];
+    const { container } = render(
+      <TestWrapper defaultValues={{ call: { assigned_to: '', notes: '', how_heard_about: 'Unknown' } }}>
+        <EssentialInfoSection
+          errors={{}}
+          guardian={mockGuardian}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    const input = container.querySelector('[name="call.how_heard_about"]');
+    const selectDisplay = input.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+    await user.click(screen.getByRole('option', { name: 'social media' }));
+
+    expect(selectDisplay).toHaveTextContent('social media');
   });
 
   test('displays error messages for medical fields', () => {
