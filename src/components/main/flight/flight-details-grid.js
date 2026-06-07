@@ -42,6 +42,10 @@ import { logger } from '@/lib/default-logger';
 import { api } from '@/lib/api';
 import { VeteranGuardianSearchDialog } from '@/components/main/flight/veteran-guardian-search-dialog';
 
+function getAssignedTo(person) {
+  return person?.assigned_to ?? person?.call?.assigned_to ?? '';
+}
+
 // Helper component to render person name with status icons
 function PersonDisplay({ person, type = 'Veteran' }) {
   if (!person) {
@@ -227,18 +231,18 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
   const pairBg = index % 2 === 0 ? 'rgba(0, 0, 0, 0.02)' : 'transparent';
 
   // Display the local value if being edited, otherwise show the saved value
-  const displayAssignedTo = localAssignedTo !== null ? localAssignedTo : guardian?.call?.assigned_to;
+  const displayAssignedTo = localAssignedTo !== null ? localAssignedTo : getAssignedTo(guardian);
   
   // Check if veteran and guardian have mismatched call assignments
-  const veteranAssignedTo = veteran?.call?.assigned_to;
+  const veteranAssignedTo = getAssignedTo(veteran);
   const hasCallMismatch = guardian && veteranAssignedTo && displayAssignedTo && veteranAssignedTo !== displayAssignedTo;
 
   const handleSyncCallAssignment = async () => {
     // Sync guardian to veteran's call assignment
-    if (veteran?.call?.assigned_to && guardian && onUpdate) {
+    if (veteranAssignedTo && guardian && onUpdate) {
       try {
-        setLocalAssignedTo(veteran.call.assigned_to);
-        await onUpdate(guardian.id, 'Guardian', { call: { assigned_to: veteran.call.assigned_to } });
+        setLocalAssignedTo(veteranAssignedTo);
+        await onUpdate(guardian.id, 'Guardian', { call: { assigned_to: veteranAssignedTo } });
         setLocalAssignedTo(null);
         toast.success('Call assignment synced');
       } catch (error) {
@@ -353,7 +357,7 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
         <TableCell sx={{ borderBottom: 'none' }}>
           {veteran && (
             <EditableField
-              value={veteran.call?.assigned_to || ''}
+              value={getAssignedTo(veteran)}
               onBlur={handleAssignedToCallChange}
               placeholder="Assign to call"
               maxWidth={150}
