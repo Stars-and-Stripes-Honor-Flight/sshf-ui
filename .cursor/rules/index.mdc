@@ -1,0 +1,42 @@
+---
+description: Index and precedence guide for repository rule files
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Rules index and precedence
+
+This file explains how the repository rules in `.cursor/rules/` work together.
+
+## Baseline location
+
+The project baseline lives in `.cursor/index.mdc`. It defines the
+high-level environment: Next.js App Router UI, Google domain auth, REST API access via
+`src/lib/api.js`, JSON contracts in `docs/openapi.json`, and ES module syntax.
+
+Do not duplicate that baseline text in each rule file.
+
+## How rules work together
+
+Use the baseline for project-wide foundation and the focused rule files for behavior guardrails.
+
+- `test-first-planning.mdc` defines plan-first and test-first execution flow
+- `api-client-consistency.mdc` and `openapi-sync-rule.mdc` keep client calls and the contract aligned
+- `feature-wiring.mdc` and `naming-conventions.mdc` keep page/component/schema/test organization consistent
+- `auth-and-data-access.mdc` and `backend-access-guardrails.mdc` enforce auth and API access patterns
+- `config-and-script-consistency.mdc` and `security-and-secrets-hygiene.mdc` protect operational consistency and secrets hygiene
+
+## Conflict precedence guidance
+
+When guidance overlaps, apply rules in this order:
+
+1. Follow explicit user instructions first.
+2. Apply the project baseline (`.cursor/index.mdc`).
+3. Apply `test-first-planning.mdc` for workflow and sequencing.
+4. Apply the most specific rule file for the touched area (auth, data access, naming, docs, config, security).
+5. If two specific rules conflict, prefer the stricter guardrail and document the decision in your response.
+
+## Guardrails
+
+- Do not weaken stricter rule guidance to satisfy a looser rule.
+- If a rule becomes stale, update the rule file rather than silently bypassing it.

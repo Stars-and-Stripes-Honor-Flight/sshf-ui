@@ -1,0 +1,27 @@
+---
+description: Keep authentication and token handling consistent for API-backed UI
+globs: ["src/lib/api.js", "src/lib/auth/**/*.{js,jsx}", "src/contexts/auth/**/*.{js,jsx}", "src/app/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}"]
+alwaysApply: true
+---
+
+# Auth and data access workflow
+
+For protected data, keep authentication predictable so token attachment and refresh stay consistent.
+
+1. Acquire and refresh tokens through `tokenManager` (`src/lib/auth/domain/tokenManager`); do not read tokens ad hoc.
+2. Attach the bearer token via the API client's `getHeaders()`/`request()`, not per-call header construction.
+3. Let `request()` own the 401 path (refresh-and-retry, then `handleUnauthorized` redirect to sign-in).
+4. Gate protected pages/components on auth state from the auth context rather than re-checking tokens inline.
+5. Keep `paths` (`@/paths`) as the single source of route targets for redirects.
+
+## Protected access expectations
+
+- Components should assume `api` already handles auth; they react to resolved data or thrown errors.
+- A failed refresh must clear tokens and redirect once, through the existing `handleUnauthorized` flow.
+- Tests should cover unauthorized (401 → redirect) and authenticated success paths.
+
+## Guardrails
+
+- Do not bypass `tokenManager` or hardcode tokens, headers, or auth URLs in components.
+- Do not add new redirect targets as string literals; use `@/paths`.
+- Do not weaken or duplicate the 401 handling that lives in `src/lib/api.js`.

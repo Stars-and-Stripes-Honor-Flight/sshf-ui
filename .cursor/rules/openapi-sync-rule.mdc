@@ -1,0 +1,30 @@
+---
+description: Keep the OpenAPI contract and the API client/UI in sync
+globs: ["docs/openapi.json", "src/lib/api.js", "src/schemas/**/*.{js,ts}", "src/components/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}", "README.md"]
+alwaysApply: true
+---
+
+# OpenAPI sync workflow
+
+`docs/openapi.json` is the single source of truth for the backend contract.
+Important: It is generated and owned by the API and can not be modified in this project.
+If you find discrepancies between what is in this project related to the API and what is in the spec, surface them to the developer.
+The developer will either need to modify the approach on this project or go back to the API and make corrections.
+
+1. Treat `docs/openapi.json` as canonical; do not create or rely on duplicate copies elsewhere in the repo.
+2. When an `api` method's request/response fields change, reconcile them with the matching schema in `docs/openapi.json`.
+3. When reading a field, confirm its shape in the spec (e.g. flight-detail people expose flat `assigned_to`, full records use nested `call.assigned_to`).
+4. Keep zod schemas in `src/schemas/**` consistent with documented field names, types, and required-ness.
+5. Add or update tests that assert the field/shape the UI depends on.
+
+## Documentation expectations
+
+- The schema a component reads should match the endpoint that actually returns it.
+- New or renamed fields appear in the spec, the API client, the consuming UI, and tests together.
+- Mismatches between spec and rendered data are bugs (see issue #119): fix the read path, not just the spec.
+
+## Guardrails
+
+- Do not bind UI fields to a shape that disagrees with `docs/openapi.json`.
+- Do not document fields the API does not return, or read fields the spec does not list.
+- Do not reintroduce a second OpenAPI file; update `docs/openapi.json` only.

@@ -1,0 +1,33 @@
+---
+description: Enforce planning and test-first implementation for feature work
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Plan-first, test-first workflow
+
+For any new feature, bug fix, refactor, or behavior change, follow this workflow by default:
+
+1. Start with a short implementation plan before changing code.
+2. In the plan, identify: files likely to change, tests to add/update, acceptance criteria, and risks/edge cases.
+3. Prefer writing tests first, using Jest + React Testing Library.
+4. Do not write production code until the test or spec exists.
+5. Run (or describe running) the new test and confirm it fails for the expected reason.
+6. Only then implement the production code.
+7. Do not weaken or delete tests just to make implementation pass unless the user asks.
+8. After implementing, run the relevant tests again and confirm they pass.
+9. Summarize work as: Plan → Tests added/changed → Implementation → Verification.
+
+## Test-first expectations
+
+- Colocate tests in `__tests__/` next to the component, named `<name>.test.js`.
+- Use React Testing Library queries (`screen`, `findBy*`) and `userEvent`; assert behavior, not implementation.
+- Mock boundaries with `jest.mock`: `@/lib/api`, `next/navigation`, and `@/components/core/toaster`.
+- Cover happy path, edge cases, and the regression that motivated the change.
+- Run a focused file with `npx jest path/to/file.test.js` (or `npm test` for the suite).
+
+## Guardrails
+
+- Never skip straight to implementation unless the user explicitly says to bypass planning or tests.
+- If the task is tiny, still give a one-to-three bullet mini-plan and note the tests first.
+- Reuse existing test patterns in `src/**/__tests__/` instead of inventing new harnesses.

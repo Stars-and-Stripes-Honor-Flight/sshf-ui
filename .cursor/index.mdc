@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+This is the SSHF web UI: a Next.js 15 App Router application (React 18, MUI v6).
+It authenticates users with Google domain accounts and talks to the SSHF REST API over HTTPS using bearer tokens.
+All backend data access goes through the shared API client in `src/lib/api.js`; the UI never contacts CouchDB directly.
+Requests and responses are JSON and must follow the contract documented in `docs/openapi.json`.
+Always use ES module syntax. Prefer React function components and the `@/*` path alias (maps to `src/`).
+
+For rule grouping and conflict precedence, see `rules/index.mdc`.
