@@ -277,6 +277,21 @@ describe('VeteranEditForm - Update Functionality', () => {
     });
   });
 
+  test('includes call.how_heard_about in API call with Unknown default', async () => {
+    const user = userEvent.setup();
+    render(<VeteranEditForm veteran={mockVeteran} />);
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      const payload = mockUpdateVeteran.mock.calls[0][1];
+      expect(payload.call).toEqual(
+        expect.objectContaining({ how_heard_about: 'Unknown' })
+      );
+    });
+  });
+
   test('excludes history arrays from API call', async () => {
     const user = userEvent.setup();
     render(<VeteranEditForm veteran={mockVeteran} />);

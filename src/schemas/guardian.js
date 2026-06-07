@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { howHeardAboutSchema } from '@/schemas/call';
 
 export const guardianSchema = z.object({
   _id: z.string().optional(), // CouchDB ID
@@ -99,6 +100,7 @@ export const guardianSchema = z.object({
     notes: z.string().optional(),
     email_sent: z.boolean().default(false),
     assigned_to: z.string().optional(),
+    how_heard_about: howHeardAboutSchema,
     mail_sent: z.boolean().default(false),
     history: z.array(
       z.object({

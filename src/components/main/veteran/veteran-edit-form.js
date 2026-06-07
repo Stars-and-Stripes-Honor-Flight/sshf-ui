@@ -236,11 +236,14 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
       adopt: false,
       address: { phone: '', email: '' }
     },
-    call: veteran.call || {
+    call: {
       assigned_to: '',
       notes: '',
+      how_heard_about: 'Unknown',
       mail_sent: false,
-      email_sent: false
+      email_sent: false,
+      ...(veteran.call || {}),
+      how_heard_about: veteran.call?.how_heard_about ?? 'Unknown',
     },
     shirt: veteran.shirt || { size: '' },
     apparel: veteran.apparel || { 
