@@ -1,6 +1,7 @@
 // API client for interacting with the backend API
 import { toast } from '@/components/core/toaster';
 import { tokenManager } from '@/lib/auth/domain/tokenManager';
+import { isValidPhoneSearchTerm } from '@/lib/phone-search';
 import { paths } from '@/paths';
 
 class ApiClient {
@@ -108,12 +109,17 @@ class ApiClient {
   }
 
   // Search for veterans and guardians
-  async search({ limit = 25, lastname = '', status = 'Active', flight = 'All' }) {
+  async search({ limit = 25, lastname = '', phone_num = '', status = 'Active', flight = 'All' }) {
     try {
       const queryParams = new URLSearchParams();
-      
+      const usePhoneSearch = isValidPhoneSearchTerm(phone_num);
+
       if (limit) queryParams.append('limit', limit);
-      if (lastname) queryParams.append('lastname', lastname);
+      if (usePhoneSearch) {
+        queryParams.append('phone_num', phone_num);
+      } else if (lastname) {
+        queryParams.append('lastname', lastname);
+      }
       if (status) queryParams.append('status', status);
       if (flight && flight !== 'All') queryParams.append('flight', flight);
 

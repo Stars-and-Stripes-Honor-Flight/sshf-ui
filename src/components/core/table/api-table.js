@@ -29,8 +29,22 @@ import { TextFilterButton } from '@/components/core/table/text-filter';
 import { ComboFilterButton } from '@/components/core/table/combo-filter';
 import { paths } from '@/paths';
 import { formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
+import { isValidPhoneSearchTerm } from '@/lib/phone-search';
 
 import { api } from '@/lib/api';
+
+const phoneFilterValidate = (value) => ({
+  valid: isValidPhoneSearchTerm(value),
+  message: 'Enter at least 3 digits',
+});
+
+const isActiveFilterValue = (filter) => {
+  if (filter.property === 'phoneNum') {
+    return isValidPhoneSearchTerm(filter.value);
+  }
+
+  return filter.value != undefined && filter.value !== '';
+};
 
 
 let LoadingOrEmptyMessage = ({ rows, entityFriendlyName, columns, tablePageData, isLoading }) => {
@@ -114,7 +128,13 @@ let TableTabs = ({ tableTabs, handleTabChange, currentTab }) => {
 
 let FiltersAndSorts = ({ filters, sorts, handleChange, handleClearFilters }) => {
     // Check if any filter has a value, including hidden ones (like lastName from quick search)
-    const hasFilters = filters.some(f => f.value != undefined && f.value !== '');
+    const hasFilters = filters.some((f) => {
+      if (f.hidden) {
+        return f.value != undefined && f.value !== '';
+      }
+
+      return isActiveFilterValue(f);
+    });
     let filterButtons = [];
     let sortButtons = [];
     
@@ -143,6 +163,20 @@ let FiltersAndSorts = ({ filters, sorts, handleChange, handleClearFilters }) => 
                         handleChange={ (value) => {
                             handleChange(f.property, value);
                         }} />
+                    break;
+                case "phone":
+                    filterButton = <TextFilterButton
+                        key={f.property}
+                        value={f.value || f.defaultValue || ''}
+                        label={f.propertyFriendlyName}
+                        applyMode="explicit"
+                        helperText="Enter at least 3 digits"
+                        placeholder={f.placeholder || 'Phone number...'}
+                        validate={phoneFilterValidate}
+                        handleChange={(value) => {
+                            handleChange(f.property, value);
+                        }}
+                    />
                     break;
             }
 
@@ -276,6 +310,10 @@ export function ApiTable({
                 if (urlValue) {
                     if (f.property === 'lastName') {
                         filterParams.lastname = urlValue;
+                    } else if (f.property === 'phoneNum') {
+                        if (isValidPhoneSearchTerm(urlValue)) {
+                            filterParams.phone_num = urlValue;
+                        }
                     } else if (f.property === 'status') {
                         filterParams.status = urlValue;
                     } else if (f.property === 'flight') {
@@ -287,8 +325,17 @@ export function ApiTable({
             
             // Also check for lastName directly from URL (for quick search, even if not in filters array)
             const lastNameFromUrl = searchParams.get('lastName');
-            if (lastNameFromUrl && !filterParams.lastname) {
+            if (lastNameFromUrl && !filterParams.lastname && !filterParams.phone_num) {
                 filterParams.lastname = lastNameFromUrl;
+            }
+
+            const phoneNumFromUrl = searchParams.get('phoneNum');
+            if (phoneNumFromUrl && !filterParams.phone_num && isValidPhoneSearchTerm(phoneNumFromUrl)) {
+                filterParams.phone_num = phoneNumFromUrl;
+            }
+
+            if (filterParams.phone_num) {
+                delete filterParams.lastname;
             }
             
             // Also check for flight directly from URL (flight filter is added dynamically, may not be in filters array on refresh)
@@ -376,7 +423,7 @@ export function ApiTable({
         const searchParamsBuilder = new URLSearchParams();
         
         // Known filter properties that should be managed
-        const knownFilterProperties = new Set(['lastName', 'status', 'flight']);
+        const knownFilterProperties = new Set(['lastName', 'status', 'flight', 'phoneNum']);
 
         // Start with all current params
         currentParams.forEach((value, key) => {

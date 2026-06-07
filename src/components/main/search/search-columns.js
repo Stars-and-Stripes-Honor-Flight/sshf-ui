@@ -100,6 +100,14 @@ export const searchColumns = [
             );
         }
     },
+    {
+        field: 'phone',
+        name: 'Phone',
+        width: '140px',
+        formatter: (row) => (
+            <Typography variant="body2">{row.phone || '—'}</Typography>
+        ),
+    },
     { 
         field: 'flight',
         name: 'Flight',
