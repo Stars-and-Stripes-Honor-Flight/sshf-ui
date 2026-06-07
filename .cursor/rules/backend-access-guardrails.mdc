@@ -1,0 +1,27 @@
+---
+description: Keep all backend/data access behind the shared API client, never direct to the database
+globs: ["src/lib/api.js", "src/app/**/*.{js,jsx}", "src/components/**/*.{js,jsx}", "src/hooks/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}"]
+alwaysApply: true
+---
+
+# Backend access workflow
+
+The UI talks only to the SSHF REST API. It must never contact CouchDB or other data stores directly.
+
+1. Read and write data exclusively through `api` methods in `src/lib/api.js`.
+2. Treat CouchDB fields like `_id` and `_rev` as opaque values to round-trip, not data to fetch directly.
+3. Centralize endpoint URLs and base URL (`NEXT_PUBLIC_API_URL`) in the API client, not in components.
+4. Handle expected failures (e.g. 404) where the user acts, and rely on the client's shared error/refresh behavior otherwise.
+5. After a mutation, refetch through the API client to keep displayed data consistent.
+
+## Data flow expectations
+
+- Pages/components/hooks request data via `api`; they do not build CouchDB URLs or queries.
+- Keep auth/session concerns inside `src/lib/api.js` + `tokenManager`, not duplicated per feature.
+- Preserve `_rev` on updates so optimistic-concurrency writes succeed.
+
+## Guardrails
+
+- Do not call CouchDB, `fetch`, or `axios` directly from UI code; add/extend an `api` method.
+- Do not cache backend data in ad hoc module globals that bypass the client and its refresh logic.
+- Do not log raw tokens, cookies, or full backend responses containing sensitive fields.

@@ -1,0 +1,28 @@
+---
+description: Keep pages, components, schemas, API methods, and tests aligned per feature
+globs: ["src/app/**/*.{js,jsx}", "src/components/**/*.{js,jsx}", "src/schemas/**/*.{js,ts}", "src/lib/api.js", "src/**/__tests__/**/*.test.{js,jsx}", "docs/openapi.json", "README.md"]
+alwaysApply: true
+---
+
+# Feature wiring workflow
+
+For each feature, maintain a clear and predictable pairing across the App Router page,
+its components, validation schema, API methods, and tests.
+
+1. Put routes/pages under `src/app/**` (respect route groups like `(main)`); keep page files thin.
+2. Put feature UI in `src/components/main/<feature>/**`; reuse shared pieces from `src/components/core/**` and `src/components/main/shared/**`.
+3. Define/extend form validation as zod schemas in `src/schemas/**` and wire them with react-hook-form resolvers.
+4. Add backend calls as methods on `src/lib/api.js`; pages/components call `api`, not `fetch`.
+5. Add/update colocated tests in `__tests__/` for every changed component or data flow, and keep `docs/openapi.json` aligned when fields change.
+
+## Resource change checklist
+
+- Page composes components; data-shaping/validation lives in schemas and the API client, not inline in JSX.
+- Form fields match the zod schema, which matches the documented contract.
+- Tests cover render, user interaction, success, and error/not-found paths.
+
+## Guardrails
+
+- Do not add a new page or data flow without tests.
+- Do not add schema/form fields without updating the consuming UI, tests, and `docs/openapi.json`.
+- Do not embed large validation or fetch logic directly in components; keep it in schemas and `src/lib/api.js`.

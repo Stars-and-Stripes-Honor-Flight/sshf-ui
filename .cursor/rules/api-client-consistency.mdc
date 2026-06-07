@@ -1,0 +1,28 @@
+---
+description: Route all backend calls through the shared API client with consistent contracts
+globs: ["src/lib/api.js", "src/lib/**/*.js", "src/app/**/*.{js,jsx}", "src/components/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}"]
+alwaysApply: true
+---
+
+# API client consistency workflow
+
+For any backend interaction, go through the shared client in `src/lib/api.js` and keep
+request/response shapes aligned with `docs/openapi.json`.
+
+1. Add backend calls as methods on the `ApiClient` class and call them via the exported `api` singleton.
+2. Use the shared `request()` helper so auth headers, 401 refresh, and base URL handling stay centralized.
+3. Send and read JSON field names exactly as documented in `docs/openapi.json`.
+4. Surface user-facing failures with `toast` from `@/components/core/toaster`; do not invent per-call patterns.
+5. Keep payload keys and types stable; update callers, tests, and the OpenAPI spec together.
+
+## Usage expectations
+
+- Components and pages consume `api` methods; they should not build URLs or call `fetch` directly.
+- Reuse one error-handling pattern (`toast.error` + rethrow) rather than mixing styles per resource.
+- Match the response shape the endpoint actually returns (e.g. flat `assigned_to` on flight-detail people vs. nested `call.assigned_to` on full records).
+
+## Guardrails
+
+- Do not call `fetch`/`axios` from components, pages, or hooks; add a method to `src/lib/api.js` instead.
+- Do not change request/response keys without updating callers, `docs/openapi.json`, and tests.
+- Do not swallow errors silently; report via toast and let callers handle failure.

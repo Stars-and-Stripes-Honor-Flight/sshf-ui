@@ -1,0 +1,27 @@
+---
+description: Enforce naming conventions for files, components, schemas, tests, and symbols
+globs: ["src/**/*.{js,jsx,ts,tsx}", "src/schemas/**/*.{js,ts}", "src/**/__tests__/**/*.test.{js,jsx}", ".cursor/**/*.mdc"]
+alwaysApply: true
+---
+
+# Naming conventions workflow
+
+For new files and symbols, follow existing patterns and avoid mixing conventions.
+
+1. Name files in kebab-case (`flight-details-grid.js`, `veteran-edit-form.js`), matching current structure.
+2. Name exported React components in PascalCase (`FlightDetailsGrid`); name hooks `useXxx` in `src/hooks/`.
+3. Name schema files after their resource in `src/schemas/` (`veteran.js`, exporting `veteranSchema`).
+4. Name tests after the unit under test with `.test.js`, colocated in a sibling `__tests__/` folder.
+5. Import via the `@/*` alias (`@/lib/api`, `@/components/...`) rather than long relative paths.
+
+## Consistency expectations
+
+- Prefer extending existing patterns over introducing new variants.
+- Client env vars use `NEXT_PUBLIC_` + UPPER_SNAKE_CASE; other constants stay UPPER_SNAKE.
+- Route folder names align with their URL segment and the feature's component folder.
+
+## Guardrails
+
+- Do not introduce mixed casing styles within a directory.
+- Do not add duplicate files differing only by separator style (`-` vs `_`) unless migrating intentionally.
+- Do not rename established routes or public component exports without explicit request and migration notes.

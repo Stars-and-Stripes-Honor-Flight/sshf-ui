@@ -1,0 +1,27 @@
+---
+description: Keep package scripts, build/test config, and docs aligned with the project
+globs: ["package.json", "package-lock.json", "next.config.*", "jest.config.mjs", "tsconfig.json", "jsconfig.json", "README.md", ".env*"]
+alwaysApply: true
+---
+
+# Config and script consistency workflow
+
+When project structure, tooling, or test scope changes, keep scripts and configuration aligned in the same change.
+
+1. Keep `package.json` scripts working: `dev`, `build`, `start`, `lint`, `typecheck`, `test`, `test:watch`.
+2. Keep Jest config (`jest.config.mjs`) and the `@/*` alias in sync with `src/` layout and `next/jest`.
+3. Document new client config as `NEXT_PUBLIC_*` env vars (e.g. `NEXT_PUBLIC_API_URL`) with purpose.
+4. Update README setup/run/test instructions when commands or required env change.
+5. Re-run the relevant script (`lint`, `typecheck`, or `test`) after config changes and confirm expected behavior.
+
+## Configuration expectations
+
+- Runtime behavior and documented commands should remain in sync.
+- Only non-secret values belong in `NEXT_PUBLIC_*`; server-only secrets must not be exposed to the client bundle.
+- Dependency changes follow the existing install/verify flow.
+
+## Guardrails
+
+- Do not leave stale scripts that target removed paths or tooling.
+- Do not change test/lint/build commands without updating README guidance.
+- Do not edit lockfiles by hand; use the package manager.
