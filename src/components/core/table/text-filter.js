@@ -17,7 +17,15 @@ const debounce = (fn, delay) => {
   };
 };
 
-export function TextFilterButton ({ value, label, handleChange }) {
+export function TextFilterButton ({
+  value,
+  label,
+  handleChange,
+  applyMode = 'debounced',
+  helperText = '*Filter is Case Insensitive',
+  placeholder = '',
+  validate,
+}) {
 
     return (
         <FilterButton
@@ -30,15 +38,30 @@ export function TextFilterButton ({ value, label, handleChange }) {
             onFilterDelete={() => {
               handleChange();
             }}
-            popover={<TextFilterPopover label={label} />}
+            popover={
+              <TextFilterPopover
+                label={label}
+                applyMode={applyMode}
+                helperText={helperText}
+                placeholder={placeholder}
+                validate={validate}
+              />
+            }
             value={value || undefined}
         />
     );
 }
 
-function TextFilterPopover ({ label = '' }) {
+function TextFilterPopover ({
+  label = '',
+  applyMode = 'debounced',
+  helperText = '*Filter is Case Insensitive',
+  placeholder = '',
+  validate,
+}) {
     const { anchorEl, onApply, onClose, open, value: initialValue } = useFilterContext();
     const [value, setValue] = React.useState('');
+    const [validationMessage, setValidationMessage] = React.useState('');
     
     // Create a debounced version of onApply that doesn't close the popover
     const debouncedApply = React.useCallback(
@@ -48,16 +71,45 @@ function TextFilterPopover ({ label = '' }) {
       }, 500),
       [onApply]
     );
+
+    const runValidation = React.useCallback((nextValue) => {
+      if (!validate) {
+        setValidationMessage('');
+        return { valid: true };
+      }
+
+      const result = validate(nextValue);
+      setValidationMessage(result.valid ? '' : result.message);
+      return result;
+    }, [validate]);
   
     React.useEffect(() => {
       setValue(initialValue ?? '');
+      setValidationMessage('');
     }, [initialValue]);
   
     // Handle input change
     const handleInputChange = (event) => {
       const newValue = event.target.value;
       setValue(newValue);
-      debouncedApply(newValue);
+
+      if (applyMode === 'debounced') {
+        debouncedApply(newValue);
+        return;
+      }
+
+      runValidation(newValue);
+    };
+
+    const handleApply = () => {
+      if (validate) {
+        const result = runValidation(value);
+        if (!result.valid) {
+          return;
+        }
+      }
+
+      onApply(value);
     };
   
     return (
@@ -67,17 +119,18 @@ function TextFilterPopover ({ label = '' }) {
             onChange={handleInputChange}
             onKeyUp={(event) => {
               if (event.key === 'Enter') {
-                onApply(value);
+                handleApply();
               }
             }}
+            placeholder={placeholder}
             value={value}
           />
-          <Typography variant="caption">*Filter is Case Insensitive</Typography>
+          <Typography variant="caption" color={validationMessage ? 'error' : 'textSecondary'}>
+            {validationMessage || helperText}
+          </Typography>
         </FormControl>
         <Button
-          onClick={() => {
-            onApply(value);
-          }}
+          onClick={handleApply}
           variant="contained"
         >
           Apply

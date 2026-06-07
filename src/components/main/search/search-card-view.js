@@ -129,6 +129,11 @@ export function SearchCardView({ rows }) {
                     >
                       {row.name} {row.lastname}
                     </Typography>
+                    {row.phone ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {row.phone}
+                      </Typography>
+                    ) : null}
                   </Box>
                 </Stack>
 

@@ -52,12 +52,28 @@ export default function Page() {
         <Option key="Future-PostRestriction" value="Future-PostRestriction">Future-PostRestriction</Option>,
         <Option key="Copied" value="Copied">Copied</Option>
       ]
-    }
+    },
+    {
+      property: 'phoneNum',
+      propertyFriendlyName: 'Phone',
+      filterType: 'phone',
+      placeholder: 'Phone number...',
+    },
   ]);
   
   const handleQuickSearch = (event) => {
     const value = event.target.value;
     setQuickSearch(value);
+
+    // Clear phone filter immediately when user starts last-name search
+    if (value && isInitialized) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('phoneNum')) {
+        params.delete('phoneNum');
+        const newUrl = params.toString() ? `?${params.toString()}` : '/search';
+        router.replace(newUrl, { scroll: false });
+      }
+    }
   };
   
   // Debounce the search input - wait 250ms after user stops typing
@@ -77,6 +93,7 @@ export default function Page() {
     const params = new URLSearchParams(window.location.search);
     if (debouncedSearch) {
       params.set('lastName', debouncedSearch);
+      params.delete('phoneNum');
     } else {
       params.delete('lastName');
     }
@@ -86,6 +103,27 @@ export default function Page() {
     const newUrl = params.toString() ? `?${params.toString()}` : '/search';
     router.replace(newUrl, { scroll: false });
   }, [debouncedSearch, isInitialized, router]);
+
+  // When phone search is applied via URL, clear last-name quick search
+  const phoneNumParam = searchParams.get('phoneNum') || '';
+
+  React.useEffect(() => {
+    if (!isInitialized) return;
+
+    const digitCount = phoneNumParam.replace(/\D/g, '').length;
+    if (digitCount < 3) return;
+
+    setQuickSearch('');
+    setDebouncedSearch('');
+
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('lastName')) return;
+
+    params.delete('lastName');
+    const newUrl = params.toString() ? `?${params.toString()}` : '/search';
+    router.replace(newUrl, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router identity is unstable; only react to phoneNum changes
+  }, [phoneNumParam, isInitialized]);
 
   const updatesearchFilters = (newsearchFilter) => {
     setSearchFilters(newsearchFilter);
@@ -178,16 +216,23 @@ export default function Page() {
         })
       ];
 
-      setSearchFilters(prev => [
-        prev[0], // Keep lastName filter (hidden)
-        prev[1], // Keep status filter
-        { 
-          property: "flight", 
-          propertyFriendlyName: "Flight", 
-          filterType: "combo", 
-          options: flightOptions
-        }
-      ]);
+      setSearchFilters(prev => {
+        const lastNameFilter = prev.find(f => f.property === 'lastName');
+        const statusFilter = prev.find(f => f.property === 'status');
+        const phoneFilter = prev.find(f => f.property === 'phoneNum');
+
+        return [
+          lastNameFilter,
+          statusFilter,
+          {
+            property: "flight",
+            propertyFriendlyName: "Flight",
+            filterType: "combo",
+            options: flightOptions,
+          },
+          phoneFilter,
+        ].filter(Boolean);
+      });
     }
   }, [flights]);
 
