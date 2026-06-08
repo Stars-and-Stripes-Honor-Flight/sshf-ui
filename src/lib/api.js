@@ -461,6 +461,19 @@ class ApiClient {
     }
   }
 
+  // Get active veteran groups from waitlist
+  async getWaitlistVeteranGroups() {
+    try {
+      const response = await this.request('/waitlist/veteran-groups', {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch veteran groups: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Get waitlist
   async getWaitlist({ type = 'veterans', offset = 0, limit = 20 } = {}) {
     try {
