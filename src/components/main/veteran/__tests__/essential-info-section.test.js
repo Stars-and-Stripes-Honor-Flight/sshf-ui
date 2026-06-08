@@ -23,6 +23,14 @@ jest.mock('@/components/main/shared/form-section-header', () => ({
   )
 }));
 
+jest.mock('../flight-group-field', () => ({
+  FlightGroupField: ({ control, error, disabled }) => (
+    <div data-testid="flight-group-field" data-disabled={disabled} data-error={error?.message}>
+      Flight Group Field
+    </div>
+  ),
+}));
+
 describe('EssentialInfoSection', () => {
   const TestWrapper = ({ children, defaultValues = {} }) => {
     const { control } = useForm({ defaultValues });
@@ -220,6 +228,26 @@ describe('EssentialInfoSection', () => {
 
     expect(container.querySelector('input[name="medical.level"]') || container.querySelector('select[name="medical.level"]')).toBeInTheDocument();
     expect(container.querySelector('input[name="medical.food_restriction"]')).toBeInTheDocument();
+  });
+
+  test('renders FlightGroupField in flight status section', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+    ];
+
+    render(
+      <TestWrapper>
+        <EssentialInfoSection
+          errors={{}}
+          veteran={mockVeteran}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByTestId('flight-group-field')).toBeInTheDocument();
+    expect(screen.getByText('Flight Status')).toBeInTheDocument();
   });
 
   test('calls onOpenHistory when history button is clicked', async () => {
