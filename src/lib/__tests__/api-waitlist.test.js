@@ -104,6 +104,19 @@ describe('api.getWaitlist', () => {
     expect(entry.prefs).toBe('Call notes here | Guardian fee waiver.mm');
   });
 
+  test('formats names as simple "First Last", ignoring nickname and middle name', async () => {
+    mockFetchWith([
+      {
+        ...mockVeteran,
+        name: { first: 'James', middle: 'Robert', last: 'Weimer', nickname: 'Jim' },
+      },
+    ]);
+
+    const result = await api.getWaitlist({ type: 'veterans' });
+
+    expect(result[0].name).toBe('James Weimer');
+  });
+
   test('veteran without a paired guardian yields empty pairings', async () => {
     mockFetchWith([{ ...mockVeteran, guardian: { id: '', name: '' } }]);
 

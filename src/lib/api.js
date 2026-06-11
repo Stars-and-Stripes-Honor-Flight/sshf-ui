@@ -506,15 +506,10 @@ class ApiClient {
           prefs = [callNotes, statusNote].filter(Boolean).join(' | ');
         }
 
-        // Format name: if nickname exists, use "Nickname: First Middle Last", otherwise just "First Middle Last"
+        // Format name as a simple "First Last" (no nickname or middle name)
         let formattedName = entry.name;
         if (typeof entry.name === 'object') {
-          const fullName = `${entry.name?.first || ''} ${entry.name?.middle ? `${entry.name.middle} ` : ''}${entry.name?.last || ''}`.trim();
-          if (entry.name?.nickname) {
-            formattedName = `${entry.name.nickname}: ${fullName}`;
-          } else {
-            formattedName = fullName;
-          }
+          formattedName = `${entry.name?.first || ''} ${entry.name?.last || ''}`.trim();
         }
 
         // Pairing names: veterans have a single guardian, guardians have veteran pairings
