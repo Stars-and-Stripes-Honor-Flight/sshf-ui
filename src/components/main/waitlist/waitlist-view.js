@@ -19,7 +19,7 @@ import { WaitlistTypeFilter } from '@/components/main/waitlist/waitlist-type-fil
 import { WaitlistItem } from '@/components/main/waitlist/waitlist-item';
 import { WaitlistMobileCard } from '@/components/main/waitlist/waitlist-mobile-card';
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 100;
 
 export function WaitlistView() {
   const searchParams = useSearchParams();
@@ -123,7 +123,12 @@ export function WaitlistView() {
         // Mobile Card View
         <Stack spacing={2} sx={{ p: 2 }}>
           {entries.map((entry, index) => (
-            <WaitlistMobileCard key={`${waitlistType}-${entry.id}-${index}`} entry={entry} type={waitlistType} />
+            <WaitlistMobileCard
+              key={`${waitlistType}-${entry.id}-${index}`}
+              entry={entry}
+              type={waitlistType}
+              position={offset + index + 1}
+            />
           ))}
         </Stack>
       ) : (
@@ -133,18 +138,32 @@ export function WaitlistView() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, width: '50px' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: '60px' }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Age</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Birth Date</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>City</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Application Date</TableCell>
+                  {waitlistType === 'veterans' ? (
+                    <>
+                      <TableCell sx={{ fontWeight: 600 }}>Conflict</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Flight Group</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Guardian</TableCell>
+                    </>
+                  ) : (
+                    <TableCell sx={{ fontWeight: 600 }}>Veteran(s)</TableCell>
+                  )}
                   <TableCell sx={{ fontWeight: 600 }}>Notes</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {entries.map((entry, index) => (
-                  <WaitlistItem key={`${waitlistType}-${entry.id}-${index}`} entry={entry} type={waitlistType} />
+                  <WaitlistItem
+                    key={`${waitlistType}-${entry.id}-${index}`}
+                    entry={entry}
+                    type={waitlistType}
+                    position={offset + index + 1}
+                  />
                 ))}
               </TableBody>
             </Table>

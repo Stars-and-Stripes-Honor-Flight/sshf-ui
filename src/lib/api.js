@@ -475,7 +475,7 @@ class ApiClient {
   }
 
   // Get waitlist
-  async getWaitlist({ type = 'veterans', offset = 0, limit = 20 } = {}) {
+  async getWaitlist({ type = 'veterans', offset = 0, limit = 100 } = {}) {
     try {
       const queryParams = new URLSearchParams();
       
@@ -506,21 +506,20 @@ class ApiClient {
           prefs = [callNotes, statusNote].filter(Boolean).join(' | ');
         }
 
-        // Format name: if nickname exists, use "Nickname: First Middle Last", otherwise just "First Middle Last"
-        // For veterans, add vet_type in parentheses
+        // Format name as a simple "First Last" (no nickname or middle name)
         let formattedName = entry.name;
         if (typeof entry.name === 'object') {
-          const fullName = `${entry.name?.first || ''} ${entry.name?.middle ? `${entry.name.middle} ` : ''}${entry.name?.last || ''}`.trim();
-          if (entry.name?.nickname) {
-            formattedName = `${entry.name.nickname}: ${fullName}`;
-          } else {
-            formattedName = fullName;
-          }
+          formattedName = `${entry.name?.first || ''} ${entry.name?.last || ''}`.trim();
         }
-        
-        // Add vet_type for veterans
-        if (type === 'veterans' && entry.vet_type) {
-          formattedName = `${formattedName} (${entry.vet_type})`;
+
+        // Pairing names: veterans have a single guardian, guardians have veteran pairings
+        let pairings = [];
+        if (type === 'guardians') {
+          pairings = (entry.veteran?.pairings || [])
+            .filter((pairing) => pairing?.name)
+            .map((pairing) => ({ id: pairing.id || '', name: pairing.name }));
+        } else if (entry.guardian?.name) {
+          pairings = [{ id: entry.guardian.id || '', name: entry.guardian.name }];
         }
 
         // Calculate age from birth_date
@@ -544,6 +543,10 @@ class ApiClient {
           appdate: entry.app_date || '',
           birth_date: entry.birth_date || '',
           prefs,
+          status: entry.flight?.status || '',
+          vet_type: type === 'veterans' ? entry.vet_type || '' : '',
+          group: type === 'veterans' ? entry.flight?.group || '' : '',
+          pairings,
         };
       });
     } catch (error) {
