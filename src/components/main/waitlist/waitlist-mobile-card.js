@@ -5,31 +5,24 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
-import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/ssr/MedalMilitary';
 import { dayjs } from '@/lib/dayjs';
 import { paths } from '@/paths';
+import { StatusChip, ConflictChip, PairingLinks } from '@/components/main/waitlist/waitlist-indicators';
 
-const getIcon = (type) => {
-  if (type === 'veterans') {
-    return (
-      <Tooltip title="Veteran" arrow placement="top">
-        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-          <MedalMilitaryIcon size="24" color="#b5ccf6" weight="fill" />
-        </span>
-      </Tooltip>
-    );
-  }
+function DetailField({ label, children }) {
   return (
-    <Tooltip title="Guardian" arrow placement="top">
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-        <UserIcon size="24" color="#ff9999" weight="regular" />
-      </span>
-    </Tooltip>
+    <Stack spacing={0.25} sx={{ flex: 1 }}>
+      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" component="div">
+        {children}
+      </Typography>
+    </Stack>
   );
-};
+}
 
-export function WaitlistMobileCard({ entry, type }) {
+export function WaitlistMobileCard({ entry, type, position }) {
   const detailUrl = type === 'veterans' 
     ? paths.main.veterans.details(entry.id)
     : paths.main.guardians.details(entry.id);
@@ -41,22 +34,25 @@ export function WaitlistMobileCard({ entry, type }) {
     <Card>
       <CardContent sx={{ '&:last-child': { pb: 2 } }}>
         <Stack spacing={2}>
-          {/* Header with icon and name */}
+          {/* Header with position and name */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-            <Box 
-              sx={{
-                bgcolor: 'var(--mui-palette-background-level1)',
-                borderRadius: 1.5,
-                p: '4px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: 40,
-                minHeight: 40,
-              }}
-            >
-              {getIcon(type)}
-            </Box>
+            <Tooltip title={type === 'veterans' ? 'Veteran' : 'Guardian'} arrow placement="top">
+              <Box 
+                sx={{
+                  bgcolor: 'var(--mui-palette-background-level1)',
+                  borderRadius: 1.5,
+                  p: '4px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 40,
+                  minHeight: 40,
+                  fontWeight: 600,
+                }}
+              >
+                {position}
+              </Box>
+            </Tooltip>
             <Stack spacing={0.5} sx={{ flex: 1 }}>
               <a 
                 href={detailUrl}
@@ -75,6 +71,10 @@ export function WaitlistMobileCard({ entry, type }) {
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {entry.city}
               </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                <StatusChip status={entry.status} />
+                {type === 'veterans' && <ConflictChip vetType={entry.vet_type} />}
+              </Box>
             </Stack>
           </Box>
 
@@ -83,32 +83,27 @@ export function WaitlistMobileCard({ entry, type }) {
           {/* Details rows */}
           <Stack spacing={1}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-              <Stack spacing={0.25} sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                  Age
-                </Typography>
-                <Typography variant="body2">
-                  {entry.age !== null ? entry.age : '—'}
-                </Typography>
-              </Stack>
-              <Stack spacing={0.25} sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                  Birth Date
-                </Typography>
-                <Typography variant="body2">
-                  {birthDate}
-                </Typography>
-              </Stack>
+              <DetailField label="Age">
+                {entry.age !== null ? entry.age : '—'}
+              </DetailField>
+              <DetailField label="Birth Date">
+                {birthDate}
+              </DetailField>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-              <Stack spacing={0.25} sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                  Application Date
-                </Typography>
-                <Typography variant="body2">
-                  {appDate}
-                </Typography>
-              </Stack>
+              <DetailField label="Application Date">
+                {appDate}
+              </DetailField>
+              {type === 'veterans' && (
+                <DetailField label="Group">
+                  {entry.group || '—'}
+                </DetailField>
+              )}
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+              <DetailField label={type === 'veterans' ? 'Guardian' : 'Veteran(s)'}>
+                <PairingLinks pairings={entry.pairings} type={type} />
+              </DetailField>
             </Box>
           </Stack>
 
