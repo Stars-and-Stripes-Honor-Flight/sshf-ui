@@ -1,21 +1,35 @@
 ---
 description: Keep the OpenAPI contract and the API client/UI in sync
-globs: ["docs/openapi.json", "src/lib/api.js", "src/schemas/**/*.{js,ts}", "src/components/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}", "README.md"]
+globs: ["docs/openapi.json", "src/lib/api.js", "src/schemas/**/*.{js,ts}", "src/components/**/*.{js,jsx}", "src/**/__tests__/**/*.test.{js,jsx}", "README.md", "orval.config.mjs", "scripts/sync-schemas.mjs"]
 alwaysApply: true
 ---
 
 # OpenAPI sync workflow
 
 `docs/openapi.json` is the single source of truth for the backend contract.
-Important: It is generated and owned by the API and can not be modified in this project.
-If you find discrepancies between what is in this project related to the API and what is in the spec, surface them to the developer.
+It is generated and owned by the API. In this repo, update it **only** by running:
+
+- `npm run sync-schemas` — fetch from the deployed dev API and regenerate Zod schemas
+- `npm run sync-schemas:local` — fetch from `http://localhost:8080/openapi.json`
+- `npm run generate-schemas` — regenerate from the existing local `docs/openapi.json` (no fetch)
+
+Never hand-edit `docs/openapi.json` or `src/schemas/generated/**`.
+If you find discrepancies between this project and the spec, surface them to the developer.
 The developer will either need to modify the approach on this project or go back to the API and make corrections.
 
 1. Treat `docs/openapi.json` as canonical; do not create or rely on duplicate copies elsewhere in the repo.
-2. When an `api` method's request/response fields change, reconcile them with the matching schema in `docs/openapi.json`.
-3. When reading a field, confirm its shape in the spec (e.g. flight-detail people expose flat `assigned_to`, full records use nested `call.assigned_to`).
-4. Keep zod schemas in `src/schemas/**` consistent with documented field names, types, and required-ness.
-5. Add or update tests that assert the field/shape the UI depends on.
+2. After an API change deploys, run `npm run sync-schemas`, review `git diff` for `docs/openapi.json` and `src/schemas/generated/`, then commit both.
+3. When an `api` method's request/response fields change, reconcile them with the matching schema in `docs/openapi.json` / generated Zod.
+4. When reading a field, confirm its shape in the spec (e.g. flight-detail people expose flat `assigned_to`, full records use nested `call.assigned_to`).
+5. Keep hand Zod form schemas in `src/schemas/*.js` consistent with documented field names; extend generated schemas for custom UI validation instead of forking field names.
+6. Add or update tests that assert the field/shape the UI depends on.
+
+## Key models
+
+- `Veteran`, `Guardian`, `Flight` — primary documents
+- `FlightDetailPerson`, `FlightDetailPair`, `FlightDetailResult` — flight detail views
+- `AssignmentPerson`, `AssignmentPair`, `FlightAssignment` — flight assignments
+- `SearchRequest`, `SearchResult`, `SearchResults`, `Error`, waitlist/unpaired DTOs
 
 ## Documentation expectations
 
@@ -27,4 +41,5 @@ The developer will either need to modify the approach on this project or go back
 
 - Do not bind UI fields to a shape that disagrees with `docs/openapi.json`.
 - Do not document fields the API does not return, or read fields the spec does not list.
-- Do not reintroduce a second OpenAPI file; update `docs/openapi.json` only.
+- Do not reintroduce a second OpenAPI file; update `docs/openapi.json` only via sync scripts.
+- Do not replace form schemas (`veteranSchema`, etc.) with raw generated API schemas when the form needs stricter validation — wrap/extend instead.

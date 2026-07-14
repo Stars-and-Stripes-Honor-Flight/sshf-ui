@@ -10,6 +10,54 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Schema sync (OpenAPI → Zod)
+
+The backend OpenAPI 3.0 contract is the source of truth. This repo keeps a checked-in copy at `docs/openapi.json` and generates Zod schemas under `src/schemas/generated/` with [Orval](https://orval.dev/).
+
+### When to sync
+
+Run sync after the API team deploys a contract change (new/renamed fields, enums, DTOs):
+
+```bash
+# Fetch from the deployed dev API and regenerate Zod schemas
+npm run sync-schemas
+
+# Or fetch from a locally running API (http://localhost:8080)
+npm run sync-schemas:local
+
+# Regenerate from the existing docs/openapi.json without fetching
+npm run generate-schemas
+```
+
+Then review and commit both the spec and generated schemas:
+
+```bash
+git diff docs/openapi.json src/schemas/generated/
+git add docs/openapi.json src/schemas/generated/
+git commit -m "chore: sync schemas from API"
+```
+
+Override the fetch URL with `SYNC_SCHEMAS_URL` if needed.
+
+### Conflict handling
+
+- Prefer **re-running sync** over hand-merging files under `src/schemas/generated/`.
+- Never hand-edit `docs/openapi.json` or generated files. If the UI needs a different shape, change form wrappers or fix the API spec.
+- If generated output and form validation disagree, keep form rules in `src/schemas/*.js` and surface API mismatches to the API project.
+
+### Custom validation on top of generated schemas
+
+Hand-written form schemas remain the UI import surface (`@/schemas/veteran`, etc.). Each re-exports the generated API schema for optional use:
+
+```js
+import { veteranSchema, veteranApiSchema } from '@/schemas/veteran';
+// or: import { Veteran } from '@/schemas/generated';
+```
+
+To add stricter form rules later, wrap or extend the generated schema (`.extend`, `.pick`, `.merge`, `.superRefine`) in `src/schemas/*.js` — do not edit generated files.
+
+Key generated models include `Veteran`, `Guardian`, `Flight`, flight-detail/assignment DTOs, and search/error schemas.
+
 
 ## Deployment
 

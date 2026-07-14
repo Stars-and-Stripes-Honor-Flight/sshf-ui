@@ -3,3 +3,12 @@ It will provide user authentication using Google domain accounts and then intera
 The backend API will validate requests based on the token received from the authentication process.
 The UI will receive requests with JSON payload and respond with JSON.
 Always use ES module style JavaScript syntax.
+
+## OpenAPI and Zod schemas
+
+- The API OpenAPI 3.0 spec is the source of truth for backend contracts. A checked-in copy lives at `docs/openapi.json` (API-owned; never hand-edit).
+- Sync from the deployed API with `npm run sync-schemas` (dev) or `npm run sync-schemas:local` (http://localhost:8080). This updates `docs/openapi.json` and regenerates `src/schemas/generated/`.
+- Do not hand-edit `src/schemas/generated/**` (machine-generated TypeScript Zod schemas via Orval).
+- Form/UI schemas stay in `src/schemas/*.js` and may wrap or extend generated schemas (e.g. `veteranApiSchema` re-exports). Prefer custom form rules in those wrappers, not edits to generated files.
+- Key API models: `Veteran`, `Guardian`, `Flight` (documents); `FlightDetailPerson` / `FlightDetailPair` / `FlightDetailResult` (flight roster views); `AssignmentPerson` / `AssignmentPair` / `FlightAssignment` (pairing); `SearchRequest` / `SearchResult` / `SearchResults`; `Error`; waitlist/unpaired DTOs.
+- If UI needs disagree with the OpenAPI spec, surface the mismatch — do not invent fields or silently diverge.

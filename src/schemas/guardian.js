@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { howHeardAboutSchema } from '@/schemas/call';
 
+/** API contract schema from OpenAPI (see `npm run sync-schemas`). */
+export { Guardian as guardianApiSchema } from '@/schemas/generated';
+
+/** Form validation schema — stricter/partial vs the API contract; do not replace with guardianApiSchema. */
 export const guardianSchema = z.object({
   _id: z.string().optional(), // CouchDB ID
   _rev: z.string().optional(), // CouchDB revision

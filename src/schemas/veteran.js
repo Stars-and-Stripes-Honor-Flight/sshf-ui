@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+/** API contract schema from OpenAPI (see `npm run sync-schemas`). */
+export { Veteran as veteranApiSchema } from '@/schemas/generated';
+
+/** Form validation schema — stricter/partial vs the API contract; do not replace with veteranApiSchema. */
 export const veteranSchema = z.object({
   _id: z.string().optional(), // CouchDB ID
   _rev: z.string().optional(), // CouchDB revision
