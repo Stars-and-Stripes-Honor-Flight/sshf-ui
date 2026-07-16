@@ -62,6 +62,12 @@ describe('Search page', () => {
     expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
+  test('renders Pairing filter in filter bar', async () => {
+    render(<Page />);
+
+    expect(await screen.findByText('Pairing')).toBeInTheDocument();
+  });
+
   test('renders Phone filter after Flight when flights are loaded', async () => {
     mockGetFlights.mockReturnValue([{ _id: 'f1', name: 'SSHF-Test02' }]);
 
@@ -71,7 +77,7 @@ describe('Search page', () => {
 
     const filterLabels = screen.getByTestId('api-table').querySelectorAll('span');
     const labels = [...filterLabels].map((node) => node.textContent);
-    expect(labels).toEqual(['Status', 'Flight', 'Phone']);
+    expect(labels).toEqual(['Status', 'Flight', 'Phone', 'Pairing']);
   });
 
   test('typing in last name clears phoneNum from URL', async () => {
