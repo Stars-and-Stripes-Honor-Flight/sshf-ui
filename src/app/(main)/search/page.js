@@ -59,6 +59,15 @@ export default function Page() {
       filterType: 'phone',
       placeholder: 'Phone number...',
     },
+    {
+      property: 'pairing',
+      propertyFriendlyName: 'Pairing',
+      filterType: 'combo',
+      options: [
+        <Option key="All" value="All">All</Option>,
+        <Option key="Unpaired" value="Unpaired">Unpaired Only</Option>,
+      ],
+    },
   ]);
   
   const handleQuickSearch = (event) => {
@@ -220,6 +229,7 @@ export default function Page() {
         const lastNameFilter = prev.find(f => f.property === 'lastName');
         const statusFilter = prev.find(f => f.property === 'status');
         const phoneFilter = prev.find(f => f.property === 'phoneNum');
+        const pairingFilter = prev.find(f => f.property === 'pairing');
 
         return [
           lastNameFilter,
@@ -231,6 +241,7 @@ export default function Page() {
             options: flightOptions,
           },
           phoneFilter,
+          pairingFilter,
         ].filter(Boolean);
       });
     }

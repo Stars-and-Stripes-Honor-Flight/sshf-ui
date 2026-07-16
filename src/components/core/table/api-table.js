@@ -367,11 +367,18 @@ export function ApiTable({
                 
                 // Apply custom mapping if provided
                 const mappedData = customMapping ? results.map(customMapping) : results;
-                
+
+                // Pairing is not filterable server-side, so apply it client-side to the fetched page
+                const hasPairingFilter = filters.some(f => f.property === 'pairing');
+                const pairingFilterValue = hasPairingFilter ? searchParams.get('pairing') : null;
+                const filteredData = pairingFilterValue === 'Unpaired'
+                    ? mappedData.filter(row => !row.pairing || row.pairing === 'None')
+                    : mappedData;
+
                 let tempPageData = { ...tablePageData };
                 tempPageData.count = response.total_rows;
                 setTablePageData(tempPageData);
-                setRows(mappedData);
+                setRows(filteredData);
             } else {
                 toast.error(`Something went wrong! Or we could not find this ${entityFriendlyName} Record`);
             }
@@ -423,7 +430,7 @@ export function ApiTable({
         const searchParamsBuilder = new URLSearchParams();
         
         // Known filter properties that should be managed
-        const knownFilterProperties = new Set(['lastName', 'status', 'flight', 'phoneNum']);
+        const knownFilterProperties = new Set(['lastName', 'status', 'flight', 'phoneNum', 'pairing']);
 
         // Start with all current params
         currentParams.forEach((value, key) => {
