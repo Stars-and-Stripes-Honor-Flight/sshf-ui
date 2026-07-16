@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+/** API contract schema from OpenAPI (see `npm run sync-schemas`). */
+export { Flight as flightApiSchema } from '@/schemas/generated';
+
+/** Form validation schema — may be stricter than the API contract; do not replace with flightApiSchema. */
 export const flightSchema = z.object({
   _id: z.string().optional(), // CouchDB ID
   _rev: z.string().optional(), // CouchDB revision
