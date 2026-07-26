@@ -44,6 +44,8 @@ out/
 junit.xml
 
 .env
+.env.local
+.env.*.local
 .DS_Store
 *.swp
 *~

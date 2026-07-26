@@ -6,7 +6,10 @@ import { paths } from '@/paths';
 
 class ApiClient {
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sshf-api-330507742215.us-central1.run.app';
+    // No fallback: a missing NEXT_PUBLIC_API_URL must fail loudly rather than
+    // silently pointing a build at the wrong environment's API.
+    // CI enforces this via scripts/check-build-env.mjs before deploying.
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL;
   }
 
   // Handle unauthorized errors by clearing tokens and redirecting to login
