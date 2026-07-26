@@ -2,27 +2,20 @@
   "openapi": "3.0.0",
   "info": {
     "title": "SSHF API",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "API for managing veterans documents with Google authentication"
   },
   "servers": [
     {
-      "url": "https://sshf-api-330507742215.us-central1.run.app",
-      "description": "API Server"
-    },
-    {
       "url": "http://localhost:8080",
-      "description": "Force local API Server"
-    },
-    {
-      "url": "https://sshf-api-330507742215.us-central1.run.app",
-      "description": "Force Dev Environment API Server"
+      "description": "API Server"
     }
   ],
   "components": {
     "securitySchemes": {
       "GoogleAuth": {
         "type": "oauth2",
+        "description": "Google OAuth2. The access token must be issued for this API's configured OAuth client; tokens from other clients are rejected with 401. Protected data endpoints return 401 for a missing, invalid, or wrong-audience token and 403 when the account email domain or Workspace group membership is not permitted (ALLOWED_EMAIL_DOMAINS / ALLOWED_GROUP_EMAILS). GET /user/hasgroup is auth-only so clients can probe group membership.",
         "flows": {
           "implicit": {
             "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
@@ -34,9 +27,7 @@
             }
           }
         },
-        "x-clientId": "330507742215-scerc6p0lvou59tufmohq1b7b4bj0l90.apps.googleusercontent.com",
         "x-init": {
-          "clientId": "330507742215-scerc6p0lvou59tufmohq1b7b4bj0l90.apps.googleusercontent.com",
           "appName": "SSHF API"
         }
       }
@@ -3801,6 +3792,58 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/user/hasgroup": {
+      "get": {
+        "summary": "Check whether the authenticated user belongs to a Workspace group",
+        "description": "Auth-only probe used by the UI during sign-in. Does not require membership in ALLOWED_GROUP_EMAILS so non-members can still discover that they are unauthorized. Data routes enforce group membership separately via the authorize middleware.\n",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "GoogleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "groupEmail",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Workspace group email to check"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membership result for the requested group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "hasgroup"
+                  ],
+                  "properties": {
+                    "hasgroup": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or wrong-audience token"
+          },
+          "503": {
+            "description": "Token introspection temporarily unavailable"
           }
         }
       }

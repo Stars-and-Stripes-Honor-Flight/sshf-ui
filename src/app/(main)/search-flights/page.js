@@ -17,7 +17,6 @@ import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/di
 import { config } from '@/config';
 import { getFlightsSorted, refreshFlights } from '@/lib/flights';
 import { FlightCard } from '@/components/main/flight/flight-card';
-import { usePermissions } from '@/hooks/use-permissions';
 
 function FlightsListPage() {
   const router = useRouter();
@@ -30,14 +29,6 @@ function FlightsListPage() {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [isInitialized, setIsInitialized] = React.useState(false);
   const searchInputRef = React.useRef(null);
-
-  // Permission check
-  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  const { isInGroup } = usePermissions();
-
-  if (!isInGroup(ROLE_FULL_ACCESS)) {
-    return <div>Access Denied</div>;
-  }
 
   // Filter function
   const applyFilters = React.useCallback((flightsData, search, status) => {

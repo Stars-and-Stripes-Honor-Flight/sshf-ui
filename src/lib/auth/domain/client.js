@@ -1,5 +1,6 @@
 'use client';
 
+import { api } from '@/lib/api';
 import { tokenManager } from './tokenManager';
 
 // Google OAuth configuration
@@ -173,20 +174,13 @@ class AuthClient {
         const possibleRoles = [ROLE_FULL_ACCESS];
 
         for (const role of possibleRoles) {
-          // Call user/hasgroup endpoint on api to check authorization.
-          const hasGroupResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/hasgroup?groupEmail=${role}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!hasGroupResponse.ok) {
-            continue;
-          }
-
-          const hasGroupData = await hasGroupResponse.json();
-          if (hasGroupData.hasgroup) {
-            roles.push({name: role, email: role});
+          try {
+            const hasGroupData = await api.hasGroup(role);
+            if (hasGroupData?.hasgroup) {
+              roles.push({ name: role, email: role });
+            }
+          } catch {
+            // Probe failures should not block sign-in; treat as no membership.
           }
         }
 

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.2
  */
 import { z as zod } from 'zod';
 import { FlightDetailPair } from './flightDetailPair.zod';

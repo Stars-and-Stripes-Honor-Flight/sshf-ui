@@ -97,6 +97,10 @@ class ApiClient {
           // No refresh token or refresh failed - handle as unauthorized
           this.handleUnauthorized();
         }
+
+        if (response.status === 403) {
+          toast.error('You are not authorized to perform this action in this environment.');
+        }
         
         const errorData = await response.json().catch(() => ({}));
         const error = new Error(errorData.message || `API request failed with status ${response.status}`);
@@ -109,6 +113,21 @@ class ApiClient {
       console.error('API request error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Probe Workspace group membership for the current user.
+   * Auth-only on the API (does not require ALLOWED_GROUP_EMAILS).
+   */
+  async hasGroup(groupEmail) {
+    const queryParams = new URLSearchParams();
+    if (groupEmail) {
+      queryParams.append('groupEmail', groupEmail);
+    }
+    const response = await this.request(`/user/hasgroup?${queryParams.toString()}`, {
+      method: 'GET',
+    });
+    return await response.json();
   }
 
   // Search for veterans and guardians

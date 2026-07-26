@@ -7,16 +7,8 @@ import Typography from '@mui/material/Typography';
 
 import { config } from '@/config';
 import { WaitlistView } from '@/components/main/waitlist/waitlist-view';
-import { usePermissions } from '@/hooks/use-permissions';
 
 export default function Page() {
-  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  const { isInGroup } = usePermissions();
-
-  if (!isInGroup(ROLE_FULL_ACCESS)) {
-    return <div>Access Denied</div>;
-  }
-
   return (
     <Box
       sx={{

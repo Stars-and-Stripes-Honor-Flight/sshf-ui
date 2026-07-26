@@ -16,22 +16,12 @@ import { Option } from '@/components/core/option';
 
 import { searchColumns } from '@/components/main/search/search-columns';
 import { SearchCardView } from '@/components/main/search/search-card-view';
-import { usePermissions } from '@/hooks/use-permissions';
 import { getFlights, formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
 
 export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // TODO: Look at adding to a higher level component or page to protect all pages.
-  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  const { hasRole, isInGroup } = usePermissions();
-
-
-  if (!isInGroup(ROLE_FULL_ACCESS)) {
-    return <div>Access Denied</div>;
-  }
-  
   const searchInputRef = React.useRef(null);
   const [quickSearch, setQuickSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');

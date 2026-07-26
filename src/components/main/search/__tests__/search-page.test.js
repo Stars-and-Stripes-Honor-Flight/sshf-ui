@@ -13,13 +13,6 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-jest.mock('@/hooks/use-permissions', () => ({
-  usePermissions: () => ({
-    hasRole: jest.fn(() => true),
-    isInGroup: jest.fn(() => true),
-  }),
-}));
-
 import { getFlights, formatFlightNameForDisplay, ensureFlightPrefix } from '@/lib/flights';
 
 const mockGetFlights = jest.fn(() => []);
