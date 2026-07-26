@@ -95,8 +95,36 @@ jobs:
           sed -i 's/^[[:space:]]*//' .env.production
           cat .env.production
 
+      # Cloud Run rejects --no-traffic when the service does not exist yet.
+      - name: 'Check whether Cloud Run service already exists'
+        id: 'service'
+        run: |
+          if gcloud run services describe "${SERVICE_NAME}" \
+            --region "${REGION}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # First release: create the service and send it traffic immediately.
+      - name: 'Deploy to Cloud Run (create service)'
+        id: 'deploy_create'
+        if: steps.service.outputs.exists == 'false'
+        uses: 'google-github-actions/deploy-cloudrun@v3'
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          service: '${{ env.SERVICE_NAME }}'
+          region: '${{ env.REGION }}'
+          source: './'
+          secrets: |
+            GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
+          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}'
+
+      # Later releases: deploy a tagged revision with no traffic, smoke-test it,
+      # then shift traffic (below).
       - name: 'Deploy to Cloud Run (no traffic)'
-        id: 'deploy'
+        id: 'deploy_update'
+        if: steps.service.outputs.exists == 'true'
         uses: 'google-github-actions/deploy-cloudrun@v3'
         with:
           project_id: '${{ env.PROJECT_ID }}'
@@ -109,18 +137,34 @@ jobs:
             GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
           flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}'
 
-      - name: 'Smoke test tagged revision'
+      - name: 'Resolve smoke-test URL'
+        id: 'smoke_url'
         run: |
-          TAG="${{ steps.version.outputs.revision_tag }}"
-          TAG_URL=$(gcloud run services describe "${SERVICE_NAME}" \
-            --region "${REGION}" --project "${PROJECT_ID}" --format json \
-            | jq -r --arg t "$TAG" '.status.traffic[] | select(.tag==$t) | .url')
-          if [[ -z "$TAG_URL" || "$TAG_URL" == "null" ]]; then
-            echo "::error::Could not resolve URL for revision tag $TAG"
-            exit 1
+          if [[ "${{ steps.service.outputs.exists }}" == "true" ]]; then
+            TAG="${{ steps.version.outputs.revision_tag }}"
+            SMOKE_URL=$(gcloud run services describe "${SERVICE_NAME}" \
+              --region "${REGION}" --project "${PROJECT_ID}" --format json \
+              | jq -r --arg t "$TAG" '.status.traffic[] | select(.tag==$t) | .url')
+            if [[ -z "$SMOKE_URL" || "$SMOKE_URL" == "null" ]]; then
+              echo "::error::Could not resolve URL for revision tag $TAG"
+              exit 1
+            fi
+          else
+            SMOKE_URL="${{ steps.deploy_create.outputs.url }}"
+            if [[ -z "$SMOKE_URL" ]]; then
+              SMOKE_URL=$(gcloud run services describe "${SERVICE_NAME}" \
+                --region "${REGION}" --project "${PROJECT_ID}" \
+                --format 'value(status.url)')
+            fi
           fi
-          echo "Smoke testing $TAG_URL"
-          curl -fsSL --retry 5 --retry-delay 10 "$TAG_URL/" -o /tmp/sshf-ui-home.html
+          echo "url=$SMOKE_URL" >> "$GITHUB_OUTPUT"
+          echo "Smoke URL: $SMOKE_URL"
+
+      - name: 'Smoke test revision'
+        run: |
+          SMOKE_URL="${{ steps.smoke_url.outputs.url }}"
+          echo "Smoke testing $SMOKE_URL"
+          curl -fsSL --retry 5 --retry-delay 10 "$SMOKE_URL/" -o /tmp/sshf-ui-home.html
           # Confirm the production API URL is present in the served document
           # graph and the known-dev API URL is absent.
           if ! grep -qF "${NEXT_PUBLIC_API_URL}" /tmp/sshf-ui-home.html; then
@@ -128,7 +172,7 @@ jobs:
             # a few linked scripts and search those too.
             FOUND=0
             for SRC in $(grep -oE '/_next/static/[^"]+\.js' /tmp/sshf-ui-home.html | head -n 20); do
-              curl -fsSL "${TAG_URL}${SRC}" -o /tmp/chunk.js || continue
+              curl -fsSL "${SMOKE_URL}${SRC}" -o /tmp/chunk.js || continue
               if grep -qF "${NEXT_PUBLIC_API_URL}" /tmp/chunk.js; then
                 FOUND=1
                 break
@@ -144,7 +188,7 @@ jobs:
             exit 1
           fi
           for SRC in $(grep -oE '/_next/static/[^"]+\.js' /tmp/sshf-ui-home.html | head -n 20); do
-            curl -fsSL "${TAG_URL}${SRC}" -o /tmp/chunk.js || continue
+            curl -fsSL "${SMOKE_URL}${SRC}" -o /tmp/chunk.js || continue
             if grep -qF "${DEV_API_URL}" /tmp/chunk.js; then
               echo "::error::Dev API URL leaked into production bundle script ${SRC}"
               exit 1
@@ -152,7 +196,10 @@ jobs:
           done
           echo "Smoke test passed"
 
+      # Only needed after a no-traffic update deploy. On first create, the new
+      # service already receives 100% traffic.
       - name: 'Shift 100% traffic to new revision'
+        if: steps.service.outputs.exists == 'true'
         run: |
           gcloud run services update-traffic "${SERVICE_NAME}" \
             --region "${REGION}" --project "${PROJECT_ID}" --to-latest
@@ -168,4 +215,8 @@ jobs:
       - name: 'Show output'
         run: |-
           echo "Released ${{ steps.version.outputs.version }} to production"
-          echo ${{ steps.deploy.outputs.url }}
+          if [[ "${{ steps.service.outputs.exists }}" == "true" ]]; then
+            echo "${{ steps.deploy_update.outputs.url }}"
+          else
+            echo "${{ steps.deploy_create.outputs.url }}"
+          fi
