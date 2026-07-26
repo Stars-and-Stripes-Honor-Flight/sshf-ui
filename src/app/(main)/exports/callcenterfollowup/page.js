@@ -15,7 +15,6 @@ import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Downloa
 
 import { getFlightsSorted } from '@/lib/flights';
 import { downloadCallCenterFollowupCSV } from '@/lib/exports';
-import { usePermissions } from '@/hooks/use-permissions';
 
 function CallCenterFollowupExportPage() {
   const [flights, setFlights] = React.useState([]);
@@ -25,15 +24,7 @@ function CallCenterFollowupExportPage() {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
 
-  // Permission check
-  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  const { isInGroup } = usePermissions();
-
   React.useEffect(() => {
-    if (!isInGroup(ROLE_FULL_ACCESS)) {
-      return;
-    }
-
     const loadFlights = async () => {
       try {
         setIsLoading(true);
@@ -48,7 +39,7 @@ function CallCenterFollowupExportPage() {
     };
 
     loadFlights();
-  }, [ROLE_FULL_ACCESS]);
+  }, []);
 
   const handleExport = async () => {
     setError('');
@@ -67,10 +58,6 @@ function CallCenterFollowupExportPage() {
       setIsExporting(false);
     }
   };
-
-  if (!isInGroup(ROLE_FULL_ACCESS)) {
-    return <div>Access Denied</div>;
-  }
 
   return (
     <Box sx={{ py: 3, px: 2 }}>

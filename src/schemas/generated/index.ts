@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.2
  */
 
 export * from './addVeteransResult.zod';
@@ -27,6 +27,8 @@ export * from './getRecentActivity503.zod';
 export * from './getRecentActivityParams.zod';
 export * from './getSearch500.zod';
 export * from './getSearchParams.zod';
+export * from './getUserHasgroup200.zod';
+export * from './getUserHasgroupParams.zod';
 export * from './getVeteransSearch500.zod';
 export * from './getVeteransSearch501.zod';
 export * from './getVeteransSearchParams.zod';

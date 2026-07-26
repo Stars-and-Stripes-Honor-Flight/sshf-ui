@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.2
  */
 import * as zod from 'zod';
 
@@ -298,6 +298,19 @@ export const GetSearchQueryParams = zod.object({
 })
 
 export const GetSearchResponse = SearchResults
+
+
+/**
+ * Auth-only probe used by the UI during sign-in. Does not require membership in ALLOWED_GROUP_EMAILS so non-members can still discover that they are unauthorized. Data routes enforce group membership separately via the authorize middleware.
+ * @summary Check whether the authenticated user belongs to a Workspace group
+ */
+export const GetUserHasgroupQueryParams = zod.object({
+  "groupEmail": zod.string().email().describe('Workspace group email to check')
+})
+
+export const GetUserHasgroupResponse = zod.object({
+  "hasgroup": zod.boolean()
+})
 
 
 /**

@@ -20,7 +20,9 @@ written for both developers and administrators.
 
 Both services are publicly invokable; authentication happens inside the
 application (Google OAuth popup → Next.js `/api/auth/*` token exchange → API
-bearer token). Group checks are performed by the API, not the UI.
+bearer token). Workspace group membership is enforced by the API
+(`ALLOWED_GROUP_EMAILS` on data routes). The UI also gates the app shell with
+`NEXT_PUBLIC_ROLE_FULL_ACCESS` after sign-in (defense in depth).
 
 ## Critical difference from sshf-api
 

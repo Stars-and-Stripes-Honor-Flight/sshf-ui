@@ -4,14 +4,18 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
+import { useHasFullAccess } from '@/hooks/use-permissions';
 import { useSettings } from '@/hooks/use-settings';
 
 import { layoutConfig } from '../config';
+import { getNavItemsForAccess } from '../nav-access';
 import { MainNav } from './main-nav';
 import { SideNav } from './side-nav';
 
 export function VerticalLayout({ children }) {
   const { settings } = useSettings();
+  const hasFullAccess = useHasFullAccess();
+  const navItems = getNavItemsForAccess(layoutConfig.navItems, hasFullAccess);
 
   return (
     <React.Fragment>
@@ -36,9 +40,9 @@ export function VerticalLayout({ children }) {
           minHeight: '100%',
         }}
       >
-        <SideNav color={settings.navColor} items={layoutConfig.navItems} />
+        <SideNav color={settings.navColor} items={navItems} />
         <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', pl: { lg: 'var(--SideNav-width)' } }}>
-          <MainNav items={layoutConfig.navItems} />
+          <MainNav items={navItems} />
           <Box
             component="main"
             sx={{

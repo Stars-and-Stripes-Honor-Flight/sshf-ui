@@ -15,7 +15,6 @@ import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Downloa
 
 import { getFlightsSorted } from '@/lib/flights';
 import { downloadFlightRosterCSV } from '@/lib/exports';
-import { usePermissions } from '@/hooks/use-permissions';
 
 function FlightRosterExportPage() {
   const [flights, setFlights] = React.useState([]);
@@ -26,15 +25,7 @@ function FlightRosterExportPage() {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
 
-  // Permission check
-  const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  const { isInGroup } = usePermissions();
-
   React.useEffect(() => {
-    if (!isInGroup(ROLE_FULL_ACCESS)) {
-      return;
-    }
-
     const loadFlights = async () => {
       try {
         setIsLoading(true);
@@ -49,7 +40,7 @@ function FlightRosterExportPage() {
     };
 
     loadFlights();
-  }, [ROLE_FULL_ACCESS]);
+  }, []);
 
   const handleExport = async () => {
     setError('');
@@ -69,10 +60,6 @@ function FlightRosterExportPage() {
       setIsExporting(false);
     }
   };
-
-  if (!isInGroup(ROLE_FULL_ACCESS)) {
-    return <div>Access Denied</div>;
-  }
 
   return (
     <Box sx={{ py: 3, px: 2 }}>
