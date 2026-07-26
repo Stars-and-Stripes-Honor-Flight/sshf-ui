@@ -109,13 +109,18 @@ onto the Cloud Run service at runtime for the OAuth token exchange routes.
    Workload Identity Federation:
    1. Checks out the release tag.
    2. Validates the four `NEXT_PUBLIC_*` production variables.
-   3. Source-deploys into `sshf-ui-prd` with **no traffic** and a revision tag
-      (`v1-2-3` — dots become dashes).
-   4. Smoke-tests the tagged revision URL (HTTP 200 on `/`, production API URL
+   3. Source-deploys into `sshf-ui-prd`:
+      - **First release** (service does not exist yet): creates the Cloud Run
+        service and sends it traffic immediately. Cloud Run rejects
+        `--no-traffic` on create, so the no-traffic path is skipped.
+      - **Later releases**: deploys a revision with **no traffic** and a
+        revision tag (`v1-2-3` — dots become dashes).
+   4. Smoke-tests the new revision URL (HTTP 200 on `/`, production API URL
       present in the served bundle, development API URL absent).
-   5. Shifts 100% of traffic to the new revision.
+   5. On later releases only: shifts 100% of traffic to the new revision.
 
-If any step fails, production traffic remains on the previous revision.
+If a later-release step fails after a no-traffic deploy, production traffic
+remains on the previous revision.
 
 ### Manual promotion
 
