@@ -160,6 +160,15 @@ jobs:
           echo "url=$SMOKE_URL" >> "$GITHUB_OUTPUT"
           echo "Smoke URL: $SMOKE_URL"
 
+      # Must run before the unauthenticated smoke test. New services are private
+      # until allUsers is granted roles/run.invoker (same posture as sshf-ui-dev).
+      - name: 'Ensure public invoker'
+        run: |
+          gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+            --region "${REGION}" --project "${PROJECT_ID}" \
+            --member="allUsers" --role="roles/run.invoker" \
+            --quiet
+
       - name: 'Smoke test revision'
         run: |
           SMOKE_URL="${{ steps.smoke_url.outputs.url }}"
@@ -203,14 +212,6 @@ jobs:
         run: |
           gcloud run services update-traffic "${SERVICE_NAME}" \
             --region "${REGION}" --project "${PROJECT_ID}" --to-latest
-
-      # Idempotent: required for the first bootstrap deploy; harmless afterward.
-      - name: 'Ensure public invoker'
-        run: |
-          gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
-            --region "${REGION}" --project "${PROJECT_ID}" \
-            --member="allUsers" --role="roles/run.invoker" \
-            --quiet
 
       - name: 'Show output'
         run: |-
