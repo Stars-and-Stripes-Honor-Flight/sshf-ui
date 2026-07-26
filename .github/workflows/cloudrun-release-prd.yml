@@ -1,0 +1,171 @@
+name: Release to Cloud Run Production
+
+# Next.js inlines NEXT_PUBLIC_* at build time, so production cannot promote a
+# digests from the dev image. This workflow source-builds the tagged commit
+# into sshf-ui-prd with production build variables.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Existing git tag to deploy (e.g. v1.0.0)'
+        required: true
+
+concurrency: production-deploy
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
+  REGION: ${{ secrets.GCP_REGION }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  # Runtime SA email (not secret). Set as a production environment variable.
+  RUNTIME_SERVICE_ACCOUNT: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+  # Production client build values from the "production" environment Variables.
+  NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+  NEXT_PUBLIC_ROLE_FULL_ACCESS: ${{ vars.NEXT_PUBLIC_ROLE_FULL_ACCESS }}
+  NEXT_PUBLIC_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_ENVIRONMENT }}
+  # Hard-coded known-bad value for the smoke-test negative check.
+  DEV_API_URL: https://sshf-api-330507742215.us-central1.run.app
+
+jobs:
+  release:
+    runs-on: 'ubuntu-latest'
+    # Requires the "production" GitHub environment (approval gate +
+    # environment-scoped GCP_* secrets pointing at sshf-ui-prd).
+    environment: 'production'
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: 'Checkout release tag'
+        uses: 'actions/checkout@v4'
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 'Resolve version'
+        id: 'version'
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            git checkout --force "$VERSION"
+          else
+            VERSION="${{ inputs.version }}"
+            git checkout --force "$VERSION"
+          fi
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' must be a semver tag like v1.2.3"
+            exit 1
+          fi
+          # Cloud Run revision tags cannot contain dots.
+          REVISION_TAG="${VERSION//./-}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "revision_tag=$REVISION_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: 'Validate client build environment'
+        run: node scripts/check-build-env.mjs
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v3'
+        with:
+          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          service_account: '${{ env.SERVICE_ACCOUNT }}'
+          token_format: 'access_token'
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v3'
+
+      - name: 'Configure client build environment'
+        run: |
+          cat > .env.production <<EOF
+          NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+          NEXT_PUBLIC_ROLE_FULL_ACCESS=${NEXT_PUBLIC_ROLE_FULL_ACCESS}
+          NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT}
+          EOF
+          sed -i 's/^[[:space:]]*//' .env.production
+          cat .env.production
+
+      - name: 'Deploy to Cloud Run (no traffic)'
+        id: 'deploy'
+        uses: 'google-github-actions/deploy-cloudrun@v3'
+        with:
+          project_id: '${{ env.PROJECT_ID }}'
+          service: '${{ env.SERVICE_NAME }}'
+          region: '${{ env.REGION }}'
+          source: './'
+          no_traffic: true
+          tag: '${{ steps.version.outputs.revision_tag }}'
+          secrets: |
+            GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
+          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}'
+
+      - name: 'Smoke test tagged revision'
+        run: |
+          TAG="${{ steps.version.outputs.revision_tag }}"
+          TAG_URL=$(gcloud run services describe "${SERVICE_NAME}" \
+            --region "${REGION}" --project "${PROJECT_ID}" --format json \
+            | jq -r --arg t "$TAG" '.status.traffic[] | select(.tag==$t) | .url')
+          if [[ -z "$TAG_URL" || "$TAG_URL" == "null" ]]; then
+            echo "::error::Could not resolve URL for revision tag $TAG"
+            exit 1
+          fi
+          echo "Smoke testing $TAG_URL"
+          curl -fsSL --retry 5 --retry-delay 10 "$TAG_URL/" -o /tmp/sshf-ui-home.html
+          # Confirm the production API URL is present in the served document
+          # graph and the known-dev API URL is absent.
+          if ! grep -qF "${NEXT_PUBLIC_API_URL}" /tmp/sshf-ui-home.html; then
+            # Next may put the value in a chunk referenced by the HTML; fetch
+            # a few linked scripts and search those too.
+            FOUND=0
+            for SRC in $(grep -oE '/_next/static/[^"]+\.js' /tmp/sshf-ui-home.html | head -n 20); do
+              curl -fsSL "${TAG_URL}${SRC}" -o /tmp/chunk.js || continue
+              if grep -qF "${NEXT_PUBLIC_API_URL}" /tmp/chunk.js; then
+                FOUND=1
+                break
+              fi
+            done
+            if [[ "$FOUND" -ne 1 ]]; then
+              echo "::error::Prod API URL not found in served bundle"
+              exit 1
+            fi
+          fi
+          if grep -qF "${DEV_API_URL}" /tmp/sshf-ui-home.html; then
+            echo "::error::Dev API URL leaked into production bundle HTML"
+            exit 1
+          fi
+          for SRC in $(grep -oE '/_next/static/[^"]+\.js' /tmp/sshf-ui-home.html | head -n 20); do
+            curl -fsSL "${TAG_URL}${SRC}" -o /tmp/chunk.js || continue
+            if grep -qF "${DEV_API_URL}" /tmp/chunk.js; then
+              echo "::error::Dev API URL leaked into production bundle script ${SRC}"
+              exit 1
+            fi
+          done
+          echo "Smoke test passed"
+
+      - name: 'Shift 100% traffic to new revision'
+        run: |
+          gcloud run services update-traffic "${SERVICE_NAME}" \
+            --region "${REGION}" --project "${PROJECT_ID}" --to-latest
+
+      # Idempotent: required for the first bootstrap deploy; harmless afterward.
+      - name: 'Ensure public invoker'
+        run: |
+          gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+            --region "${REGION}" --project "${PROJECT_ID}" \
+            --member="allUsers" --role="roles/run.invoker" \
+            --quiet
+
+      - name: 'Show output'
+        run: |-
+          echo "Released ${{ steps.version.outputs.version }} to production"
+          echo ${{ steps.deploy.outputs.url }}

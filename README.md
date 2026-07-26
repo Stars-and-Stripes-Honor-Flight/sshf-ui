@@ -2,13 +2,29 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
-First, run the development server:
+1. Copy the example env file and fill in a local `GOOGLE_CLIENT_SECRET` if you
+   need the OAuth sign-in flow:
 
 ```bash
+cp .env.example .env.local
+```
+
+`.env.local` is gitignored. The four `NEXT_PUBLIC_*` values in `.env.example`
+are the development defaults (API URL, Google client ID, full-access group,
+and `NEXT_PUBLIC_ENVIRONMENT=Development`). Without them the client will not
+point at a backend — there is no hardcoded API fallback.
+
+2. Install dependencies and start the development server:
+
+```bash
+npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+Before a Cloud Run deploy, CI runs `npm run check-build-env` to ensure the four
+`NEXT_PUBLIC_*` build variables are set.
 
 ## Schema sync (OpenAPI → Zod)
 
@@ -61,36 +77,43 @@ Key generated models include `Veteran`, `Guardian`, `Flight`, flight-detail/assi
 
 ## Deployment
 
-This project is deployed to Google Cloud Run via GitHub Actions. The deployment workflow (`.github/workflows/cloudrun-source.yml`) runs automatically when a pull request is merged to the `main` branch.
+This project deploys to Google Cloud Run via GitHub Actions:
 
-### Required GitHub Secrets
+- **Development** — merge to `main` runs `.github/workflows/cloudrun-source.yml`
+  (source deploy into `sshf-ui-dev`).
+- **Production** — publishing a GitHub Release `vX.Y.Z` runs
+  `.github/workflows/cloudrun-release-prd.yml` (source deploy into
+  `sshf-ui-prd` behind a `production` environment approval gate).
 
-Configure these secrets in GitHub repository settings (`Settings > Secrets and variables > Actions`):
+Because Next.js inlines `NEXT_PUBLIC_*` at build time, each environment builds
+from source with its own GitHub Actions variables. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+for the full pipeline, secrets, and release process.
+
+### Required GitHub configuration
+
+**Repository secrets** (dev deploy):
 
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
-| `GCP_PROJECT_ID` | Your GCP project ID | `sshf-ui-dev` |
+| `GCP_PROJECT_ID` | GCP project ID | `sshf-ui-dev` |
 | `GCP_SERVICE_NAME` | Cloud Run service name | `sshf-ui` |
-| `GCP_REGION` | GCP region for deployment | `us-central1` |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider path | `projects/123456789/locations/global/workloadIdentityPools/github-pool/providers/github` |
-| `GCP_SERVICE_ACCOUNT` | Service account email for deployment | `github-actions@sshf-ui-dev.iam.gserviceaccount.com` |
-| `GCP_SECRET_NAME` | Name of Google Secret Manager secret | `sshf-ui-google-client-secret-dev` |
+| `GCP_REGION` | GCP region | `us-central1` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider path | `projects/.../providers/...` |
+| `GCP_SERVICE_ACCOUNT` | Deploy service account email | `...@sshf-ui-dev.iam.gserviceaccount.com` |
+| `GCP_SECRET_NAME` | Secret Manager secret for `GOOGLE_CLIENT_SECRET` | `sshf-ui-google-client-secret-dev` |
 
-### Google Secret Manager
+**Repository variables** (dev client build):
 
-The `GOOGLE_CLIENT_SECRET` is pulled from Google Secret Manager at runtime (not stored in GitHub). Ensure the secret exists in your GCP project and the Cloud Run service account has access to it.
+| Variable | Example |
+|----------|---------|
+| `NEXT_PUBLIC_API_URL` | `https://sshf-api-330507742215.us-central1.run.app` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `....apps.googleusercontent.com` |
+| `NEXT_PUBLIC_ROLE_FULL_ACCESS` | `sshf_app_dev_full_access@starsandstripeshonorflight.org` |
+| `NEXT_PUBLIC_ENVIRONMENT` | `Development` |
 
-### GCP Setup
-
-If you're reusing an existing Workload Identity Pool from another project (e.g., sshf-api), you may need to update the pool's attribute condition to include this repository:
-
-```bash
-gcloud iam workload-identity-pools providers update "github" \
-  --project="YOUR_PROJECT_ID" \
-  --location="global" \
-  --workload-identity-pool="github-pool" \
-  --attribute-condition="assertion.repository_owner == 'YOUR_GITHUB_ORG' && assertion.repository in ['YOUR_ORG/sshf-api', 'YOUR_ORG/sshf-ui']"
-```
+Production uses the GitHub `production` environment with the same secret/variable
+names scoped to `sshf-ui-prd` and production values. Only `GOOGLE_CLIENT_SECRET`
+is a real secret (Secret Manager); the `NEXT_PUBLIC_*` values are public by design.
 
 ## Learn More
 

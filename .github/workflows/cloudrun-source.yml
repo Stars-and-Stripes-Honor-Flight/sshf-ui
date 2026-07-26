@@ -13,6 +13,12 @@ env:
   REGION: ${{ secrets.GCP_REGION }}
   WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  # Client build values from repo Variables (Settings → Secrets and variables → Actions → Variables).
+  # These are public by design (inlined into the Next.js client bundle at build time).
+  NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+  NEXT_PUBLIC_ROLE_FULL_ACCESS: ${{ vars.NEXT_PUBLIC_ROLE_FULL_ACCESS }}
+  NEXT_PUBLIC_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_ENVIRONMENT }}
 
 jobs:
   deploy:
@@ -35,13 +41,17 @@ jobs:
           echo "Region length: ${#REGION}"
           echo "WIP length: ${#WORKLOAD_IDENTITY_PROVIDER}"
           echo "Service Account length: ${#SERVICE_ACCOUNT}"
-          
-          # Check if any are empty
+          echo "NEXT_PUBLIC_ENVIRONMENT: ${NEXT_PUBLIC_ENVIRONMENT}"
+          echo "NEXT_PUBLIC_API_URL length: ${#NEXT_PUBLIC_API_URL}"
+
           [[ -z "$PROJECT_ID" ]] && echo "⚠️ PROJECT_ID is empty" || echo "✓ PROJECT_ID is set"
           [[ -z "$SERVICE_NAME" ]] && echo "⚠️ SERVICE_NAME is empty" || echo "✓ SERVICE_NAME is set"
           [[ -z "$REGION" ]] && echo "⚠️ REGION is empty" || echo "✓ REGION is set"
           [[ -z "$WORKLOAD_IDENTITY_PROVIDER" ]] && echo "⚠️ WIP is empty" || echo "✓ WIP is set"
           [[ -z "$SERVICE_ACCOUNT" ]] && echo "⚠️ SERVICE_ACCOUNT is empty" || echo "✓ SERVICE_ACCOUNT is set"
+
+      - name: 'Validate client build environment'
+        run: node scripts/check-build-env.mjs
 
       # Configure Workload Identity Federation and generate an access token.
       #
@@ -49,7 +59,7 @@ jobs:
       # including authenticating via a JSON credentials file.
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
+        uses: 'google-github-actions/auth@v3'
         with:
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
           service_account: '${{ env.SERVICE_ACCOUNT }}'
@@ -58,23 +68,37 @@ jobs:
           export_environment_variables: true
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+        uses: 'google-github-actions/setup-gcloud@v3'
+
+      # NEXT_PUBLIC_* is inlined at next build time. Write them into .env.production
+      # so Buildpacks / next build see them, and also pass --update-build-env-vars.
+      - name: 'Configure client build environment'
+        run: |
+          cat > .env.production <<EOF
+          NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+          NEXT_PUBLIC_ROLE_FULL_ACCESS=${NEXT_PUBLIC_ROLE_FULL_ACCESS}
+          NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT}
+          EOF
+          # Trim accidental leading whitespace from the heredoc lines.
+          sed -i 's/^[[:space:]]*//' .env.production
+          cat .env.production
 
       - name: 'Deploy to Cloud Run'
         id: 'deploy'
-        uses: 'google-github-actions/deploy-cloudrun@v2'
+        uses: 'google-github-actions/deploy-cloudrun@v3'
         with:
           project_id: '${{ env.PROJECT_ID }}'
           service: '${{ env.SERVICE_NAME }}'
           region: '${{ env.REGION }}'
-          # NOTE: If using a different source folder, update the image name below:
           source: './'
           # Reference secret from Google Secret Manager (must already exist in GCP)
           secrets: |
             GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
+          # Build-time for Next.js client bundle.
+          flags: >-
+            --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}
 
-      # If required, use the Cloud Run URL output in later steps
       - name: 'Show output'
         run: |-
           echo ${{ steps.deploy.outputs.url }}
-

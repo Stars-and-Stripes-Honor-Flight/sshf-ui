@@ -14,6 +14,7 @@ import { Warning } from '@phosphor-icons/react';
 
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
+import { getEnvironmentBanner } from '@/lib/environment';
 
 import { MobileNav } from '../mobile-nav';
 import { UserPopover } from '../user-popover/user-popover';
@@ -21,13 +22,12 @@ import { UserPopover } from '../user-popover/user-popover';
 export function MainNav({ items }) {
   const [openNav, setOpenNav] = React.useState(false);
   const { user } = useUser();
-  const [isTestEnvironment, setIsTestEnvironment] = React.useState(false);
-  
-  // Show test environment indicator if NODE_ENV is not production or if explicitly set
-  // Only check on client side to avoid hydration mismatches
+  const [environmentBanner, setEnvironmentBanner] = React.useState(null);
+
+  // Banner shows for any non-production NEXT_PUBLIC_ENVIRONMENT.
+  // Only check on client side to avoid hydration mismatches.
   React.useEffect(() => {
-    const isTest = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_SHOW_TEST_BANNER === 'true';
-    setIsTestEnvironment(isTest);
+    setEnvironmentBanner(getEnvironmentBanner());
   }, []);
 
   return (
@@ -57,7 +57,7 @@ export function MainNav({ items }) {
             position: 'relative',
           }}
         >
-          {isTestEnvironment ? (
+          {environmentBanner?.show ? (
             <>
               {/* Mobile menu button - positioned absolutely on the left */}
               <IconButton
@@ -130,7 +130,7 @@ export function MainNav({ items }) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  🧪 TEST ENVIRONMENT
+                  🧪 {environmentBanner?.label}
                 </Box>
               </Box>
               

@@ -16,6 +16,7 @@ import { Warning } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/domain/client';
+import { getEnvironmentBanner } from '@/lib/environment';
 import { useUser } from '@/hooks/use-user';
 import { DynamicLogo } from '@/components/core/logo';
 import { toast } from '@/components/core/toaster';
@@ -28,13 +29,12 @@ export function SignInForm() {
   const router = useRouter();
   const { checkSession } = useUser();
   const [isPending, setIsPending] = React.useState(false);
-  const [isTestEnvironment, setIsTestEnvironment] = React.useState(false);
-  
-  // Show test environment indicator if NODE_ENV is not production or if explicitly set
-  // Only check on client side to avoid hydration mismatches
+  const [environmentBanner, setEnvironmentBanner] = React.useState(null);
+
+  // Banner shows for any non-production NEXT_PUBLIC_ENVIRONMENT.
+  // Only check on client side to avoid hydration mismatches.
   React.useEffect(() => {
-    const isTest = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_SHOW_TEST_BANNER === 'true';
-    setIsTestEnvironment(isTest);
+    setEnvironmentBanner(getEnvironmentBanner());
   }, []);
 
   const onAuth = React.useCallback(async (providerId) => {
@@ -78,7 +78,7 @@ export function SignInForm() {
         </Box>
       </div>
       <Stack spacing={3}>
-        {isTestEnvironment && (
+        {environmentBanner?.show && (
           <Box
             sx={{
               display: 'flex',
@@ -133,7 +133,7 @@ export function SignInForm() {
                 whiteSpace: 'nowrap',
               }}
             >
-              🧪 TEST ENVIRONMENT
+              🧪 {environmentBanner?.label}
             </Box>
           </Box>
         )}
