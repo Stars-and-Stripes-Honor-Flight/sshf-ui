@@ -2,6 +2,7 @@
 
 import { api } from '@/lib/api';
 import { tokenManager } from './tokenManager';
+import { rolesFromGroupProbe } from './group-probe';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -167,6 +168,7 @@ class AuthClient {
         const userData = await userResponse.json();
 
         const roles = [];
+        let membershipProbeFailed = false;
 
         // Check group memberships (preload roles)
         const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
@@ -176,11 +178,11 @@ class AuthClient {
         for (const role of possibleRoles) {
           try {
             const hasGroupData = await api.hasGroup(role);
-            if (hasGroupData?.hasgroup) {
-              roles.push({ name: role, email: role });
-            }
-          } catch {
-            // Probe failures should not block sign-in; treat as no membership.
+            const probed = rolesFromGroupProbe(role, hasGroupData);
+            roles.push(...probed.roles);
+          } catch (error) {
+            // Probe failures should not block sign-in, but they are not "not a member".
+            membershipProbeFailed = rolesFromGroupProbe(role, { error }).probeFailed;
           }
         }
 
@@ -190,7 +192,8 @@ class AuthClient {
           firstName: userData.given_name,
           lastName: userData.family_name,
           avatar: userData.picture,
-          roles: roles // Add roles to user data
+          roles,
+          membershipProbeFailed
         };
 
         // Store the complete user data

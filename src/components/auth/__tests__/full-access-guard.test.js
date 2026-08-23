@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 
 const mockUsePathname = jest.fn();
 const mockUseHasFullAccess = jest.fn();
+const mockUseMembershipProbeFailed = jest.fn();
 
 jest.mock('next/navigation', () => ({
   usePathname: () => mockUsePathname(),
@@ -11,6 +12,7 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/hooks/use-permissions', () => ({
   useHasFullAccess: () => mockUseHasFullAccess(),
+  useMembershipProbeFailed: () => mockUseMembershipProbeFailed(),
 }));
 
 import { FullAccessGuard } from '../full-access-guard';
@@ -18,6 +20,7 @@ import { FullAccessGuard } from '../full-access-guard';
 describe('FullAccessGuard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseMembershipProbeFailed.mockReturnValue(false);
   });
 
   test('renders children when the user has full access', () => {
@@ -47,6 +50,22 @@ describe('FullAccessGuard', () => {
     expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
     expect(screen.getByText(/not authorized/i)).toBeInTheDocument();
     expect(screen.getByText(/contact an administrator/i)).toBeInTheDocument();
+  });
+
+  test('shows an API/connectivity message when the membership probe failed', () => {
+    mockUseHasFullAccess.mockReturnValue(false);
+    mockUseMembershipProbeFailed.mockReturnValue(true);
+    mockUsePathname.mockReturnValue('/search');
+
+    render(
+      <FullAccessGuard>
+        <div>Protected content</div>
+      </FullAccessGuard>
+    );
+
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
+    expect(screen.getByText(/could not verify access group membership/i)).toBeInTheDocument();
+    expect(screen.queryByText(/contact an administrator/i)).not.toBeInTheDocument();
   });
 
   test('still renders children on settings routes without full access', () => {
