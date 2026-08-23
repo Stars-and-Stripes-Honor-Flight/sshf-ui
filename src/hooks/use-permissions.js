@@ -18,3 +18,8 @@ export function useHasFullAccess() {
   const fullAccessGroup = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
   return isInGroup(fullAccessGroup);
 }
+
+export function useMembershipProbeFailed() {
+  const { user } = useUser();
+  return Boolean(user?.membershipProbeFailed);
+}

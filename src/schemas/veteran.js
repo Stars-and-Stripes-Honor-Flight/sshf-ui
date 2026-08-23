@@ -102,4 +102,21 @@ export const veteranSchema = z.object({
     updated_at: z.string(),
     updated_by: z.string(),
   }),
-}); 
+});
+
+/**
+ * Create-scoped schema — validates only the fields the Create Veteran form renders.
+ * Re-declares the optional address fields (unrendered in the create form's underlying
+ * shared address section) so an untouched empty string doesn't fail the base schema's
+ * regex/email checks, which only skip `undefined`, not `''`.
+ */
+export const veteranCreateSchema = veteranSchema
+  .pick({ name: true, address: true, vet_type: true })
+  .extend({
+    service: veteranSchema.shape.service.pick({ branch: true }),
+    address: veteranSchema.shape.address.extend({
+      phone_eve: z.union([z.literal(''), veteranSchema.shape.address.shape.phone_eve.unwrap()]).optional(),
+      phone_mbl: z.union([z.literal(''), veteranSchema.shape.address.shape.phone_mbl.unwrap()]).optional(),
+      email: z.union([z.literal(''), veteranSchema.shape.address.shape.email.unwrap()]).optional(),
+    }),
+  });

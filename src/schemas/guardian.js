@@ -176,4 +176,20 @@ export const guardianSchema = z.object({
     updated_at: z.string(),
     updated_by: z.string(),
   }),
-}); 
+});
+
+/**
+ * Create-scoped schema — validates only the fields the Create Guardian form renders.
+ * Re-declares the optional address fields (unrendered in the create form's underlying
+ * shared address section) so an untouched empty string doesn't fail the base schema's
+ * regex/email checks, which only skip `undefined`, not `''`.
+ */
+export const guardianCreateSchema = guardianSchema
+  .pick({ name: true, address: true, birth_date: true, gender: true })
+  .extend({
+    address: guardianSchema.shape.address.extend({
+      phone_eve: z.union([z.literal(''), guardianSchema.shape.address.shape.phone_eve.unwrap()]).optional(),
+      phone_mbl: z.union([z.literal(''), guardianSchema.shape.address.shape.phone_mbl.unwrap()]).optional(),
+      email: z.union([z.literal(''), guardianSchema.shape.address.shape.email.unwrap()]).optional(),
+    }),
+  });

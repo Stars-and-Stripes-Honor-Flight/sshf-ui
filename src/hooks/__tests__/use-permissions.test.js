@@ -51,4 +51,18 @@ describe('useHasFullAccess', () => {
 
     expect(result.current).toBe(false);
   });
+
+  test('reports a failed membership probe separately from non-membership', () => {
+    mockUseUser.mockReturnValue({
+      user: { roles: [], membershipProbeFailed: true },
+    });
+
+    let result;
+    jest.isolateModules(() => {
+      const { useMembershipProbeFailed } = require('../use-permissions');
+      result = renderHook(() => useMembershipProbeFailed()).result;
+    });
+
+    expect(result.current).toBe(true);
+  });
 });

@@ -24,7 +24,9 @@ import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
-import { guardianSchema } from '@/schemas/guardian';
+import { api } from '@/lib/api';
+import { guardianCreateSchema } from '@/schemas/guardian';
+import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 
 const defaultValues = {
   name: {
@@ -45,46 +47,7 @@ const defaultValues = {
     email: ''
   },
   birth_date: '',
-  gender: 'M',
-  weight: 0,
-  occupation: '',
-  app_date: new Date().toISOString().split('T')[0],
-  notes: {
-    service: 'N',
-    other: ''
-  },
-  medical: {
-    level: '',
-    food_restriction: 'None',
-    can_push: false,
-    can_lift: false,
-    limitations: '',
-    experience: '',
-    release: false,
-    form: false
-  },
-  flight: {
-    status: 'Active',
-    id: '',
-    group: '',
-    bus: '',
-    seat: '',
-    waiver: false,
-    vaccinated: false,
-    training: 'None',
-    training_complete: false,
-    training_see_doc: false,
-    training_notes: '',
-    status_note: '',
-    mediaWaiver: false,
-    infection_test: false,
-    nofly: false,
-    booksOrdered: 0,
-    confirmed_date: '',
-    confirmed_by: '',
-    paid: false,
-    exempt: false
-  }
+  gender: 'M'
 };
 
 export function GuardianCreateForm() {
@@ -94,17 +57,17 @@ export function GuardianCreateForm() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({ defaultValues, resolver: zodResolver(guardianSchema) });
+  } = useForm({ defaultValues, resolver: zodResolver(guardianCreateSchema) });
 
   const onSubmit = React.useCallback(
     async (data) => {
       try {
-        // Make API request
+        const created = await api.createGuardian({ ...data, type: 'Guardian' });
         toast.success('Guardian created');
-        router.push(paths.main.guardians.list);
+        router.push(created?._id ? paths.main.guardians.details(created._id) : paths.main.guardians.list);
       } catch (err) {
         logger.error(err);
-        toast.error('Something went wrong!');
+        toast.error('Failed to create guardian: ' + (err.message || 'Unknown error'));
       }
     },
     [router]
@@ -189,11 +152,10 @@ export function GuardianCreateForm() {
               </Grid>
             </Stack>
 
-            {/* Add more sections for:
-                - Contact Information
-                - Medical Information
-                - Flight Details
-                Based on the schema */}
+            <Stack spacing={3}>
+              <Typography variant="h6">Contact Information</Typography>
+              <AddressInformationCard control={control} errors={errors} emailGridProps={{ xs: 12 }} />
+            </Stack>
 
           </Stack>
         </CardContent>
