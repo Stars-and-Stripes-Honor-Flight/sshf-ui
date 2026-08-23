@@ -24,7 +24,9 @@ import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { Option } from '@/components/core/option';
 import { toast } from '@/components/core/toaster';
-import { veteranSchema } from '@/schemas/veteran';
+import { api } from '@/lib/api';
+import { veteranCreateSchema } from '@/schemas/veteran';
+import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 
 const defaultValues = {
   name: {
@@ -45,38 +47,9 @@ const defaultValues = {
     email: ''
   },
   service: {
-    branch: '',
-    rank: '',
-    dates: '',
-    activity: ''
+    branch: ''
   },
-  vet_type: '',
-  birth_date: '',
-  gender: 'M',
-  weight: 0,
-  app_date: new Date().toISOString().split('T')[0],
-  medical: {
-    level: '3',
-    alt_level: '3',
-    food_restriction: 'None',
-    usesCane: false,
-    usesWalker: false,
-    usesWheelchair: false,
-    isWheelchairBound: false,
-    usesScooter: false,
-    requiresOxygen: false,
-    examRequired: false,
-    form: false,
-    release: false,
-    limitations: '',
-    review: ''
-  },
-  flight: {
-    status: 'Active',
-    group: '',
-    waiver: false,
-    vaccinated: false
-  }
+  vet_type: ''
 };
 
 export function VeteranCreateForm() {
@@ -86,17 +59,17 @@ export function VeteranCreateForm() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({ defaultValues, resolver: zodResolver(veteranSchema) });
+  } = useForm({ defaultValues, resolver: zodResolver(veteranCreateSchema) });
 
   const onSubmit = React.useCallback(
     async (data) => {
       try {
-        // Make API request
+        const created = await api.createVeteran({ ...data, type: 'Veteran' });
         toast.success('Veteran created');
-        router.push(paths.main.veterans.list);
+        router.push(created?._id ? paths.main.veterans.details(created._id) : paths.main.veterans.list);
       } catch (err) {
         logger.error(err);
-        toast.error('Something went wrong!');
+        toast.error('Failed to create veteran: ' + (err.message || 'Unknown error'));
       }
     },
     [router]
@@ -193,12 +166,10 @@ export function VeteranCreateForm() {
               </Grid>
             </Stack>
 
-            {/* Add more sections for:
-                - Contact Information
-                - Service Details
-                - Medical Information
-                - Flight Details
-                Based on the schema */}
+            <Stack spacing={3}>
+              <Typography variant="h6">Contact Information</Typography>
+              <AddressInformationCard control={control} errors={errors} />
+            </Stack>
 
           </Stack>
         </CardContent>
