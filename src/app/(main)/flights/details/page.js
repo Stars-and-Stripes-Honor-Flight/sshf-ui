@@ -48,6 +48,7 @@ import { formatFlightNameForDisplay } from '@/lib/flights';
 import { toast } from '@/components/core/toaster';
 import { FlightExportMenu } from '@/components/main/flight/flight-export-menu';
 import { FlightDetailsGrid } from '@/components/main/flight/flight-details-grid';
+import { FlightStatsSection } from '@/components/main/flight/flight-stats-section';
 
 function FlightDetailsPage() {
   const searchParams = useSearchParams();
@@ -469,79 +470,7 @@ function FlightDetailsPage() {
               </Dialog>
 
               {/* Stats Section */}
-              {stats && (
-                <Stack spacing={3}>
-                  <Typography variant="h5">Overview</Typography>
-                  
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
-                    {/* Flight & Tour Stats Combined */}
-                    <Card sx={{ flex: '1 1 auto', minWidth: 250 }}>
-                      <CardContent>
-                        <Stack spacing={2.5}>
-                          {/* Flight Stats */}
-                          <Box>
-                            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
-                              <AirplaneTiltIcon size={20} />
-                              <Typography color="text.secondary" variant="caption">
-                                Flight Breakdown
-                              </Typography>
-                            </Stack>
-                            <Stack spacing={1}>
-                              {Object.entries(stats.flight).map(([key, value]) => (
-                                <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', ...(key === 'None' && value > 0 && { backgroundColor: 'rgba(211, 47, 47, 0.08)', p: 1, borderRadius: 0.5 }) }}>
-                                  <Typography variant="body2">{key}</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 600, ...(key === 'None' && value > 0 && { color: 'var(--mui-palette-error-main)' }) }}>{value}</Typography>
-                                </Box>
-                              ))}
-                            </Stack>
-                          </Box>
-
-                          {/* Divider */}
-                          <Box sx={{ borderTop: 1, borderColor: 'divider' }} />
-
-                          {/* Tour Stats */}
-                          <Box>
-                            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
-                              <UsersIcon size={20} />
-                              <Typography color="text.secondary" variant="caption">
-                                Tour Breakdown
-                              </Typography>
-                            </Stack>
-                            <Stack spacing={1}>
-                              {Object.entries(stats.tours).map(([key, value]) => (
-                                <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', ...(key === 'None' && value > 0 && { backgroundColor: 'rgba(211, 47, 47, 0.08)', p: 1, borderRadius: 0.5 }) }}>
-                                  <Typography variant="body2">{key}</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 600, ...(key === 'None' && value > 0 && { color: 'var(--mui-palette-error-main)' }) }}>{value}</Typography>
-                                </Box>
-                              ))}
-                            </Stack>
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-
-                    {/* Bus Capacity */}
-                    <Card sx={{ flex: '1 1 auto', minWidth: 250, display: 'flex', flexDirection: 'column' }}>
-                      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
-                          <BusIcon size={20} />
-                          <Typography color="text.secondary" variant="caption">
-                            Bus Breakdown
-                          </Typography>
-                        </Stack>
-                        <Stack spacing={1.5} sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-                          {Object.entries(stats.buses).map(([bus, count]) => (
-                            <Box key={bus} sx={{ display: 'flex', justifyContent: 'space-between', ...(bus === 'None' && count > 0 && { backgroundColor: 'rgba(211, 47, 47, 0.08)', p: 1, borderRadius: 0.5 }) }}>
-                              <Typography variant="body2">{bus}</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 600, ...(bus === 'None' && count > 0 && { color: 'var(--mui-palette-error-main)' }) }}>{count}</Typography>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </Stack>
-                </Stack>
-              )}
+              <FlightStatsSection stats={stats} flightId={flightId} />
 
               {/* Pairs Table */}
               <Stack spacing={2}>
