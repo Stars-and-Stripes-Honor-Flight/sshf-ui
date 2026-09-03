@@ -165,4 +165,26 @@ describe('QueryEditor', () => {
     expect(screen.getByText(/Veteran/i)).toBeInTheDocument();
     expect(screen.getByText(/Guardian/i)).toBeInTheDocument();
   });
+
+  it('should sync editor when value prop changes', () => {
+    const initialValue = { selector: { type: 'Guardian' }, limit: 10 };
+    const { rerender } = render(
+      <QueryEditor value={initialValue} onChange={mockOnChange} onRun={mockOnRun} isLoading={false} />
+    );
+
+    const textarea = screen.getByRole('textbox');
+    expect(textarea.value).toContain('"type": "Guardian"');
+    expect(textarea.value).toContain('"limit": 10');
+
+    // Update the value prop (simulating loading a saved query)
+    const newValue = { selector: { type: 'Veteran' }, limit: 25 };
+    rerender(
+      <QueryEditor value={newValue} onChange={mockOnChange} onRun={mockOnRun} isLoading={false} />
+    );
+
+    // Editor should now show the new value
+    expect(textarea.value).toContain('"type": "Veteran"');
+    expect(textarea.value).toContain('"limit": 25');
+    expect(textarea.value).not.toContain('"type": "Guardian"');
+  });
 });

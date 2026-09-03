@@ -29,6 +29,13 @@ export function QueryEditor({
   const [error, setError] = React.useState(null);
   const [includeStats, setIncludeStats] = React.useState(false);
 
+  // Sync editor value when value prop changes (e.g., when loading a saved query)
+  React.useEffect(() => {
+    const newValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    setEditorValue(newValue);
+    setError(null);
+  }, [value]);
+
   // Validate JSON and check for forbidden operations
   const validateQuery = (jsonString) => {
     try {

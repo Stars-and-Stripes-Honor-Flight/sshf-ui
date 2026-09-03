@@ -306,4 +306,43 @@ describe('QueryView', () => {
       expect(codeHighlighter.className).toContain('language-json');
     });
   });
+
+  it('should load saved query into editor when selected', async () => {
+    const user = userEvent.setup();
+    const mockQueries = [
+      { 
+        name: 'All Veterans (25)', 
+        query: { selector: { type: 'Veteran' }, limit: 25 },
+        savedAt: '2024-01-01'
+      },
+      { 
+        name: 'All Guardians (25)', 
+        query: { selector: { type: 'Guardian' }, limit: 25 },
+        savedAt: '2024-01-02'
+      }
+    ];
+    queryStorage.initializeQueriesIfEmpty.mockReturnValue(mockQueries);
+    queryStorage.getSavedQueries.mockReturnValue(mockQueries);
+
+    render(<QueryView />);
+
+    // Open Load Query dialog
+    const loadButton = screen.getByText('Load Query');
+    await user.click(loadButton);
+
+    // Click on the first saved query
+    const savedQueryItem = screen.getByText('All Veterans (25)');
+    await user.click(savedQueryItem);
+
+    // Editor should now contain the loaded query
+    await waitFor(() => {
+      const textarea = screen.getByRole('textbox');
+      expect(textarea.value).toContain('"type": "Veteran"');
+      expect(textarea.value).toContain('"selector"');
+      expect(textarea.value).toContain('"limit": 25');
+    });
+
+    // Results should be cleared
+    expect(screen.queryByText('Document 1')).not.toBeInTheDocument();
+  });
 });
