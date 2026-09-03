@@ -45,6 +45,9 @@ export const paths = {
       flight: '/exports/flight',
       callCenterFollowup: '/exports/callcenterfollowup',
       tourLead: '/exports/tourlead'
+    },
+    tools: {
+      query: '/tools/query'
     }
   },
   notAuthorized: '/errors/not-authorized/',

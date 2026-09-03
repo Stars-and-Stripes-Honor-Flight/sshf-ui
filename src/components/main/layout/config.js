@@ -135,6 +135,19 @@ export const layoutConfig = {
           ],
         },
         {
+          key: 'tools',
+          title: 'Tools',
+          icon: 'database',
+          items: [
+            {
+              key: 'tools:query',
+              title: 'Ad-hoc Query',
+              href: paths.main.tools.query,
+              matcher: { type: 'equals', href: '/tools/query' }
+            }
+          ],
+        },
+        {
           key: 'settings',
           title: 'Settings',
           href: paths.main.settings.account,

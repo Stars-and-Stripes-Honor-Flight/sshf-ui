@@ -577,6 +577,21 @@ class ApiClient {
     }
   }
 
+  // Execute ad-hoc Mango query
+  async postQuery(body) {
+    try {
+      const response = await this.request('/query', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      return await response.json();
+    } catch (error) {
+      toast.error(`Query failed: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Export call center follow-up as CSV
   async exportCallCenterFollowup(flightName = '') {
     try {

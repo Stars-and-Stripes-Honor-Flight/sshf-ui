@@ -33,6 +33,7 @@ import { MedalMilitary as MedalMilitaryIcon } from '@phosphor-icons/react/dist/s
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
 import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
+import { Database as DatabaseIcon } from '@phosphor-icons/react/dist/ssr/Database';
 
 export const icons = {
   'airplane': AirplaneTiltIcon,
@@ -70,4 +71,5 @@ export const icons = {
   gear: GearIcon,
   users: UsersIcon,
   download: DownloadIcon,
+  database: DatabaseIcon,
 };
