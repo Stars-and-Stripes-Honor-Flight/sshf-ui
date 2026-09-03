@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.2
+ * OpenAPI spec version: 1.0.3
  */
 import * as zod from 'zod';
 
@@ -13,6 +13,8 @@ import {
   FlightAssignment,
   FlightDetailResult,
   Guardian,
+  QueryRequest,
+  QueryResults,
   RecentActivityEntry,
   SearchResults,
   Veteran,
@@ -258,6 +260,33 @@ export const PatchGuardiansIdBusResponse = zod.object({
   "rev": zod.string().optional(),
   "bus": zod.string().optional()
 })
+
+
+/**
+ * Executes a read-only Mango selector query against the database.
+ * This endpoint is a secure proxy that only allows _find queries and prevents
+ * any mutation operations. Queries are never persisted.
+ *
+ * **Security**: Queries are validated to prevent mutations. The following are forbidden:
+ * - Mutation operators ($set, $update, $unset, $inc, $push, $pull)
+ * - Bulk operations (docs, bulk, new_edits)
+ * - Index creation (index, ddoc, type)
+ * - Map/reduce operations (map, reduce, views)
+ * - Skip-based pagination (use bookmark instead)
+ *
+ * **Pagination**: Use bookmark for pagination, not skip.
+ * Default limit is 25, maximum is 100. Limits exceeding 100 are clamped.
+ *
+ * **Empty selector**: An empty selector object {} is allowed and matches all documents
+ * (subject to the limit).
+ *
+ * **Index refresh**: This endpoint forces update: false in the CouchDB request to disable
+ * index refresh during query execution.
+ * @summary Execute a CouchDB Mango _find query
+ */
+export const PostQueryBody = QueryRequest
+
+export const PostQueryResponse = QueryResults
 
 
 /**

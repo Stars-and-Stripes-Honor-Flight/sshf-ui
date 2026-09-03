@@ -2,12 +2,12 @@
   "openapi": "3.0.0",
   "info": {
     "title": "SSHF API",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "API for managing veterans documents with Google authentication"
   },
   "servers": [
     {
-      "url": "http://localhost:8080",
+      "url": "https://sshf-api-330507742215.us-central1.run.app",
       "description": "API Server"
     }
   ],
@@ -27,7 +27,9 @@
             }
           }
         },
+        "x-clientId": "330507742215-scerc6p0lvou59tufmohq1b7b4bj0l90.apps.googleusercontent.com",
         "x-init": {
+          "clientId": "330507742215-scerc6p0lvou59tufmohq1b7b4bj0l90.apps.googleusercontent.com",
           "appName": "SSHF API"
         }
       }
@@ -2500,6 +2502,112 @@
           "group",
           "names"
         ]
+      },
+      "QueryRequest": {
+        "type": "object",
+        "required": [
+          "selector"
+        ],
+        "properties": {
+          "selector": {
+            "type": "object",
+            "description": "MongoDB-style query selector. An empty object {} matches all documents (subject to limit).\nMust not contain mutation operators like $set, $update, etc.\n",
+            "example": {
+              "type": "veteran",
+              "status": "Active"
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of field names to include in results. If omitted, all fields are returned.",
+            "example": [
+              "_id",
+              "name",
+              "status",
+              "phone"
+            ]
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Sort specification as an array of field-direction objects",
+            "example": [
+              {
+                "name": "asc"
+              }
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25,
+            "description": "Maximum number of results to return. Defaults to 25, clamped to 100."
+          },
+          "bookmark": {
+            "type": "string",
+            "description": "Pagination bookmark from a previous query result",
+            "example": "g1AAAAG3eJzLYWBg4M"
+          },
+          "use_index": {
+            "type": "string",
+            "description": "Index to use for the query (design doc name or array of [design_doc, index_name])",
+            "example": "_design/my-index"
+          },
+          "execution_stats": {
+            "type": "boolean",
+            "description": "If true, return execution statistics with the result"
+          }
+        }
+      },
+      "QueryResults": {
+        "type": "object",
+        "required": [
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Array of documents matching the query"
+          },
+          "bookmark": {
+            "type": "string",
+            "description": "Pagination bookmark for retrieving the next page of results"
+          },
+          "warning": {
+            "type": "string",
+            "description": "Warning message from CouchDB (e.g., \"no matching index found\")"
+          },
+          "execution_stats": {
+            "type": "object",
+            "description": "Query execution statistics (only present if requested)",
+            "properties": {
+              "total_keys_examined": {
+                "type": "integer"
+              },
+              "total_docs_examined": {
+                "type": "integer"
+              },
+              "total_quorum_docs_examined": {
+                "type": "integer"
+              },
+              "results_returned": {
+                "type": "integer"
+              },
+              "execution_time_ms": {
+                "type": "number"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -3541,6 +3649,212 @@
           },
           "500": {
             "description": "Server error"
+          }
+        }
+      }
+    },
+    "/query": {
+      "post": {
+        "summary": "Execute a CouchDB Mango _find query",
+        "description": "Executes a read-only Mango selector query against the database.\nThis endpoint is a secure proxy that only allows _find queries and prevents\nany mutation operations. Queries are never persisted.\n\n**Security**: Queries are validated to prevent mutations. The following are forbidden:\n- Mutation operators ($set, $update, $unset, $inc, $push, $pull)\n- Bulk operations (docs, bulk, new_edits)\n- Index creation (index, ddoc, type)\n- Map/reduce operations (map, reduce, views)\n- Skip-based pagination (use bookmark instead)\n\n**Pagination**: Use bookmark for pagination, not skip.\nDefault limit is 25, maximum is 100. Limits exceeding 100 are clamped.\n\n**Empty selector**: An empty selector object {} is allowed and matches all documents\n(subject to the limit).\n\n**Index refresh**: This endpoint forces update: false in the CouchDB request to disable\nindex refresh during query execution.\n",
+        "tags": [
+          "Search"
+        ],
+        "security": [
+          {
+            "GoogleAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              },
+              "examples": {
+                "basicQuery": {
+                  "summary": "Basic query with selector",
+                  "value": {
+                    "selector": {
+                      "type": "veteran",
+                      "status": "Active"
+                    },
+                    "limit": 25
+                  }
+                },
+                "withFields": {
+                  "summary": "Query with field projection",
+                  "value": {
+                    "selector": {
+                      "type": "guardian"
+                    },
+                    "fields": [
+                      "_id",
+                      "name",
+                      "phone",
+                      "status"
+                    ],
+                    "limit": 10
+                  }
+                },
+                "withBookmark": {
+                  "summary": "Paginated query with bookmark",
+                  "value": {
+                    "selector": {
+                      "flight": "SSHF-Nov2024"
+                    },
+                    "bookmark": "g1AAAAG3eJzLYWBg4M",
+                    "limit": 50
+                  }
+                },
+                "withSort": {
+                  "summary": "Query with sorting",
+                  "value": {
+                    "selector": {
+                      "status": "Active"
+                    },
+                    "sort": [
+                      {
+                        "name": "asc"
+                      }
+                    ],
+                    "limit": 25
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResults"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful query result",
+                    "value": {
+                      "docs": [
+                        {
+                          "_id": "v123",
+                          "type": "veteran",
+                          "name": "John Smith",
+                          "status": "Active"
+                        },
+                        {
+                          "_id": "v124",
+                          "type": "veteran",
+                          "name": "Jane Doe",
+                          "status": "Active"
+                        }
+                      ],
+                      "bookmark": "g1AAAAG3eJzLYWBg4M",
+                      "warning": "no matching index found, the query was executed without an index"
+                    }
+                  },
+                  "withStats": {
+                    "summary": "Result with execution statistics",
+                    "value": {
+                      "docs": [
+                        {
+                          "_id": "v123",
+                          "type": "veteran"
+                        }
+                      ],
+                      "bookmark": "g1AAAAG3eJzLYWBg4M",
+                      "execution_stats": {
+                        "total_keys_examined": 0,
+                        "total_docs_examined": 100,
+                        "total_quorum_docs_examined": 0,
+                        "results_returned": 1,
+                        "execution_time_ms": 12.5
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query or forbidden operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "missingSelector": {
+                    "summary": "Missing selector",
+                    "value": {
+                      "error": "Validation failed: selector is required"
+                    }
+                  },
+                  "mutationAttempt": {
+                    "summary": "Mutation operator detected",
+                    "value": {
+                      "error": "Validation failed: mutation operator not allowed: $set"
+                    }
+                  },
+                  "skipNotAllowed": {
+                    "summary": "Skip pagination not allowed",
+                    "value": {
+                      "error": "Validation failed: forbidden keys detected: skip"
+                    }
+                  },
+                  "invalidSyntax": {
+                    "summary": "CouchDB syntax error",
+                    "value": {
+                      "error": "Invalid selector syntax"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database session error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

@@ -85,7 +85,7 @@ class ApiClient {
                 // Still failing after refresh - handle as unauthorized
                 this.handleUnauthorized();
                 const errorData = await retryResponse.json().catch(() => ({}));
-                const error = new Error(errorData.message || `API request failed with status ${retryResponse.status}`);
+                const error = new Error(errorData.error || errorData.message || `API request failed with status ${retryResponse.status}`);
                 error.status = retryResponse.status;
                 throw error;
               }
@@ -103,7 +103,7 @@ class ApiClient {
         }
         
         const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.message || `API request failed with status ${response.status}`);
+        const error = new Error(errorData.error || errorData.message || `API request failed with status ${response.status}`);
         error.status = response.status;
         throw error;
       }
@@ -573,6 +573,21 @@ class ApiClient {
       });
     } catch (error) {
       toast.error(`Failed to fetch waitlist: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Execute ad-hoc Mango query
+  async postQuery(body) {
+    try {
+      const response = await this.request('/query', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      return await response.json();
+    } catch (error) {
+      toast.error(`Query failed: ${error.message}`);
       throw error;
     }
   }
