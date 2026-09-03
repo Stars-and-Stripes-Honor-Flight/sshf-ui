@@ -79,6 +79,19 @@ describe('ApiClient.postQuery', () => {
     expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Query failed'));
   });
 
+  it('should surface API error field in thrown error message', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'Validation failed: skip not supported' }),
+    });
+
+    const body = { selector: {}, skip: 10 };
+
+    await expect(api.postQuery(body)).rejects.toThrow(/Validation failed: skip not supported/);
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Validation failed: skip not supported'));
+  });
+
   it('should handle 500 errors', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,

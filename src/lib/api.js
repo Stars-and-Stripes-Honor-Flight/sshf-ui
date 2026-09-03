@@ -85,7 +85,7 @@ class ApiClient {
                 // Still failing after refresh - handle as unauthorized
                 this.handleUnauthorized();
                 const errorData = await retryResponse.json().catch(() => ({}));
-                const error = new Error(errorData.message || `API request failed with status ${retryResponse.status}`);
+                const error = new Error(errorData.error || errorData.message || `API request failed with status ${retryResponse.status}`);
                 error.status = retryResponse.status;
                 throw error;
               }
@@ -103,7 +103,7 @@ class ApiClient {
         }
         
         const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.message || `API request failed with status ${response.status}`);
+        const error = new Error(errorData.error || errorData.message || `API request failed with status ${response.status}`);
         error.status = response.status;
         throw error;
       }
