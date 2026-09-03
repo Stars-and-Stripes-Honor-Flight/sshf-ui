@@ -19,7 +19,9 @@ jest.mock('@/lib/query-storage', () => ({
 }));
 
 jest.mock('@/components/core/code-highlighter', () => ({
-  CodeHighlighter: ({ code }) => <pre data-testid="code-highlighter">{code}</pre>,
+  CodeHighlighter: ({ children, className }) => (
+    <pre data-testid="code-highlighter" className={className}>{children}</pre>
+  ),
 }));
 
 import { api } from '@/lib/api';
@@ -265,6 +267,43 @@ describe('QueryView', () => {
     await waitFor(() => {
       expect(screen.getByText(/Execution Stats/i)).toBeInTheDocument();
       expect(screen.getByText(/Results: 1/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should display JSON content in Raw JSON tab', async () => {
+    const user = userEvent.setup();
+    const mockResults = {
+      docs: [
+        { _id: 'vet-123', type: 'Veteran', name: { first: 'John' } },
+        { _id: 'vet-456', type: 'Veteran', name: { first: 'Jane' } }
+      ]
+    };
+    api.postQuery.mockResolvedValue(mockResults);
+
+    render(<QueryView />);
+
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: '{"selector":{}}' } });
+
+    const runButton = screen.getByText('Run Query');
+    await user.click(runButton);
+
+    // Wait for results to appear
+    await waitFor(() => {
+      expect(screen.getByText('Document 1')).toBeInTheDocument();
+    });
+
+    // Click Raw JSON tab
+    const rawJsonTab = screen.getByRole('tab', { name: /Raw JSON/i });
+    await user.click(rawJsonTab);
+
+    // Should show the JSON content with document IDs
+    await waitFor(() => {
+      const codeHighlighter = screen.getByTestId('code-highlighter');
+      expect(codeHighlighter.textContent).toContain('vet-123');
+      expect(codeHighlighter.textContent).toContain('vet-456');
+      expect(codeHighlighter.textContent).toContain('"type": "Veteran"');
+      expect(codeHighlighter.className).toContain('language-json');
     });
   });
 });

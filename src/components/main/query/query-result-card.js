@@ -60,7 +60,7 @@ export function QueryResultCard({ doc, index }) {
           {properties.map(({ key, value }, idx) => (
             <PropertyItem
               key={`${key}-${idx}`}
-              label={key}
+              name={key}
               value={value}
             />
           ))}

@@ -59,12 +59,10 @@ export function QueryResults({
           ))}
         </Stack>
       ) : (
-        <Box>
-          <CodeHighlighter
-            code={JSON.stringify(docs, null, 2)}
-            language="json"
-            sx={{ maxHeight: '600px', overflow: 'auto' }}
-          />
+        <Box sx={{ maxHeight: '600px', overflow: 'auto' }}>
+          <CodeHighlighter className="language-json">
+            {JSON.stringify(docs, null, 2)}
+          </CodeHighlighter>
         </Box>
       )}
 
