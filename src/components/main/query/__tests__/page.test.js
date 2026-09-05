@@ -24,23 +24,53 @@ jest.mock('@/components/core/code-highlighter', () => ({
 import Page from '../../../../app/(main)/tools/query/page';
 
 describe('Query Page', () => {
-  it('should render page with correct title', () => {
-    render(<Page />);
-    
-    expect(screen.getByText('Ad-hoc Query')).toBeInTheDocument();
+  const originalFlag = process.env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY;
+
+  afterEach(() => {
+    if (originalFlag === undefined) {
+      delete process.env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY;
+    } else {
+      process.env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY = originalFlag;
+    }
   });
 
-  it('should render page description', () => {
-    render(<Page />);
-    
-    expect(screen.getByText('Run CouchDB Mango queries and view results')).toBeInTheDocument();
+  describe('when the ad-hoc query flag is on', () => {
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY = 'true';
+    });
+
+    it('should render page with correct title', () => {
+      render(<Page />);
+
+      expect(screen.getByText('Ad-hoc Query')).toBeInTheDocument();
+    });
+
+    it('should render page description', () => {
+      render(<Page />);
+
+      expect(screen.getByText('Run CouchDB Mango queries and view results')).toBeInTheDocument();
+    });
+
+    it('should render QueryView component', () => {
+      render(<Page />);
+
+      expect(screen.getByText('Run Query')).toBeInTheDocument();
+      expect(screen.getByText('Save Query')).toBeInTheDocument();
+      expect(screen.getByText('Load Query')).toBeInTheDocument();
+    });
   });
 
-  it('should render QueryView component', () => {
-    render(<Page />);
-    
-    expect(screen.getByText('Run Query')).toBeInTheDocument();
-    expect(screen.getByText('Save Query')).toBeInTheDocument();
-    expect(screen.getByText('Load Query')).toBeInTheDocument();
+  describe('when the ad-hoc query flag is off', () => {
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY = 'false';
+    });
+
+    it('shows an unavailable message instead of the query editor', () => {
+      render(<Page />);
+
+      expect(screen.getByText('Not available')).toBeInTheDocument();
+      expect(screen.getByText(/Ad-hoc Query is not enabled in this environment/i)).toBeInTheDocument();
+      expect(screen.queryByText('Run Query')).not.toBeInTheDocument();
+    });
   });
 });

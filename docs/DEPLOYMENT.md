@@ -62,7 +62,8 @@ These four values are **public** (they ship in the browser bundle). They are
 **not** stored in Secret Manager. CI reads them from GitHub Actions variables
 and writes them to `.env.production` / `--update-build-env-vars` before the
 Cloud Run source build. `scripts/check-build-env.mjs` fails the workflow if
-any are missing.
+any of the four required variables are missing. `NEXT_PUBLIC_FEATURE_ADHOC_QUERY`
+is optional; unset means Ad-hoc Query stays hidden.
 
 | Variable | Development | Production |
 |---|---|---|
@@ -70,6 +71,7 @@ any are missing.
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Dev OAuth client ID | Prod OAuth client ID (same client as prod API) |
 | `NEXT_PUBLIC_ROLE_FULL_ACCESS` | `sshf_app_dev_full_access@starsandstripeshonorflight.org` | `sshf_app_prd_full_access@starsandstripeshonorflight.org` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `Development` | `Production` |
+| `NEXT_PUBLIC_FEATURE_ADHOC_QUERY` | `true` | unset or `false` until CouchDB supports Mango `_find` |
 
 `NEXT_PUBLIC_ENVIRONMENT` drives the warning banner in the nav and sign-in
 form: the banner is hidden only when the value is `Production` (case-
