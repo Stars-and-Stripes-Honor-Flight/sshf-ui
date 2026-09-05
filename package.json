@@ -1,7 +1,7 @@
 {
-  "name": "@devias-kit-pro/nextjs-template",
+  "name": "sshf-ui",
   "author": "Devias IO",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "scripts": {

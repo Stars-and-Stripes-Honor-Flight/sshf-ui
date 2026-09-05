@@ -28,6 +28,7 @@ env:
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
   NEXT_PUBLIC_ROLE_FULL_ACCESS: ${{ vars.NEXT_PUBLIC_ROLE_FULL_ACCESS }}
   NEXT_PUBLIC_ENVIRONMENT: ${{ vars.NEXT_PUBLIC_ENVIRONMENT }}
+  NEXT_PUBLIC_FEATURE_ADHOC_QUERY: ${{ vars.NEXT_PUBLIC_FEATURE_ADHOC_QUERY }}
   # Hard-coded known-bad value for the smoke-test negative check.
   DEV_API_URL: https://sshf-api-330507742215.us-central1.run.app
 
@@ -91,6 +92,7 @@ jobs:
           NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
           NEXT_PUBLIC_ROLE_FULL_ACCESS=${NEXT_PUBLIC_ROLE_FULL_ACCESS}
           NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT}
+          NEXT_PUBLIC_FEATURE_ADHOC_QUERY=${NEXT_PUBLIC_FEATURE_ADHOC_QUERY}
           EOF
           sed -i 's/^[[:space:]]*//' .env.production
           cat .env.production
@@ -118,7 +120,7 @@ jobs:
           source: './'
           secrets: |
             GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
-          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}'
+          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }},NEXT_PUBLIC_FEATURE_ADHOC_QUERY=${{ env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY }}'
 
       # Later releases: deploy a tagged revision with no traffic, smoke-test it,
       # then shift traffic (below).
@@ -135,7 +137,7 @@ jobs:
           tag: '${{ steps.version.outputs.revision_tag }}'
           secrets: |
             GOOGLE_CLIENT_SECRET=${{ secrets.GCP_SECRET_NAME }}:latest
-          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }}'
+          flags: '--service-account=${{ env.RUNTIME_SERVICE_ACCOUNT }} --update-build-env-vars=NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }},NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ env.NEXT_PUBLIC_GOOGLE_CLIENT_ID }},NEXT_PUBLIC_ROLE_FULL_ACCESS=${{ env.NEXT_PUBLIC_ROLE_FULL_ACCESS }},NEXT_PUBLIC_ENVIRONMENT=${{ env.NEXT_PUBLIC_ENVIRONMENT }},NEXT_PUBLIC_FEATURE_ADHOC_QUERY=${{ env.NEXT_PUBLIC_FEATURE_ADHOC_QUERY }}'
 
       - name: 'Resolve smoke-test URL'
         id: 'smoke_url'

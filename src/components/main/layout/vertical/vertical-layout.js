@@ -8,14 +8,14 @@ import { useHasFullAccess } from '@/hooks/use-permissions';
 import { useSettings } from '@/hooks/use-settings';
 
 import { layoutConfig } from '../config';
-import { getNavItemsForAccess } from '../nav-access';
+import { getVisibleNavItems } from '../nav-access';
 import { MainNav } from './main-nav';
 import { SideNav } from './side-nav';
 
 export function VerticalLayout({ children }) {
   const { settings } = useSettings();
   const hasFullAccess = useHasFullAccess();
-  const navItems = getNavItemsForAccess(layoutConfig.navItems, hasFullAccess);
+  const navItems = getVisibleNavItems(layoutConfig.navItems, hasFullAccess);
 
   return (
     <React.Fragment>

@@ -110,6 +110,7 @@ for the full pipeline, secrets, and release process.
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `....apps.googleusercontent.com` |
 | `NEXT_PUBLIC_ROLE_FULL_ACCESS` | `sshf_app_dev_full_access@starsandstripeshonorflight.org` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `Development` |
+| `NEXT_PUBLIC_FEATURE_ADHOC_QUERY` | `true` (optional; unset hides Ad-hoc Query) |
 
 Production uses the GitHub `production` environment with the same secret/variable
 names scoped to `sshf-ui-prd` and production values. Only `GOOGLE_CLIENT_SECRET`
