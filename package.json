@@ -35,7 +35,6 @@
     "@mui/x-date-pickers": "7.21.0",
     "@phosphor-icons/react": "2.1.7",
     "@react-pdf/renderer": "4.0.0",
-    "@supabase/ssr": "^0.5.2",
     "@testing-library/dom": "10.4.0",
     "dayjs": "1.11.13",
     "i18next": "23.16.2",
