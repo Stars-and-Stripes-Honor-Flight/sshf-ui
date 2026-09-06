@@ -43,6 +43,8 @@ function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
         seat: '09E',
         assigned_to: veteranAssignedTo,
         confirmed: true,
+        medical_form: true,
+        medical_level: 'Level 1',
         nofly: false,
       },
       {
@@ -54,6 +56,9 @@ function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
         seat: 'NF',
         assigned_to: guardianAssignedTo,
         confirmed: true,
+        medical_form: true,
+        training_complete: true,
+        training: 'Complete',
         nofly: false,
       },
     ],
@@ -142,5 +147,236 @@ describe('FlightDetailsGrid - assigned_to display', () => {
     expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', {
       call: { assigned_to: 'New Caller' },
     });
+  });
+});
+
+describe('FlightDetailsGrid - issue #141: OK status with validation issues', () => {
+  test('never shows OK status chip when pair has bus mismatch', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Bus Mismatch', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK status chip when pair has missing paired person', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.missingPairedPerson = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Missing Person', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when veteran not confirmed', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[0].confirmed = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Vet Not Confirmed', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when veteran missing medical form', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[0].medical_form = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Vet Medical Form', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when veteran missing medical level', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[0].medical_level = '';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Vet Medical Level', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when veteran has no bus', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[0].bus = 'None';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Vet No Bus', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when guardian not confirmed', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[1].confirmed = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Grd Not Confirmed', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK when guardian training incomplete', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[1].training_complete = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Grd Training', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('shows OK status only when pair has no validation issues', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+    pair.people[0].confirmed = true;
+    pair.people[0].medical_form = true;
+    pair.people[0].medical_level = 'Level 1';
+    pair.people[0].bus = 'Alpha4';
+    pair.people[1].confirmed = true;
+    pair.people[1].medical_form = true;
+    pair.people[1].training_complete = true;
+    pair.people[1].training = 'Complete';
+    pair.people[1].bus = 'Alpha4';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.getByText('OK', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.queryByText('Bus Mismatch', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Missing Person', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+  });
+
+  test('shows multiple issue chips when pair has multiple validation issues', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = true;
+    pair.missingPairedPerson = true;
+    pair.people[0].confirmed = false;
+    pair.people[1].training_complete = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Bus Mismatch', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.getByText('Missing Person', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.getByText('Vet Not Confirmed', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.getByText('Grd Training', { selector: '.MuiChip-label' })).toBeInTheDocument();
   });
 });
