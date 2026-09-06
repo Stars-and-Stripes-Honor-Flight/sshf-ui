@@ -49,6 +49,18 @@ import { toast } from '@/components/core/toaster';
 import { FlightExportMenu } from '@/components/main/flight/flight-export-menu';
 import { FlightDetailsGrid } from '@/components/main/flight/flight-details-grid';
 import { FlightStatsSection } from '@/components/main/flight/flight-stats-section';
+import { 
+  ACTIVITY_PRESETS, 
+  ACTIVITY_PRESET_LABELS, 
+  loadSavedPreset, 
+  savePreset 
+} from '@/components/main/flight/column-configs';
+import { 
+  filterPairs, 
+  sortPairs, 
+  getUniqueAssignedCallers, 
+  pairHasIssues 
+} from '@/components/main/flight/roster-helpers';
 
 function FlightDetailsPage() {
   const searchParams = useSearchParams();
@@ -62,8 +74,11 @@ function FlightDetailsPage() {
   
   // Filter states
   const [nameFilter, setNameFilter] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues
+  const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues, nofly
   const [busFilter, setBusFilter] = React.useState('all');
+  const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
+  const [sortBy, setSortBy] = React.useState('name'); // name, bus, assignment, status
+  const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
   const [assignmentCount, setAssignmentCount] = React.useState('1');
@@ -194,7 +209,14 @@ function FlightDetailsPage() {
 
   React.useEffect(() => {
     document.title = `Flight Details | ${config.site.name}`;
+    // Load saved activity preset
+    setActivityPreset(loadSavedPreset());
   }, []);
+  
+  // Save activity preset when it changes
+  React.useEffect(() => {
+    savePreset(activityPreset);
+  }, [activityPreset]);
 
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
@@ -494,14 +516,33 @@ function FlightDetailsPage() {
 
                 {/* Status Snapshot */}
                 {(() => {
+                  const filteredPairsForDisplay = filterPairs(pairs, {
+                    nameFilter,
+                    statusFilter,
+                    busFilter,
+                    assignedCallerFilter,
+                  });
+                  
                   const statusCounts = {
-                    ok: pairs.filter(p => !p.busMismatch && !p.missingPairedPerson).length,
-                    issues: pairs.filter(p => p.busMismatch || p.missingPairedPerson).length,
+                    totalPairs: pairs.length,
+                    ok: pairs.filter(p => !pairHasIssues(p)).length,
+                    issues: pairs.filter(p => pairHasIssues(p)).length,
+                    filtered: filteredPairsForDisplay.length,
                   };
                   
                   return (
                     <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-                      <Card sx={{ flex: '1 1 auto', minWidth: 150 }}>
+                      <Card sx={{ flex: '1 1 auto', minWidth: 130 }}>
+                        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography color="text.secondary" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                            Pairs on flight
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {statusCounts.totalPairs}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                      <Card sx={{ flex: '1 1 auto', minWidth: 130 }}>
                         <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
                           <Typography color="text.secondary" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                             OK
@@ -511,7 +552,7 @@ function FlightDetailsPage() {
                           </Typography>
                         </CardContent>
                       </Card>
-                      <Card sx={{ flex: '1 1 auto', minWidth: 150 }}>
+                      <Card sx={{ flex: '1 1 auto', minWidth: 130 }}>
                         <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
                           <Typography color="text.secondary" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                             Needs Attention
@@ -521,49 +562,107 @@ function FlightDetailsPage() {
                           </Typography>
                         </CardContent>
                       </Card>
+                      <Card sx={{ flex: '1 1 auto', minWidth: 130 }}>
+                        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography color="text.secondary" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                            In current view
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {statusCounts.filtered}
+                          </Typography>
+                        </CardContent>
+                      </Card>
                     </Stack>
                   );
                 })()}
 
-                {/* Filters */}
+                {/* Roster Controls */}
                 {(() => {
                   const allBuses = Array.from(new Set(
                     pairs.flatMap(p => p.people.map(person => person.bus)).filter(bus => bus && bus !== 'None')
                   )).sort();
                   
+                  const allCallers = getUniqueAssignedCallers(pairs);
+                  
                   return (
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField
-                        placeholder="Search by name..."
-                        size="small"
-                        value={nameFilter}
-                        onChange={(e) => setNameFilter(e.target.value)}
-                        sx={{ flex: 1, minWidth: 200 }}
-                      />
-                      <TextField
-                        select
-                        size="small"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        sx={{ minWidth: 150 }}
-                      >
-                        <MenuItem value="all">All Statuses</MenuItem>
-                        <MenuItem value="ok">OK Only</MenuItem>
-                        <MenuItem value="issues">Issues Only</MenuItem>
-                        <MenuItem value="nofly">No Fly</MenuItem>
-                      </TextField>
-                      <TextField
-                        select
-                        size="small"
-                        value={busFilter}
-                        onChange={(e) => setBusFilter(e.target.value)}
-                        sx={{ minWidth: 150 }}
-                      >
-                        <MenuItem value="all">All Buses</MenuItem>
-                        {allBuses.map(bus => (
-                          <MenuItem key={bus} value={bus}>{bus}</MenuItem>
-                        ))}
-                      </TextField>
+                    <Stack spacing={2}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, minWidth: 'fit-content' }}>
+                          Roster controls
+                        </Typography>
+                        <TextField
+                          select
+                          size="small"
+                          label="Columns"
+                          value={activityPreset}
+                          onChange={(e) => setActivityPreset(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          {Object.values(ACTIVITY_PRESETS).map((preset) => (
+                            <MenuItem key={preset} value={preset}>
+                              {ACTIVITY_PRESET_LABELS[preset]}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          select
+                          size="small"
+                          label="Sort by"
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="name">Veteran name A–Z</MenuItem>
+                          <MenuItem value="bus">Bus</MenuItem>
+                          <MenuItem value="assignment">Assignment</MenuItem>
+                          <MenuItem value="status">Status</MenuItem>
+                        </TextField>
+                      </Stack>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        <TextField
+                          placeholder="Search by name, phone, or city..."
+                          size="small"
+                          value={nameFilter}
+                          onChange={(e) => setNameFilter(e.target.value)}
+                          sx={{ flex: 1, minWidth: 200 }}
+                        />
+                        <TextField
+                          select
+                          size="small"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="all">All Statuses</MenuItem>
+                          <MenuItem value="ok">OK Only</MenuItem>
+                          <MenuItem value="issues">Issues Only</MenuItem>
+                          <MenuItem value="nofly">No Fly</MenuItem>
+                        </TextField>
+                        <TextField
+                          select
+                          size="small"
+                          value={busFilter}
+                          onChange={(e) => setBusFilter(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="all">All Buses</MenuItem>
+                          {allBuses.map(bus => (
+                            <MenuItem key={bus} value={bus}>{bus}</MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          select
+                          size="small"
+                          value={assignedCallerFilter}
+                          onChange={(e) => setAssignedCallerFilter(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="all">All callers</MenuItem>
+                          {allCallers.map(caller => (
+                            <MenuItem key={caller} value={caller}>{caller}</MenuItem>
+                          ))}
+                        </TextField>
+                      </Stack>
                     </Stack>
                   );
                 })()}
@@ -653,9 +752,18 @@ function FlightDetailsPage() {
                     }
                   };
 
+                  // Apply filtering and sorting
+                  const filteredPairs = filterPairs(pairs, {
+                    nameFilter,
+                    statusFilter,
+                    busFilter,
+                    assignedCallerFilter,
+                  });
+                  const sortedPairs = sortPairs(filteredPairs, sortBy);
+
                   return (
                     <FlightDetailsGrid
-                      pairs={pairs}
+                      pairs={sortedPairs}
                       onUpdate={handleUpdatePerson}
                       nameFilter={nameFilter}
                       statusFilter={statusFilter}
@@ -663,6 +771,7 @@ function FlightDetailsPage() {
                       onPairingComplete={handlePairingComplete}
                       flightId={flightId}
                       flightName={flight.name}
+                      activityPreset={activityPreset}
                     />
                   );
                 })()}

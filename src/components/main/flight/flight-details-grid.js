@@ -41,10 +41,9 @@ import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { api } from '@/lib/api';
 import { VeteranGuardianSearchDialog } from '@/components/main/flight/veteran-guardian-search-dialog';
-
-function getAssignedTo(person) {
-  return person?.assigned_to ?? person?.call?.assigned_to ?? '';
-}
+import { getColumnConfig, ACTIVITY_PRESETS } from '@/components/main/flight/column-configs';
+import { getAssignedTo } from '@/components/main/flight/roster-helpers';
+import { renderActivityCell } from '@/components/main/flight/roster-cell-renderers';
 
 // Helper component to render person name with status icons
 function PersonDisplay({ person, type = 'Veteran' }) {
@@ -221,7 +220,7 @@ function BusSelector({ value, onChange, personId, personType, disabled = false }
 }
 
 // Stacked row component showing Veteran above Guardian with different background colors
-function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog }) {
+function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS }) {
   const [open, setOpen] = React.useState(false);
   const [localAssignedTo, setLocalAssignedTo] = React.useState(null);
   const veteran = pair.people.find(p => p.type === 'Veteran');
@@ -236,6 +235,9 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
   // Check if veteran and guardian have mismatched call assignments
   const veteranAssignedTo = getAssignedTo(veteran);
   const hasCallMismatch = guardian && veteranAssignedTo && displayAssignedTo && veteranAssignedTo !== displayAssignedTo;
+  
+  // Get column configuration for the current activity preset
+  const columns = getColumnConfig(activityPreset);
 
   const handleSyncCallAssignment = async () => {
     // Sync guardian to veteran's call assignment
@@ -312,6 +314,16 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
       onOpenPairingDialog(veteran);
     }
   };
+  
+  // Cell renderer handlers for activity cells
+  const handlers = {
+    EditableField,
+    BusSelector,
+    handleSeatChange,
+    handleBusChange,
+    handleAssignedToCallChange,
+    handleSyncCallAssignment,
+  };
 
   return (
     <>
@@ -334,47 +346,18 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
         <TableCell sx={{ borderBottom: 'none' }}>
           <PersonDisplay person={veteran} type="Veteran" />
         </TableCell>
-        <TableCell sx={{ borderBottom: 'none' }}>
-          {veteran && (
-            <EditableField
-              value={veteran.seat || ''}
-              onBlur={(newValue) => handleSeatChange(newValue, veteran.id, 'Veteran')}
-              placeholder="e.g., A1"
-              maxWidth={100}
-            />
-          )}
-        </TableCell>
-        <TableCell sx={{ borderBottom: 'none' }}>
-          {veteran && (
-            <BusSelector
-              value={veteran.bus}
-              onChange={handleBusChange}
-              personId={veteran.id}
-              personType="Veteran"
-            />
-          )}
-        </TableCell>
-        <TableCell sx={{ borderBottom: 'none' }}>
-          {veteran && (
-            <EditableField
-              value={getAssignedTo(veteran)}
-              onBlur={handleAssignedToCallChange}
-              placeholder="Assign to call"
-              maxWidth={150}
-            />
-          )}
-        </TableCell>
-        <TableCell sx={{ borderBottom: 'none' }}>
-          {pair.busMismatch && (
-            <Chip label="Bus Mismatch" size="small" color="warning" variant="outlined" />
-          )}
-          {pair.missingPairedPerson && (
-            <Chip label="Missing Person" size="small" color="error" variant="outlined" />
-          )}
-          {!pair.busMismatch && !pair.missingPairedPerson && (
-            <Chip label="OK" size="small" color="success" variant="outlined" />
-          )}
-        </TableCell>
+        {columns.map((column) => (
+          <TableCell 
+            key={column.id} 
+            sx={{ 
+              borderBottom: 'none',
+              width: column.width,
+              textAlign: column.align || 'left',
+            }}
+          >
+            {renderActivityCell(column.id, veteran, pair, 'Veteran', handlers, localAssignedTo, hasCallMismatch)}
+          </TableCell>
+        ))}
       </TableRow>
 
       {/* Guardian Row (if guardian exists) - same background as veteran */}
@@ -385,68 +368,18 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
           <TableCell sx={{ borderBottom: 'none' }}>
             <PersonDisplay person={guardian} type="Guardian" />
           </TableCell>
-          <TableCell sx={{ borderBottom: 'none' }}>
-            {guardian && (
-              <EditableField
-                value={guardian.seat || ''}
-                onBlur={(newValue) => handleSeatChange(newValue, guardian.id, 'Guardian')}
-                placeholder="e.g., A2"
-                maxWidth={100}
-              />
-            )}
-          </TableCell>
-          <TableCell sx={{ borderBottom: 'none' }}>
-            {guardian && (
-              <Stack 
-                direction="row" 
-                spacing={0.5} 
-                sx={{ 
-                  alignItems: 'center', 
-                  display: 'flex',
-                  backgroundColor: guardian.bus === 'None' || !guardian.bus ? '#FCE4EC' : '#c8e6c9',
-                  color: guardian.bus === 'None' || !guardian.bus ? '#C2185B' : '#1b5e20',
-                  padding: '4px 12px',
-                  borderRadius: '16px',
-                  width: 'fit-content'
-                }}
-              >
-                {guardian.bus === 'None' || !guardian.bus ? (
-                  <>
-                    <XIcon size={14} weight="bold" />
-                    <span>None</span>
-                  </>
-                ) : (
-                  <>
-                    <BusIcon size={14} weight="fill" />
-                    <span>{guardian.bus}</span>
-                  </>
-                )}
-              </Stack>
-            )}
-          </TableCell>
-          <TableCell sx={{ borderBottom: 'none' }}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              {displayAssignedTo && (
-                <Chip
-                  label={displayAssignedTo}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontWeight: 500, backgroundColor: hasCallMismatch ? '#fff3e0' : 'transparent' }}
-                />
-              )}
-              {hasCallMismatch && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={handleSyncCallAssignment}
-                  sx={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                >
-                  Sync
-                </Button>
-              )}
-            </Stack>
-          </TableCell>
-          <TableCell sx={{ borderBottom: 'none' }} />
+          {columns.map((column) => (
+            <TableCell 
+              key={column.id} 
+              sx={{ 
+                borderBottom: 'none',
+                width: column.width,
+                textAlign: column.align || 'left',
+              }}
+            >
+              {renderActivityCell(column.id, guardian, pair, 'Guardian', handlers, localAssignedTo, hasCallMismatch)}
+            </TableCell>
+          ))}
         </TableRow>
       )}
 
@@ -465,13 +398,13 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
               Add Guardian
             </Button>
           </TableCell>
-          <TableCell colSpan={4} sx={{ borderBottom: 'none' }} />
+          <TableCell colSpan={columns.length} sx={{ borderBottom: 'none' }} />
         </TableRow>
       )}
 
       {/* Expandable Details Row */}
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3 + columns.length}>
           {open && (
             <Box sx={{ margin: 2 }}>
               <Stack spacing={2}>
@@ -567,52 +500,12 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
 }
 
 // Main FlightDetailsGrid component
-export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName }) {
+export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS }) {
+  const columns = getColumnConfig(activityPreset);
   const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
   const [selectedVeteranForPairing, setSelectedVeteranForPairing] = React.useState(null);
-  
-  const filteredPairs = pairs.filter(pair => {
-    // Name filter
-    const veteran = pair.people.find(p => p.type === 'Veteran');
-    const guardian = pair.people.find(p => p.type === 'Guardian');
-    const fullNames = [
-      veteran ? `${veteran.name_first} ${veteran.name_last}` : '',
-      guardian ? `${guardian.name_first} ${guardian.name_last}` : '',
-    ].join(' ').toLowerCase();
-    
-    if (nameFilter && !fullNames.includes(nameFilter.toLowerCase())) {
-      return false;
-    }
 
-    // Status filter
-    if (statusFilter === 'ok' && (pair.busMismatch || pair.missingPairedPerson)) {
-      return false;
-    }
-    if (statusFilter === 'issues') {
-      const hasNoBus = pair.people.some(p => !p.bus || p.bus === 'None');
-      if (!pair.busMismatch && !pair.missingPairedPerson && !hasNoBus) {
-        return false;
-      }
-    }
-    if (statusFilter === 'nofly') {
-      const hasNoFly = pair.people.some(p => p.nofly);
-      if (!hasNoFly) {
-        return false;
-      }
-    }
-
-    // Bus filter
-    if (busFilter !== 'all') {
-      const veteran = pair.people.find(p => p.type === 'Veteran');
-      if (veteran?.bus !== busFilter) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
-  if (filteredPairs.length === 0) {
+  if (pairs.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
         <Typography color="text.secondary">
@@ -632,14 +525,22 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
               <TableCell width={40} />
               <TableCell width={40} />
               <TableCell sx={{ fontWeight: 600 }}>Veteran/Guardian</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Seat</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Bus</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Assigned to Call</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              {columns.map((column) => (
+                <TableCell 
+                  key={column.id} 
+                  sx={{ 
+                    fontWeight: 600,
+                    width: column.width,
+                    textAlign: column.align || 'left',
+                  }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPairs.map((pair, index) => (
+            {pairs.map((pair, index) => (
               <PairRowStacked
                 key={pair.pairId}
                 pair={pair}
@@ -648,6 +549,7 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
                 nameFilter={nameFilter}
                 statusFilter={statusFilter}
                 busFilter={busFilter}
+                activityPreset={activityPreset}
                 onOpenPairingDialog={(veteran) => {
                   setSelectedVeteranForPairing(veteran);
                   setPairingDialogOpen(true);

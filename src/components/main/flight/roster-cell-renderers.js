@@ -8,10 +8,10 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { BusIcon } from '@phosphor-icons/react/dist/ssr/Bus';
-import { XIcon } from '@phosphor-icons/react/dist/ssr/X';
-import { CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
-import { XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
+import { Bus as BusIcon } from '@phosphor-icons/react/dist/ssr/Bus';
+import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
+import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
+import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 
 import { getAssignedTo } from './roster-helpers';
 

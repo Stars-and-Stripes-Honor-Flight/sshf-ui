@@ -33,12 +33,13 @@ describe('column-configs', () => {
   });
 
   describe('COLUMN_CONFIGS', () => {
-    test('ops preset includes seat, bus, status columns', () => {
+    test('ops preset includes seat, bus, assigned_to, status columns', () => {
       const opsColumns = COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS];
-      expect(opsColumns).toHaveLength(3);
+      expect(opsColumns).toHaveLength(4);
       expect(opsColumns[0].id).toBe('seat');
       expect(opsColumns[1].id).toBe('bus');
-      expect(opsColumns[2].id).toBe('status');
+      expect(opsColumns[2].id).toBe('assigned_to');
+      expect(opsColumns[3].id).toBe('status');
     });
 
     test('caller preset includes assigned_to, confirmed, phone, fm_number columns', () => {

@@ -24,6 +24,7 @@ export const COLUMN_CONFIGS = {
   [ACTIVITY_PRESETS.OPS]: [
     { id: 'seat', label: 'Seat', width: 100 },
     { id: 'bus', label: 'Bus', width: 140 },
+    { id: 'assigned_to', label: 'Assigned to Call', width: 150 },
     { id: 'status', label: 'Status', width: 200 },
   ],
   [ACTIVITY_PRESETS.CALLER]: [
