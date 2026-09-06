@@ -144,3 +144,89 @@ describe('FlightDetailsGrid - assigned_to display', () => {
     });
   });
 });
+
+describe('FlightDetailsGrid - issue #141: OK status with validation issues', () => {
+  test('never shows OK status chip when pair has bus mismatch', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Bus Mismatch', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('never shows OK status chip when pair has missing paired person', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.missingPairedPerson = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Missing Person', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+
+  test('shows OK status only when pair has no validation issues', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = false;
+    pair.missingPairedPerson = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.getByText('OK', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.queryByText('Bus Mismatch', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Missing Person', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+  });
+
+  test('shows both issue chips when pair has multiple validation issues', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.busMismatch = true;
+    pair.missingPairedPerson = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('Bus Mismatch', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.getByText('Missing Person', { selector: '.MuiChip-label' })).toBeInTheDocument();
+  });
+});
