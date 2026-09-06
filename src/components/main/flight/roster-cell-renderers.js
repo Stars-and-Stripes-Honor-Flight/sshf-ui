@@ -13,7 +13,7 @@ import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 
-import { getAssignedTo } from './roster-helpers';
+import { getAssignedTo, getPairStatusIssues } from './roster-helpers';
 
 /**
  * Render seat cell (editable for veteran, display for guardian)
@@ -86,20 +86,28 @@ export function renderBusCell(person, personType, handlers) {
 
 /**
  * Render status cell (only on veteran row)
+ * Shows issue chips or OK when no issues exist
  */
 export function renderStatusCell(pair) {
+  const issues = getPairStatusIssues(pair);
+  
+  if (issues.length === 0) {
+    return <Chip label="OK" size="small" color="success" variant="outlined" />;
+  }
+  
   return (
-    <>
-      {pair.busMismatch && (
-        <Chip label="Bus Mismatch" size="small" color="warning" variant="outlined" />
-      )}
-      {pair.missingPairedPerson && (
-        <Chip label="Missing Person" size="small" color="error" variant="outlined" />
-      )}
-      {!pair.busMismatch && !pair.missingPairedPerson && (
-        <Chip label="OK" size="small" color="success" variant="outlined" />
-      )}
-    </>
+    <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+      {issues.map((issue) => (
+        <Chip
+          key={issue.id}
+          label={issue.label}
+          size="small"
+          color={issue.severity === 'error' ? 'error' : 'warning'}
+          variant="outlined"
+          sx={{ fontSize: '0.75rem', height: 'auto', py: 0.25 }}
+        />
+      ))}
+    </Stack>
   );
 }
 

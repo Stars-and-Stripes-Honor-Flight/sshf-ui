@@ -1,6 +1,7 @@
 import {
   getAssignedTo,
   getUniqueAssignedCallers,
+  getPairStatusIssues,
   pairHasIssues,
   filterPairs,
   sortPairs,
@@ -84,24 +85,215 @@ describe('roster-helpers', () => {
     });
   });
 
+  describe('getPairStatusIssues', () => {
+    test('returns empty array when pair has no issues', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          {
+            type: 'Veteran',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
+            bus: 'Alpha1',
+          },
+          {
+            type: 'Guardian',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
+            bus: 'Alpha1',
+          },
+        ],
+      };
+      expect(getPairStatusIssues(pair)).toEqual([]);
+    });
+
+    test('includes busMismatch issue', () => {
+      const pair = {
+        busMismatch: true,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'busMismatch', label: 'Bus Mismatch', severity: 'warning' });
+    });
+
+    test('includes missingPairedPerson issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: true,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'missingPairedPerson', label: 'Missing Person', severity: 'error' });
+    });
+
+    test('includes veteran not confirmed issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: false, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('includes veteran medical form issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: false, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'veteranMedicalForm', label: 'Vet Medical Form', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('includes veteran medical level missing issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: '', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'veteranMedicalLevel', label: 'Vet Medical Level', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('includes veteran no bus issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'None' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'veteranNoBus', label: 'Vet No Bus', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('includes guardian not confirmed issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: false, medical_form: true, training_complete: true, training: 'Yes', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianNotConfirmed', label: 'Grd Not Confirmed', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('includes guardian medical form issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: false, training_complete: true, training: 'Yes', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianMedicalForm', label: 'Grd Medical Form', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('includes guardian training incomplete issue when training_complete is false', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: true, training_complete: false, training: 'In progress', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianTraining', label: 'Grd Training', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('includes guardian training incomplete issue when training is missing', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: true, training_complete: true, training: '', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianTraining', label: 'Grd Training', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('includes guardian no bus issue', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: true, training_complete: true, training: 'Yes', bus: 'None' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianNoBus', label: 'Grd No Bus', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('returns multiple issues when pair has multiple problems', () => {
+      const pair = {
+        busMismatch: true,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: false, medical_form: false, medical_level: '', bus: 'None' },
+          { type: 'Guardian', confirmed: false, medical_form: true, training_complete: false, training: '', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues.length).toBeGreaterThan(5);
+      expect(issues.some(i => i.id === 'busMismatch')).toBe(true);
+      expect(issues.some(i => i.id === 'veteranNotConfirmed')).toBe(true);
+      expect(issues.some(i => i.id === 'veteranMedicalForm')).toBe(true);
+      expect(issues.some(i => i.id === 'veteranMedicalLevel')).toBe(true);
+      expect(issues.some(i => i.id === 'veteranNoBus')).toBe(true);
+      expect(issues.some(i => i.id === 'guardianNotConfirmed')).toBe(true);
+      expect(issues.some(i => i.id === 'guardianTraining')).toBe(true);
+    });
+  });
+
   describe('pairHasIssues', () => {
     test('returns true when pair has bus mismatch', () => {
-      const pair = { busMismatch: true, missingPairedPerson: false };
+      const pair = {
+        busMismatch: true,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
       expect(pairHasIssues(pair)).toBe(true);
     });
 
-    test('returns true when pair has missing paired person', () => {
-      const pair = { busMismatch: false, missingPairedPerson: true };
+    test('returns true when veteran not confirmed', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: false, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
       expect(pairHasIssues(pair)).toBe(true);
     });
 
-    test('returns true when pair has both issues', () => {
-      const pair = { busMismatch: true, missingPairedPerson: true };
+    test('returns true when veteran has no bus', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'None' }],
+      };
       expect(pairHasIssues(pair)).toBe(true);
     });
 
     test('returns false when pair has no issues', () => {
-      const pair = { busMismatch: false, missingPairedPerson: false };
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: true, training_complete: true, training: 'Complete', bus: 'Alpha1' },
+        ],
+      };
       expect(pairHasIssues(pair)).toBe(false);
     });
   });
@@ -121,6 +313,9 @@ describe('roster-helpers', () => {
             city: 'Madison, WI',
             bus: 'Alpha1',
             assigned_to: 'Karyn',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
             nofly: false,
           },
           {
@@ -131,6 +326,10 @@ describe('roster-helpers', () => {
             city: 'Madison, WI',
             bus: 'Alpha1',
             assigned_to: 'Karyn',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
             nofly: false,
           },
         ],
@@ -148,6 +347,9 @@ describe('roster-helpers', () => {
             city: 'Milwaukee, WI',
             bus: 'Alpha2',
             assigned_to: 'Alice',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 2',
             nofly: false,
           },
           {
@@ -158,6 +360,10 @@ describe('roster-helpers', () => {
             city: 'Milwaukee, WI',
             bus: 'Alpha1',
             assigned_to: 'Alice',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
             nofly: true,
           },
         ],
@@ -175,6 +381,9 @@ describe('roster-helpers', () => {
             city: 'Green Bay, WI',
             bus: 'None',
             assigned_to: '',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
             nofly: false,
           },
         ],
@@ -212,8 +421,11 @@ describe('roster-helpers', () => {
 
     test('filters by status: ok excludes pairs with issues', () => {
       const result = filterPairs(testPairs, { statusFilter: 'ok' });
-      expect(result).toHaveLength(2);
+      // Only pair 1 has no issues (pair 2 has busMismatch, pair 3 has bus: 'None')
+      expect(result).toHaveLength(1);
+      expect(result[0].pairId).toBe('1');
       expect(result.find(p => p.pairId === '2')).toBeUndefined();
+      expect(result.find(p => p.pairId === '3')).toBeUndefined();
     });
 
     test('filters by status: issues includes only pairs with validation issues', () => {
@@ -264,6 +476,9 @@ describe('roster-helpers', () => {
             name_last: 'Doe',
             bus: 'Alpha2',
             assigned_to: 'Karyn',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
           },
         ],
       },
@@ -278,6 +493,9 @@ describe('roster-helpers', () => {
             name_last: 'Brown',
             bus: 'Alpha1',
             assigned_to: 'Bob',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
           },
         ],
       },
@@ -292,6 +510,9 @@ describe('roster-helpers', () => {
             name_last: 'Apple',
             bus: 'Bravo1',
             assigned_to: 'Alice',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'Level 1',
           },
         ],
       },
@@ -320,6 +541,8 @@ describe('roster-helpers', () => {
 
     test('sorts by status (issues first, then OK)', () => {
       const result = sortPairs(testPairs, 'status');
+      // pair 2 has busMismatch, so it comes first
+      // pairs 1 and 3 have no issues, sorted by name (Apple < Doe)
       expect(result[0].pairId).toBe('2');
       expect(result[1].pairId).toBe('3');
       expect(result[2].pairId).toBe('1');

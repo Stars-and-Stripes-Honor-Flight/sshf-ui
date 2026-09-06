@@ -12,6 +12,62 @@ export function getAssignedTo(person) {
 }
 
 /**
+ * Get detailed list of status issues for a pair
+ * @param {Object} pair - The pair object
+ * @returns {Array} Array of issue objects { id, label, severity, personType }
+ */
+export function getPairStatusIssues(pair) {
+  const issues = [];
+  
+  // Pair-level issues
+  if (pair.busMismatch) {
+    issues.push({ id: 'busMismatch', label: 'Bus Mismatch', severity: 'warning' });
+  }
+  if (pair.missingPairedPerson) {
+    issues.push({ id: 'missingPairedPerson', label: 'Missing Person', severity: 'error' });
+  }
+  
+  // Per-person readiness checks
+  const veteran = pair.people.find(p => p.type === 'Veteran');
+  const guardian = pair.people.find(p => p.type === 'Guardian');
+  
+  // Check veteran
+  if (veteran) {
+    if (veteran.confirmed === false) {
+      issues.push({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
+    }
+    if (veteran.medical_form === false) {
+      issues.push({ id: 'veteranMedicalForm', label: 'Vet Medical Form', severity: 'warning', personType: 'Veteran' });
+    }
+    if (!veteran.medical_level || veteran.medical_level.trim() === '') {
+      issues.push({ id: 'veteranMedicalLevel', label: 'Vet Medical Level', severity: 'warning', personType: 'Veteran' });
+    }
+    if (!veteran.bus || veteran.bus === 'None') {
+      issues.push({ id: 'veteranNoBus', label: 'Vet No Bus', severity: 'warning', personType: 'Veteran' });
+    }
+  }
+  
+  // Check guardian
+  if (guardian) {
+    if (guardian.confirmed === false) {
+      issues.push({ id: 'guardianNotConfirmed', label: 'Grd Not Confirmed', severity: 'warning', personType: 'Guardian' });
+    }
+    if (guardian.medical_form === false) {
+      issues.push({ id: 'guardianMedicalForm', label: 'Grd Medical Form', severity: 'warning', personType: 'Guardian' });
+    }
+    // Training check: training_complete === false or missing/empty training
+    if (guardian.training_complete === false || !guardian.training || guardian.training.trim() === '') {
+      issues.push({ id: 'guardianTraining', label: 'Grd Training', severity: 'warning', personType: 'Guardian' });
+    }
+    if (!guardian.bus || guardian.bus === 'None') {
+      issues.push({ id: 'guardianNoBus', label: 'Grd No Bus', severity: 'warning', personType: 'Guardian' });
+    }
+  }
+  
+  return issues;
+}
+
+/**
  * Get all unique assigned callers from pairs
  * @param {Array} pairs - Array of pair objects
  * @returns {Array} Sorted array of unique caller names (excluding empty)
@@ -37,7 +93,7 @@ export function getUniqueAssignedCallers(pairs) {
  * @returns {boolean} True if the pair has issues
  */
 export function pairHasIssues(pair) {
-  return Boolean(pair.busMismatch || pair.missingPairedPerson);
+  return getPairStatusIssues(pair).length > 0;
 }
 
 /**
