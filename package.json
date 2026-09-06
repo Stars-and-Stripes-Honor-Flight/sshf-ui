@@ -22,8 +22,6 @@
     "generate-schemas": "orval --config orval.config.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.515.0",
-    "@aws-sdk/credential-providers": "^3.515.0",
     "@elgorditosalsero/react-gtm-hook": "2.7.2",
     "@emotion/cache": "11.13.1",
     "@emotion/react": "11.13.3",
