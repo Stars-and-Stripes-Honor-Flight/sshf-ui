@@ -7,9 +7,16 @@ import { EssentialInfoSection } from '../essential-info-section';
 
 // Mock dependencies
 jest.mock('@/components/main/shared/personal-information-card', () => ({
-  PersonalInformationCard: ({ control, errors }) => (
+  PersonalInformationCard: ({ control, errors, shirtSizeOptions }) => (
     <div data-testid="personal-information-card">
       Personal Information Card
+      {shirtSizeOptions ? (
+        <select name="shirt.size" aria-label="Application Shirt Size">
+          {shirtSizeOptions.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      ) : null}
     </div>
   )
 }));
@@ -70,6 +77,28 @@ describe('EssentialInfoSection', () => {
     expect(screen.getByText('Medical Information')).toBeInTheDocument();
     expect(screen.getByText('Call Center Information')).toBeInTheDocument();
     expect(screen.getByText('Flight Status')).toBeInTheDocument();
+  });
+
+  test('renders application shirt size inside the personal information card', () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+    ];
+
+    render(
+      <TestWrapper defaultValues={{ shirt: { size: 'L' } }}>
+        <EssentialInfoSection
+          errors={{}}
+          guardian={mockGuardian}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    const shirtSize = screen.getByLabelText('Application Shirt Size');
+    expect(shirtSize).toBeInTheDocument();
+    expect(screen.getByTestId('personal-information-card')).toContainElement(shirtSize);
+    expect(screen.getByRole('option', { name: 'Large' })).toBeInTheDocument();
   });
 
   test('renders medical information fields', () => {

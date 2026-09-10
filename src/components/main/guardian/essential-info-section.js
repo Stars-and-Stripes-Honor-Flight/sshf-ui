@@ -23,6 +23,18 @@ import { PersonalInformationCard } from '@/components/main/shared/personal-infor
 import { FormSelectField } from '@/components/main/shared/form-select-field';
 import { howHeardAboutOptions } from '@/schemas/call';
 
+const shirtSizeOptions = [
+  { value: 'None', label: 'None' },
+  { value: 'S', label: 'Small' },
+  { value: 'M', label: 'Medium' },
+  { value: 'L', label: 'Large' },
+  { value: 'XL', label: 'X-Large' },
+  { value: '2XL', label: '2X-Large' },
+  { value: '3XL', label: '3X-Large' },
+  { value: '4XL', label: '4X-Large' },
+  { value: '5XL', label: '5X-Large' }
+];
+
 export function EssentialInfoSection({ control, errors, guardian, onOpenHistory, flightOptions, disabled = false }) {
   return (
     <Stack spacing={3}>
@@ -42,6 +54,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
         control={control} 
         errors={errors}
         nicknameGridProps={{ xs: 12, md: 6 }}
+        shirtSizeOptions={shirtSizeOptions}
         disabled={disabled}
       />
 

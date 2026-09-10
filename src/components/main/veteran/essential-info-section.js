@@ -24,6 +24,18 @@ import { FormSelectField } from '@/components/main/shared/form-select-field';
 import { howHeardAboutOptions } from '@/schemas/call';
 import { FlightGroupField } from './flight-group-field';
 
+const shirtSizeOptions = [
+  { value: '', label: 'Select size' },
+  { value: 'S', label: 'Small' },
+  { value: 'M', label: 'Medium' },
+  { value: 'L', label: 'Large' },
+  { value: 'XL', label: 'X-Large' },
+  { value: '2XL', label: '2X-Large' },
+  { value: '3XL', label: '3X-Large' },
+  { value: '4XL', label: '4X-Large' },
+  { value: '5XL', label: '5X-Large' }
+];
+
 export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, flightOptions, disabled = false }) {
   return (
     <Stack spacing={3}>
@@ -42,6 +54,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
       <PersonalInformationCard 
         control={control} 
         errors={errors}
+        shirtSizeOptions={shirtSizeOptions}
         disabled={disabled}
       />
 
