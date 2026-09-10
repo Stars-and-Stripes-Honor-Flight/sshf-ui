@@ -56,6 +56,17 @@ describe('AdditionalDetailsSection', () => {
     expect(container.querySelector('input[name="apparel.shirt_size"]') || container.querySelector('select[name="apparel.shirt_size"]')).toBeInTheDocument();
   });
 
+  test('does not render the application shirt size field', () => {
+    const { container } = render(
+      <TestWrapper defaultValues={{ shirt: { size: 'M' }, apparel: { item: '', jacket_size: '', shirt_size: '' } }}>
+        <AdditionalDetailsSection errors={{}} />
+      </TestWrapper>
+    );
+
+    expect(container.querySelector('[name="shirt.size"]')).not.toBeInTheDocument();
+    expect(screen.queryByText('Application Shirt Size')).not.toBeInTheDocument();
+  });
+
   test('renders homecoming information fields', () => {
     const { container } = render(
       <TestWrapper defaultValues={{ homecoming: { destination: 'Home Airport' } }}>

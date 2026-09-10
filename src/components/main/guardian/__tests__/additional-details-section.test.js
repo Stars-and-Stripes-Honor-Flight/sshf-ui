@@ -49,9 +49,20 @@ describe('AdditionalDetailsSection', () => {
       </TestWrapper>
     );
 
-    expect(container.querySelector('input[name="shirt.size"]') || container.querySelector('select[name="shirt.size"]')).toBeInTheDocument();
     expect(container.querySelector('input[name="apparel.jacket_size"]') || container.querySelector('select[name="apparel.jacket_size"]')).toBeInTheDocument();
     expect(container.querySelector('input[name="apparel.shirt_size"]') || container.querySelector('select[name="apparel.shirt_size"]')).toBeInTheDocument();
+  });
+
+  test('does not render the application shirt size field', () => {
+    const { container } = render(
+      <TestWrapper defaultValues={{ shirt: { size: 'M' }, apparel: { item: '', jacket_size: '', shirt_size: '', delivery: '' } }}>
+        <AdditionalDetailsSection errors={{}} />
+      </TestWrapper>
+    );
+
+    expect(container.querySelector('[name="shirt.size"]')).not.toBeInTheDocument();
+    expect(screen.queryByText('Application Shirt Size')).not.toBeInTheDocument();
+    expect(screen.queryByText('Shirt Size')).not.toBeInTheDocument();
   });
 
   test('renders metadata fields using FormTextField', () => {
@@ -69,22 +80,20 @@ describe('AdditionalDetailsSection', () => {
 
   test('displays error messages for apparel fields', () => {
     const errors = {
-      shirt: {
-        size: { message: 'Shirt size is required' }
-      },
       apparel: {
-        jacket_size: { message: 'Jacket size is required' }
+        jacket_size: { message: 'Jacket size is required' },
+        shirt_size: { message: 'Apparel shirt size is required' }
       }
     };
 
     render(
-      <TestWrapper defaultValues={{ shirt: { size: '' }, apparel: { item: '', jacket_size: '', shirt_size: '', delivery: '' } }}>
+      <TestWrapper defaultValues={{ apparel: { item: '', jacket_size: '', shirt_size: '', delivery: '' } }}>
         <AdditionalDetailsSection errors={errors} />
       </TestWrapper>
     );
 
-    expect(screen.getByText('Shirt size is required')).toBeInTheDocument();
     expect(screen.getByText('Jacket size is required')).toBeInTheDocument();
+    expect(screen.getByText('Apparel shirt size is required')).toBeInTheDocument();
   });
 });
 

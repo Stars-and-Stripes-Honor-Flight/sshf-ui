@@ -91,6 +91,54 @@ describe('PersonalInformationCard', () => {
     expect(screen.queryByPlaceholderText('Nickname')).not.toBeInTheDocument();
   });
 
+  test('renders application shirt size field when shirtSizeOptions is provided', () => {
+    const shirtSizeOptions = [
+      { value: '', label: 'Select size' },
+      { value: 'M', label: 'Medium' }
+    ];
+
+    render(
+      <TestWrapper defaultValues={{ shirt: { size: 'M' } }}>
+        <PersonalInformationCard
+          errors={{}}
+          shirtSizeOptions={shirtSizeOptions}
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByTestId('form-select-field-shirt.size')).toBeInTheDocument();
+    expect(screen.getByText('Application Shirt Size')).toBeInTheDocument();
+    expect(screen.getByText('Medium')).toBeInTheDocument();
+  });
+
+  test('renders application shirt size immediately after the gender field', () => {
+    const shirtSizeOptions = [{ value: 'M', label: 'Medium' }];
+
+    const { container } = render(
+      <TestWrapper defaultValues={{ shirt: { size: 'M' } }}>
+        <PersonalInformationCard
+          errors={{}}
+          shirtSizeOptions={shirtSizeOptions}
+        />
+      </TestWrapper>
+    );
+
+    const fields = [...container.querySelectorAll('[data-testid^="form-text-field-"], [data-testid^="form-select-field-"]')];
+    const genderIndex = fields.findIndex((field) => field.getAttribute('data-testid') === 'form-select-field-gender');
+    expect(fields[genderIndex + 1]).toHaveAttribute('data-testid', 'form-select-field-shirt.size');
+  });
+
+  test('does not render application shirt size field when shirtSizeOptions is not provided', () => {
+    render(
+      <TestWrapper>
+        <PersonalInformationCard errors={{}} />
+      </TestWrapper>
+    );
+
+    expect(screen.queryByTestId('form-select-field-shirt.size')).not.toBeInTheDocument();
+    expect(screen.queryByText('Application Shirt Size')).not.toBeInTheDocument();
+  });
+
   test('displays gender options correctly', () => {
     render(
       <TestWrapper>

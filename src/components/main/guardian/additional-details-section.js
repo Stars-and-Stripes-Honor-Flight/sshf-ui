@@ -43,29 +43,6 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
             <Grid xs={12} md={4}>
               <Controller
                 control={control}
-                name="shirt.size"
-                render={({ field }) => (
-                  <FormControl error={Boolean(errors.shirt?.size)} fullWidth disabled={disabled}>
-                    <InputLabel>Shirt Size</InputLabel>
-                    <Select {...field}>
-                      <Option value="None">None</Option>
-                      <Option value="S">Small</Option>
-                      <Option value="M">Medium</Option>
-                      <Option value="L">Large</Option>
-                      <Option value="XL">X-Large</Option>
-                      <Option value="2XL">2X-Large</Option>
-                      <Option value="3XL">3X-Large</Option>
-                      <Option value="4XL">4X-Large</Option>
-                      <Option value="5XL">5X-Large</Option>
-                    </Select>
-                    {errors.shirt?.size && <FormHelperText>{errors.shirt.size.message}</FormHelperText>}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={4}>
-              <Controller
-                control={control}
                 name="apparel.jacket_size"
                 render={({ field }) => (
                   <FormControl error={Boolean(errors.apparel?.jacket_size)} fullWidth disabled={disabled}>

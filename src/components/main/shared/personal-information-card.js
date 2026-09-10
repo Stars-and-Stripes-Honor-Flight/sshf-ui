@@ -14,6 +14,7 @@ export function PersonalInformationCard({
   control, 
   errors,
   nicknameGridProps, // Optional: pass nicknameGridProps for guardian form
+  shirtSizeOptions, // Optional: renders the application shirt size field when provided
   disabled = false
 }) {
   return (
@@ -55,6 +56,17 @@ export function PersonalInformationCard({
             ]}
             gridProps={{ xs: 12, md: 6 }}
           />
+          {shirtSizeOptions ? (
+            <FormSelectField
+              control={control}
+              name="shirt.size"
+              label="Application Shirt Size"
+              error={errors.shirt?.size}
+              disabled={disabled}
+              options={shirtSizeOptions}
+              gridProps={{ xs: 12, md: 6 }}
+            />
+          ) : null}
         </Grid>
       </CardContent>
     </Card>
