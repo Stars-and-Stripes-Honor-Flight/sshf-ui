@@ -25,6 +25,7 @@ import TableContainer from '@mui/material/TableContainer';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 import Tooltip from '@mui/material/Tooltip';
@@ -64,6 +65,8 @@ import {
 import {
   loadFlightRosterControls,
   saveFlightRosterControls,
+  resetFlightRosterControls,
+  DEFAULT_ROSTER_CONTROLS,
 } from '@/components/main/flight/flight-roster-controls-storage';
 import {
   beginRosterControlsHydrate,
@@ -291,6 +294,23 @@ function FlightDetailsPage() {
 
     return () => clearTimeout(timer);
   }, [nameFilter, flightId, persistRosterControls]);
+
+  const handleResetRosterFilters = React.useCallback(() => {
+    if (!flightId) {
+      return;
+    }
+
+    const defaults = resetFlightRosterControls(flightId);
+    setNameFilter(defaults.nameFilter);
+    setStatusFilter(defaults.statusFilter);
+    setBusFilter(defaults.busFilter);
+    setAssignedCallerFilter(defaults.assignedCallerFilter);
+    setSortBy(defaults.sortBy);
+    rosterPersistCoordinatorRef.current = {
+      skipNextPersist: false,
+      hydratedFlightId: flightId,
+    };
+  }, [flightId]);
 
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
@@ -692,6 +712,17 @@ function FlightDetailsPage() {
                           <MenuItem value="status">Status</MenuItem>
                           <MenuItem value="seat">Seat</MenuItem>
                         </TextField>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleResetRosterFilters}
+                          sx={{
+                            alignSelf: { xs: 'stretch', sm: 'center' },
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Reset filters
+                        </Button>
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <TextField
@@ -700,6 +731,20 @@ function FlightDetailsPage() {
                           value={nameFilter}
                           onChange={(e) => setNameFilter(e.target.value)}
                           sx={{ flex: 1, minWidth: 200 }}
+                          InputProps={{
+                            endAdornment: nameFilter ? (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  size="small"
+                                  aria-label="Clear search"
+                                  onClick={() => setNameFilter('')}
+                                  edge="end"
+                                >
+                                  <XIcon size={16} />
+                                </IconButton>
+                              </InputAdornment>
+                            ) : null,
+                          }}
                         />
                         <TextField
                           select

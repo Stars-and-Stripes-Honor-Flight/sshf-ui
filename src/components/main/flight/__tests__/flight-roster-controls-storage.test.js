@@ -3,6 +3,7 @@ import {
   getFlightRosterControlsStorageKey,
   loadFlightRosterControls,
   saveFlightRosterControls,
+  resetFlightRosterControls,
   ROSTER_CONTROLS_SCHEMA_VERSION,
 } from '../flight-roster-controls-storage';
 
@@ -131,6 +132,25 @@ describe('flight-roster-controls-storage', () => {
       ).not.toThrow();
 
       Storage.prototype.setItem = originalSetItem;
+    });
+  });
+
+  describe('resetFlightRosterControls', () => {
+    test('writes defaults to localStorage and returns them', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        nameFilter: 'smith',
+        sortBy: 'seat',
+        statusFilter: 'issues',
+      });
+
+      expect(resetFlightRosterControls('flight-1')).toEqual(DEFAULT_ROSTER_CONTROLS);
+      expect(loadFlightRosterControls('flight-1')).toEqual(DEFAULT_ROSTER_CONTROLS);
+    });
+
+    test('no-ops when flight id is missing', () => {
+      expect(resetFlightRosterControls('')).toEqual(DEFAULT_ROSTER_CONTROLS);
+      expect(localStorage.length).toBe(0);
     });
   });
 });

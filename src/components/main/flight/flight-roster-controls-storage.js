@@ -115,3 +115,14 @@ export function saveFlightRosterControls(flightId, controls) {
     console.warn('Failed to save flight roster controls:', error);
   }
 }
+
+/**
+ * Reset persisted roster controls for a flight to defaults.
+ * @param {string | null | undefined} flightId
+ * @returns {typeof DEFAULT_ROSTER_CONTROLS}
+ */
+export function resetFlightRosterControls(flightId) {
+  const defaults = { ...DEFAULT_ROSTER_CONTROLS };
+  saveFlightRosterControls(flightId, defaults);
+  return defaults;
+}
