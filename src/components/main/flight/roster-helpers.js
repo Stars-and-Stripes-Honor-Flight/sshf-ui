@@ -12,6 +12,83 @@ export function getAssignedTo(person) {
 }
 
 /**
+ * Normalize a seat string for display-independent comparison (trim, uppercase letter).
+ * @param {string|undefined|null} seat
+ * @returns {string}
+ */
+function normalizeSeatString(seat) {
+  return (seat ?? '').trim();
+}
+
+/**
+ * Parse a seat label into row number and row letter, or null when not parseable.
+ * Accepts one- or two-digit row with optional leading zero, e.g. 3A, 03A, 11B.
+ * @param {string|undefined|null} seat
+ * @returns {{ row: number, letter: string } | null}
+ */
+export function parseSeatNumber(seat) {
+  const normalized = normalizeSeatString(seat);
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/^(\d+)\s*([A-Za-z])$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    row: Number.parseInt(match[1], 10),
+    letter: match[2].toUpperCase(),
+  };
+}
+
+/**
+ * Seat used for roster sort: veteran's seat when set, otherwise guardian's.
+ * @param {Object} pair - Flight roster pair
+ * @returns {string}
+ */
+export function getPairSortSeat(pair) {
+  const veteran = pair.people?.find((p) => p.type === 'Veteran');
+  const guardian = pair.people?.find((p) => p.type === 'Guardian');
+
+  const veteranSeat = normalizeSeatString(veteran?.seat);
+  if (veteranSeat) {
+    return veteranSeat;
+  }
+
+  return normalizeSeatString(guardian?.seat);
+}
+
+/**
+ * Compare two seat labels for roster ordering: row (numeric), then letter.
+ * Empty or unparseable seats sort after valid seats.
+ * @param {string} seatA
+ * @param {string} seatB
+ * @returns {number}
+ */
+export function compareSeatNumbers(seatA, seatB) {
+  const parsedA = parseSeatNumber(seatA);
+  const parsedB = parseSeatNumber(seatB);
+
+  if (!parsedA && !parsedB) {
+    return normalizeSeatString(seatA).localeCompare(normalizeSeatString(seatB));
+  }
+  if (!parsedA) {
+    return 1;
+  }
+  if (!parsedB) {
+    return -1;
+  }
+
+  if (parsedA.row !== parsedB.row) {
+    return parsedA.row - parsedB.row;
+  }
+
+  return parsedA.letter.localeCompare(parsedB.letter);
+}
+
+/**
  * Get detailed list of status issues for a pair
  * @param {Object} pair - The pair object
  * @returns {Array} Array of issue objects { id, label, severity, personType }
@@ -172,9 +249,9 @@ export function filterPairs(pairs, filters) {
 
 /**
  * Sort pairs based on the sort criteria
- * Sort key is always based on the veteran in the pair
+ * Most sort keys use the veteran in the pair; seat uses veteran seat or guardian when absent.
  * @param {Array} pairs - Array of pair objects
- * @param {string} sortBy - Sort criteria (name/bus/assignment/status)
+ * @param {string} sortBy - Sort criteria (name/bus/assignment/status/seat)
  * @returns {Array} Sorted pairs (new array)
  */
 export function sortPairs(pairs, sortBy) {
@@ -227,6 +304,12 @@ export function sortPairs(pairs, sortBy) {
         const nameB = vetB ? `${vetB.name_last} ${vetB.name_first}`.toLowerCase() : '';
         return nameA.localeCompare(nameB);
       });
+      break;
+
+    case 'seat':
+      sorted.sort((a, b) =>
+        compareSeatNumbers(getPairSortSeat(a), getPairSortSeat(b))
+      );
       break;
       
     default:
