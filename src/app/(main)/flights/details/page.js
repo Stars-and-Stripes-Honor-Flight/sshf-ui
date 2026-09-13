@@ -25,6 +25,7 @@ import TableContainer from '@mui/material/TableContainer';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 import Tooltip from '@mui/material/Tooltip';
@@ -61,6 +62,17 @@ import {
   getUniqueAssignedCallers, 
   pairHasIssues 
 } from '@/components/main/flight/roster-helpers';
+import {
+  loadFlightRosterControls,
+  saveFlightRosterControls,
+  resetFlightRosterControls,
+  DEFAULT_ROSTER_CONTROLS,
+} from '@/components/main/flight/flight-roster-controls-storage';
+import {
+  beginRosterControlsHydrate,
+  createInitialRosterPersistCoordinatorState,
+  evaluateRosterControlsPersist,
+} from '@/components/main/flight/roster-controls-persist-coordinator';
 
 function FlightDetailsPage() {
   const searchParams = useSearchParams();
@@ -83,6 +95,7 @@ function FlightDetailsPage() {
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
   const [assignmentCount, setAssignmentCount] = React.useState('1');
   const [addingAssignments, setAddingAssignments] = React.useState(false);
+  const rosterPersistCoordinatorRef = React.useRef(createInitialRosterPersistCoordinatorState());
   
   // Bus mismatch auto-fix states
   const [showBusMismatchDialog, setShowBusMismatchDialog] = React.useState(false);
@@ -217,6 +230,87 @@ function FlightDetailsPage() {
   React.useEffect(() => {
     savePreset(activityPreset);
   }, [activityPreset]);
+
+  // Hydrate roster filters/sort from localStorage when flight is known
+  React.useEffect(() => {
+    if (!flightId) {
+      return;
+    }
+
+    rosterPersistCoordinatorRef.current = beginRosterControlsHydrate(
+      rosterPersistCoordinatorRef.current
+    );
+
+    const savedControls = loadFlightRosterControls(flightId);
+    setNameFilter(savedControls.nameFilter);
+    setStatusFilter(savedControls.statusFilter);
+    setBusFilter(savedControls.busFilter);
+    setAssignedCallerFilter(savedControls.assignedCallerFilter);
+    setSortBy(savedControls.sortBy);
+  }, [flightId]);
+
+  const persistRosterControls = React.useCallback(
+    (nameValue) => {
+      if (!flightId) {
+        return;
+      }
+
+      const evaluation = evaluateRosterControlsPersist(
+        rosterPersistCoordinatorRef.current,
+        flightId
+      );
+      rosterPersistCoordinatorRef.current = evaluation.state;
+
+      if (!evaluation.shouldPersist) {
+        return;
+      }
+
+      saveFlightRosterControls(flightId, {
+        nameFilter: nameValue,
+        statusFilter,
+        busFilter,
+        assignedCallerFilter,
+        sortBy,
+      });
+    },
+    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy]
+  );
+
+  // Persist roster controls when values change. The coordinator skips the first persist
+  // pass after hydrate so pending setState does not overwrite saved localStorage.
+  React.useEffect(() => {
+    persistRosterControls(nameFilter);
+  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, persistRosterControls]);
+
+  // Debounce name filter persistence while typing
+  React.useEffect(() => {
+    if (!flightId) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      persistRosterControls(nameFilter);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [nameFilter, flightId, persistRosterControls]);
+
+  const handleResetRosterFilters = React.useCallback(() => {
+    if (!flightId) {
+      return;
+    }
+
+    const defaults = resetFlightRosterControls(flightId);
+    setNameFilter(defaults.nameFilter);
+    setStatusFilter(defaults.statusFilter);
+    setBusFilter(defaults.busFilter);
+    setAssignedCallerFilter(defaults.assignedCallerFilter);
+    setSortBy(defaults.sortBy);
+    rosterPersistCoordinatorRef.current = {
+      skipNextPersist: false,
+      hydratedFlightId: flightId,
+    };
+  }, [flightId]);
 
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
@@ -618,6 +712,17 @@ function FlightDetailsPage() {
                           <MenuItem value="status">Status</MenuItem>
                           <MenuItem value="seat">Seat</MenuItem>
                         </TextField>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleResetRosterFilters}
+                          sx={{
+                            alignSelf: { xs: 'stretch', sm: 'center' },
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Reset filters
+                        </Button>
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <TextField
@@ -626,6 +731,20 @@ function FlightDetailsPage() {
                           value={nameFilter}
                           onChange={(e) => setNameFilter(e.target.value)}
                           sx={{ flex: 1, minWidth: 200 }}
+                          InputProps={{
+                            endAdornment: nameFilter ? (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  size="small"
+                                  aria-label="Clear search"
+                                  onClick={() => setNameFilter('')}
+                                  edge="end"
+                                >
+                                  <XIcon size={16} />
+                                </IconButton>
+                              </InputAdornment>
+                            ) : null,
+                          }}
                         />
                         <TextField
                           select
