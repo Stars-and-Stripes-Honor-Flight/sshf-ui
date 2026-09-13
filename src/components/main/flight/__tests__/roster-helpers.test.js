@@ -5,6 +5,8 @@ import {
   pairHasIssues,
   filterPairs,
   sortPairs,
+  getPairSortSeat,
+  compareSeatNumbers,
 } from '../roster-helpers';
 
 describe('roster-helpers', () => {
@@ -558,6 +560,171 @@ describe('roster-helpers', () => {
       const result = sortPairs(testPairs, 'invalid');
       expect(result).toEqual(testPairs);
       expect(result).not.toBe(testPairs);
+    });
+
+    test('sorts by seat (row then letter; empty seats last)', () => {
+      const seatPairs = [
+        {
+          pairId: 'empty',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'No',
+              name_last: 'Seat',
+              bus: 'Alpha1',
+              seat: '',
+            },
+          ],
+        },
+        {
+          pairId: 'late',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Late',
+              name_last: 'Row',
+              bus: 'Alpha1',
+              seat: '11B',
+            },
+          ],
+        },
+        {
+          pairId: 'early',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Early',
+              name_last: 'Row',
+              bus: 'Alpha1',
+              seat: '3A',
+            },
+          ],
+        },
+        {
+          pairId: 'same-row-b',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Same',
+              name_last: 'B',
+              bus: 'Alpha1',
+              seat: '03B',
+            },
+          ],
+        },
+      ];
+
+      const result = sortPairs(seatPairs, 'seat');
+      expect(result.map((p) => p.pairId)).toEqual(['early', 'same-row-b', 'late', 'empty']);
+    });
+
+    test('sorts by guardian seat when pair has no veteran', () => {
+      const guardianOnly = [
+        {
+          pairId: 'g1',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Guardian',
+              name_first: 'G',
+              name_last: 'One',
+              bus: 'Alpha1',
+              seat: '5C',
+            },
+          ],
+        },
+        {
+          pairId: 'g2',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Guardian',
+              name_first: 'G',
+              name_last: 'Two',
+              bus: 'Alpha1',
+              seat: '2A',
+            },
+          ],
+        },
+      ];
+
+      const result = sortPairs(guardianOnly, 'seat');
+      expect(result.map((p) => p.pairId)).toEqual(['g2', 'g1']);
+    });
+  });
+
+  describe('getPairSortSeat', () => {
+    test('uses veteran seat when present', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', seat: '12A' },
+          { type: 'Guardian', seat: '99Z' },
+        ],
+      };
+      expect(getPairSortSeat(pair)).toBe('12A');
+    });
+
+    test('uses guardian seat when veteran is missing', () => {
+      const pair = {
+        people: [{ type: 'Guardian', seat: '4D' }],
+      };
+      expect(getPairSortSeat(pair)).toBe('4D');
+    });
+
+    test('uses guardian seat when veteran has no seat', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', seat: '' },
+          { type: 'Guardian', seat: '4D' },
+        ],
+      };
+      expect(getPairSortSeat(pair)).toBe('4D');
+    });
+
+    test('returns empty string when no seats assigned', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', seat: '' },
+          { type: 'Guardian', seat: '' },
+        ],
+      };
+      expect(getPairSortSeat(pair)).toBe('');
+    });
+  });
+
+  describe('compareSeatNumbers', () => {
+    test('orders by row numerically (leading zero ignored)', () => {
+      expect(compareSeatNumbers('3A', '11B')).toBeLessThan(0);
+      expect(compareSeatNumbers('03A', '11B')).toBeLessThan(0);
+    });
+
+    test('treats 3A and 03A as the same row', () => {
+      expect(compareSeatNumbers('3A', '03A')).toBe(0);
+    });
+
+    test('breaks ties by seat letter within the same row', () => {
+      expect(compareSeatNumbers('3A', '3B')).toBeLessThan(0);
+      expect(compareSeatNumbers('03B', '3A')).toBeGreaterThan(0);
+    });
+
+    test('sorts empty or missing seats after assigned seats', () => {
+      expect(compareSeatNumbers('', '1A')).toBeGreaterThan(0);
+      expect(compareSeatNumbers('1A', '')).toBeLessThan(0);
+      expect(compareSeatNumbers('', '')).toBe(0);
+    });
+
+    test('sorts unparseable seats after valid seats', () => {
+      expect(compareSeatNumbers('TBD', '2A')).toBeGreaterThan(0);
     });
   });
 });
