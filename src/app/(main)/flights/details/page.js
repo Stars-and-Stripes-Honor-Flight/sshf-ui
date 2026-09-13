@@ -61,6 +61,10 @@ import {
   getUniqueAssignedCallers, 
   pairHasIssues 
 } from '@/components/main/flight/roster-helpers';
+import {
+  loadFlightRosterControls,
+  saveFlightRosterControls,
+} from '@/components/main/flight/flight-roster-controls-storage';
 
 function FlightDetailsPage() {
   const searchParams = useSearchParams();
@@ -83,6 +87,7 @@ function FlightDetailsPage() {
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
   const [assignmentCount, setAssignmentCount] = React.useState('1');
   const [addingAssignments, setAddingAssignments] = React.useState(false);
+  const rosterControlsHydratedForFlightRef = React.useRef(null);
   
   // Bus mismatch auto-fix states
   const [showBusMismatchDialog, setShowBusMismatchDialog] = React.useState(false);
@@ -217,6 +222,56 @@ function FlightDetailsPage() {
   React.useEffect(() => {
     savePreset(activityPreset);
   }, [activityPreset]);
+
+  // Hydrate roster filters/sort from localStorage when flight is known
+  React.useEffect(() => {
+    if (!flightId) {
+      return;
+    }
+
+    const savedControls = loadFlightRosterControls(flightId);
+    setNameFilter(savedControls.nameFilter);
+    setStatusFilter(savedControls.statusFilter);
+    setBusFilter(savedControls.busFilter);
+    setAssignedCallerFilter(savedControls.assignedCallerFilter);
+    setSortBy(savedControls.sortBy);
+    rosterControlsHydratedForFlightRef.current = flightId;
+  }, [flightId]);
+
+  const persistRosterControls = React.useCallback(
+    (nameValue) => {
+      if (!flightId || rosterControlsHydratedForFlightRef.current !== flightId) {
+        return;
+      }
+
+      saveFlightRosterControls(flightId, {
+        nameFilter: nameValue,
+        statusFilter,
+        busFilter,
+        assignedCallerFilter,
+        sortBy,
+      });
+    },
+    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy]
+  );
+
+  // Persist non-name roster controls immediately
+  React.useEffect(() => {
+    persistRosterControls(nameFilter);
+  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, persistRosterControls]);
+
+  // Debounce name filter persistence while typing
+  React.useEffect(() => {
+    if (!flightId) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      persistRosterControls(nameFilter);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [nameFilter, flightId, persistRosterControls]);
 
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
