@@ -65,6 +65,11 @@ import {
   loadFlightRosterControls,
   saveFlightRosterControls,
 } from '@/components/main/flight/flight-roster-controls-storage';
+import {
+  beginRosterControlsHydrate,
+  createInitialRosterPersistCoordinatorState,
+  evaluateRosterControlsPersist,
+} from '@/components/main/flight/roster-controls-persist-coordinator';
 
 function FlightDetailsPage() {
   const searchParams = useSearchParams();
@@ -87,7 +92,7 @@ function FlightDetailsPage() {
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
   const [assignmentCount, setAssignmentCount] = React.useState('1');
   const [addingAssignments, setAddingAssignments] = React.useState(false);
-  const rosterControlsHydratedForFlightRef = React.useRef(null);
+  const rosterPersistCoordinatorRef = React.useRef(createInitialRosterPersistCoordinatorState());
   
   // Bus mismatch auto-fix states
   const [showBusMismatchDialog, setShowBusMismatchDialog] = React.useState(false);
@@ -229,18 +234,31 @@ function FlightDetailsPage() {
       return;
     }
 
+    rosterPersistCoordinatorRef.current = beginRosterControlsHydrate(
+      rosterPersistCoordinatorRef.current
+    );
+
     const savedControls = loadFlightRosterControls(flightId);
     setNameFilter(savedControls.nameFilter);
     setStatusFilter(savedControls.statusFilter);
     setBusFilter(savedControls.busFilter);
     setAssignedCallerFilter(savedControls.assignedCallerFilter);
     setSortBy(savedControls.sortBy);
-    rosterControlsHydratedForFlightRef.current = flightId;
   }, [flightId]);
 
   const persistRosterControls = React.useCallback(
     (nameValue) => {
-      if (!flightId || rosterControlsHydratedForFlightRef.current !== flightId) {
+      if (!flightId) {
+        return;
+      }
+
+      const evaluation = evaluateRosterControlsPersist(
+        rosterPersistCoordinatorRef.current,
+        flightId
+      );
+      rosterPersistCoordinatorRef.current = evaluation.state;
+
+      if (!evaluation.shouldPersist) {
         return;
       }
 
@@ -255,7 +273,8 @@ function FlightDetailsPage() {
     [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy]
   );
 
-  // Persist non-name roster controls immediately
+  // Persist roster controls when values change. The coordinator skips the first persist
+  // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
   }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, persistRosterControls]);
