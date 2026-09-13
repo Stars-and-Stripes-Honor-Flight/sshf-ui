@@ -22,7 +22,7 @@ export const ACTIVITY_PRESET_LABELS = {
  */
 export const COLUMN_CONFIGS = {
   [ACTIVITY_PRESETS.OPS]: [
-    { id: 'seat', label: 'Seat', width: 100 },
+    { id: 'seat', label: 'Seat', width: 112, minWidth: 112 },
     { id: 'bus', label: 'Bus', width: 140 },
     { id: 'assigned_to', label: 'Assigned to Call', width: 150 },
     { id: 'status', label: 'Status', width: 200 },
