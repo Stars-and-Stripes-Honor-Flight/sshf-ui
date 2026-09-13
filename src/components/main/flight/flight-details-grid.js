@@ -118,7 +118,17 @@ function PersonDisplay({ person, type = 'Veteran' }) {
 }
 
 // Component for editing a single field with save-on-blur
-function EditableField({ value, onChange, onBlur, disabled, placeholder, size = 'small', maxWidth = 150 }) {
+function EditableField({
+  value,
+  onChange,
+  onBlur,
+  disabled,
+  placeholder,
+  size = 'small',
+  maxWidth = 150,
+  minWidth,
+  inputProps,
+}) {
   const [localValue, setLocalValue] = React.useState(value);
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -146,7 +156,17 @@ function EditableField({ value, onChange, onBlur, disabled, placeholder, size = 
       onBlur={handleBlur}
       disabled={disabled || isSaving}
       variant="outlined"
-      sx={{ maxWidth, position: 'relative' }}
+      fullWidth={Boolean(minWidth)}
+      sx={{
+        maxWidth,
+        minWidth: minWidth ?? undefined,
+        width: minWidth ? '100%' : undefined,
+        position: 'relative',
+        '& .MuiOutlinedInput-root': minWidth
+          ? { minWidth }
+          : undefined,
+      }}
+      inputProps={inputProps}
       InputProps={{
         endAdornment: isSaving ? (
           <CircularProgress size={16} sx={{ mr: 1 }} />
@@ -352,6 +372,7 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
             sx={{ 
               borderBottom: 'none',
               width: column.width,
+              minWidth: column.minWidth ?? column.width,
               textAlign: column.align || 'left',
             }}
           >
@@ -374,6 +395,7 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
               sx={{ 
                 borderBottom: 'none',
                 width: column.width,
+                minWidth: column.minWidth ?? column.width,
                 textAlign: column.align || 'left',
               }}
             >
@@ -531,6 +553,7 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
                   sx={{ 
                     fontWeight: 600,
                     width: column.width,
+                    minWidth: column.minWidth ?? column.width,
                     textAlign: column.align || 'left',
                   }}
                 >

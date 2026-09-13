@@ -16,24 +16,25 @@ import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 import { getAssignedTo, getPairStatusIssues } from './roster-helpers';
 
 /**
- * Render seat cell (editable for veteran, display for guardian)
+ * Render seat cell (editable for veteran and guardian)
  */
 export function renderSeatCell(person, personType, handlers) {
   if (!person) return null;
-  
-  if (personType === 'Veteran') {
-    const { EditableField, handleSeatChange } = handlers;
-    return (
-      <EditableField
-        value={person.seat || ''}
-        onBlur={(newValue) => handleSeatChange(newValue, person.id, personType)}
-        placeholder="e.g., A1"
-        maxWidth={100}
-      />
-    );
-  }
-  
-  return <Typography variant="body2">{person.seat || '—'}</Typography>;
+
+  const { EditableField, handleSeatChange } = handlers;
+  return (
+    <EditableField
+      value={person.seat || ''}
+      onBlur={(newValue) => handleSeatChange(newValue, person.id, personType)}
+      placeholder="e.g., A1"
+      maxWidth={112}
+      minWidth={72}
+      inputProps={{
+        style: { minWidth: '4.5ch', textAlign: 'center' },
+        'aria-label': `${personType} seat assignment`,
+      }}
+    />
+  );
 }
 
 /**

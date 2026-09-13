@@ -120,6 +120,49 @@ describe('FlightDetailsGrid - assigned_to display', () => {
     expect(screen.getByRole('button', { name: /sync/i })).toBeInTheDocument();
   });
 
+  test('renders editable seat fields for veteran and guardian (issue #158)', () => {
+    render(
+      <FlightDetailsGrid
+        pairs={[buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' })]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.getByDisplayValue('09E')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('NF')).toBeInTheDocument();
+  });
+
+  test('updates guardian seat independently via onUpdate (issue #158)', async () => {
+    const user = userEvent.setup();
+    const onUpdate = jest.fn().mockResolvedValue(undefined);
+
+    render(
+      <FlightDetailsGrid
+        pairs={[buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' })]}
+        onUpdate={onUpdate}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    const guardianSeatInput = screen.getByDisplayValue('NF');
+    await user.clear(guardianSeatInput);
+    await user.type(guardianSeatInput, '25B');
+    await user.tab();
+
+    expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', {
+      flight: { seat: '25B' },
+    });
+  });
+
   test('writes nested call.assigned_to when veteran assignment is edited', async () => {
     const user = userEvent.setup();
     const onUpdate = jest.fn().mockResolvedValue(undefined);
