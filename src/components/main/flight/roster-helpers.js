@@ -12,6 +12,28 @@ export function getAssignedTo(person) {
 }
 
 /**
+ * Veteran flight group for roster display and sort (trimmed; empty when missing or guardian).
+ * @param {Object|undefined|null} person
+ * @returns {string}
+ */
+export function getVeteranGroup(person) {
+  if (!person || person.type !== 'Veteran') {
+    return '';
+  }
+  return (person.group ?? '').trim();
+}
+
+/**
+ * Flight group used when sorting pairs (veteran's group).
+ * @param {Object} pair
+ * @returns {string}
+ */
+export function getPairSortGroup(pair) {
+  const veteran = pair.people?.find((p) => p.type === 'Veteran');
+  return getVeteranGroup(veteran);
+}
+
+/**
  * Normalize a seat string for display-independent comparison (trim, uppercase letter).
  * @param {string|undefined|null} seat
  * @returns {string}
@@ -251,7 +273,7 @@ export function filterPairs(pairs, filters) {
  * Sort pairs based on the sort criteria
  * Most sort keys use the veteran in the pair; seat uses veteran seat or guardian when absent.
  * @param {Array} pairs - Array of pair objects
- * @param {string} sortBy - Sort criteria (name/bus/assignment/status/seat)
+ * @param {string} sortBy - Sort criteria (name/bus/assignment/group/status/seat)
  * @returns {Array} Sorted pairs (new array)
  */
 export function sortPairs(pairs, sortBy) {
@@ -285,6 +307,14 @@ export function sortPairs(pairs, sortBy) {
         const assignA = getAssignedTo(vetA).toLowerCase();
         const assignB = getAssignedTo(vetB).toLowerCase();
         return assignA.localeCompare(assignB);
+      });
+      break;
+
+    case 'group':
+      sorted.sort((a, b) => {
+        const groupA = getPairSortGroup(a).toLowerCase();
+        const groupB = getPairSortGroup(b).toLowerCase();
+        return groupA.localeCompare(groupB);
       });
       break;
       

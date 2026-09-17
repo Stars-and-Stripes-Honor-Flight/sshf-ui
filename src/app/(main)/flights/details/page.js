@@ -89,7 +89,7 @@ function FlightDetailsPage() {
   const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues, nofly
   const [busFilter, setBusFilter] = React.useState('all');
   const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
-  const [sortBy, setSortBy] = React.useState('name'); // name, bus, assignment, status, seat
+  const [sortBy, setSortBy] = React.useState('name'); // name, bus, assignment, group, status, seat
   const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
@@ -709,6 +709,7 @@ function FlightDetailsPage() {
                           <MenuItem value="name">Veteran name A–Z</MenuItem>
                           <MenuItem value="bus">Bus</MenuItem>
                           <MenuItem value="assignment">Assignment</MenuItem>
+                          <MenuItem value="group">Flight group</MenuItem>
                           <MenuItem value="status">Status</MenuItem>
                           <MenuItem value="seat">Seat</MenuItem>
                         </TextField>

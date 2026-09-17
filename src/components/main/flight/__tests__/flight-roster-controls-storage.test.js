@@ -59,6 +59,15 @@ describe('flight-roster-controls-storage', () => {
       });
     });
 
+    test('persists flight group sort option', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        sortBy: 'group',
+      });
+
+      expect(loadFlightRosterControls('flight-1').sortBy).toBe('group');
+    });
+
     test('per-flight storage does not collide', () => {
       saveFlightRosterControls('flight-a', {
         ...DEFAULT_ROSTER_CONTROLS,

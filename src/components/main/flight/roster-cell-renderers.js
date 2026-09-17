@@ -13,7 +13,7 @@ import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 
-import { getAssignedTo, getPairStatusIssues } from './roster-helpers';
+import { getAssignedTo, getPairStatusIssues, getVeteranGroup } from './roster-helpers';
 
 /**
  * Render seat cell (editable for veteran and guardian)
@@ -110,6 +110,20 @@ export function renderStatusCell(pair) {
       ))}
     </Stack>
   );
+}
+
+/**
+ * Render veteran flight group (read-only; guardians show em dash)
+ */
+export function renderGroupCell(person, personType) {
+  if (!person) return null;
+
+  if (personType !== 'Veteran') {
+    return <Typography variant="body2">—</Typography>;
+  }
+
+  const group = getVeteranGroup(person);
+  return <Typography variant="body2">{group || '—'}</Typography>;
 }
 
 /**
@@ -280,6 +294,8 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return renderBusCell(person, personType, handlers);
     case 'status':
       return personType === 'Veteran' ? renderStatusCell(pair) : null;
+    case 'group':
+      return renderGroupCell(person, personType);
     case 'assigned_to':
       return renderAssignedToCell(person, pair, personType, handlers, localAssignedTo, hasCallMismatch);
     case 'confirmed':
