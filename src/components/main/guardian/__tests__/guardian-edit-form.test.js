@@ -545,5 +545,8 @@ describe('GuardianEditForm - Flown/Deceased lock', () => {
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
     const flightSection = document.getElementById('flight-section');
     expect(within(flightSection).getAllByRole('combobox')[0]).toBeEnabled();
+
+    expect(screen.getByRole('checkbox', { name: /can push wheelchair/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /waiver received/i })).toBeDisabled();
   });
 });
