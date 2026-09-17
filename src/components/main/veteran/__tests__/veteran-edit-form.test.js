@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 import { VeteranEditForm } from '../veteran-edit-form';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -419,5 +420,168 @@ describe('VeteranEditForm - Update Functionality', () => {
       expect(payload.service.branch).toBe('Army');
       expect(payload.flight.status).toBe('Active');
     });
+  });
+});
+
+describe('VeteranEditForm - Flown/Deceased lock', () => {
+  const mockHandleGoBack = jest.fn();
+
+  const baseVeteran = {
+    _id: 'test-veteran-123',
+    _rev: '1-abc123def456',
+    type: 'Veteran',
+    name: { first: 'John', middle: '', last: 'Doe', nickname: '' },
+    address: {
+      street: '123 Main St',
+      city: 'Anytown',
+      state: 'WI',
+      zip: '12345',
+      phone_day: '555-1234',
+      phone_mbl: '555-5678',
+      email: 'john.doe@example.com',
+    },
+    service: { branch: 'Army', rank: 'E5', dates: '1965-1970', activity: 'Infantry' },
+    vet_type: 'Vietnam',
+    birth_date: '1945-01-01',
+    gender: 'M',
+    app_date: '2024-01-01',
+    medical: {
+      level: '2',
+      alt_level: '',
+      food_restriction: 'None',
+      limitations: '',
+      review: '',
+      usesCane: false,
+      usesWalker: false,
+      usesWheelchair: false,
+      usesScooter: false,
+      isWheelchairBound: false,
+      requiresOxygen: false,
+      examRequired: false,
+      release: false,
+      form: false,
+    },
+    flight: {
+      status: 'Active',
+      group: '',
+      bus: '',
+      seat: '',
+      waiver: false,
+      status_note: '',
+      confirmed_date: '',
+      confirmed_by: '',
+      mediaWaiver: false,
+      vaccinated: false,
+      infection_test: false,
+      nofly: false,
+      history: [],
+    },
+    emerg_contact: {
+      name: '',
+      relation: '',
+      address: { phone: '', phone_mbl: '', email: '', street: '', city: '', state: '', zip: '' },
+    },
+    alt_contact: {
+      name: '',
+      relation: '',
+      address: { phone: '', phone_mbl: '', email: '', street: '', city: '', state: '', zip: '' },
+    },
+    guardian: { name: '', id: '', pref_notes: '' },
+    mail_call: {
+      name: '',
+      relation: '',
+      notes: '',
+      received: false,
+      adopt: false,
+      address: { phone: '', email: '' },
+    },
+    call: { assigned_to: '', notes: '', mail_sent: false, email_sent: false, history: [] },
+    shirt: { size: '' },
+    apparel: {
+      jacket_size: '',
+      delivery: 'None',
+      item: '',
+      shirt_size: '',
+      date: '',
+      by: '',
+      notes: '',
+    },
+    media_newspaper_ok: 'No',
+    media_interview_ok: 'No',
+    accommodations: {
+      hotel_name: '',
+      room_type: 'None',
+      arrival_date: '',
+      departure_date: '',
+      notes: '',
+      arrival_time: '',
+      arrival_flight: '',
+      attend_banquette: false,
+      banquette_guest: '',
+      departure_time: '',
+      departure_flight: '',
+    },
+    homecoming: { destination: '' },
+    metadata: {
+      created_at: '2024-01-01T00:00:00Z',
+      created_by: 'System',
+      updated_at: '2024-01-01T00:00:00Z',
+      updated_by: 'System',
+    },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    sessionStorage.clear();
+    useRouter.mockReturnValue({ push: jest.fn(), back: jest.fn() });
+    useNavigationBack.mockReturnValue(mockHandleGoBack);
+    Object.defineProperty(window, 'history', {
+      value: { length: 2 },
+      writable: true,
+    });
+    api.updateVeteran = jest.fn().mockResolvedValue({
+      ...baseVeteran,
+      flight: { ...baseVeteran.flight, status: 'Deceased' },
+      _rev: '2-newrev',
+    });
+  });
+
+  test('keeps Save enabled after changing status to Deceased and persists the change', async () => {
+    const user = userEvent.setup();
+    render(<VeteranEditForm veteran={baseVeteran} />);
+
+    const flightSection = document.getElementById('flight-section');
+    const [statusSelect] = within(flightSection).getAllByRole('combobox');
+    expect(statusSelect).toBeEnabled();
+
+    fireEvent.mouseDown(statusSelect);
+    await user.click(screen.getByRole('option', { name: 'Deceased' }));
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    expect(saveButton).toBeEnabled();
+
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(api.updateVeteran).toHaveBeenCalledWith(
+        'test-veteran-123',
+        expect.objectContaining({
+          flight: expect.objectContaining({ status: 'Deceased' }),
+        })
+      );
+    });
+  });
+
+  test('disables Save for Flown/Deceased veterans when there are no pending changes', () => {
+    const deceasedVeteran = {
+      ...baseVeteran,
+      flight: { ...baseVeteran.flight, status: 'Deceased' },
+    };
+
+    render(<VeteranEditForm veteran={deceasedVeteran} />);
+
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
+    const flightSection = document.getElementById('flight-section');
+    expect(within(flightSection).getAllByRole('combobox')[0]).toBeEnabled();
   });
 });

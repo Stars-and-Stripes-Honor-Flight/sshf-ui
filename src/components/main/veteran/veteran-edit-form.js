@@ -345,6 +345,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
   
   // Determine if form should be disabled (Flown or Deceased status)
   const isFormDisabled = watchStatus === 'Flown' || watchStatus === 'Deceased';
+  const isSaveDisabled = saving || (isFormDisabled && !isDirty);
 
   // Scroll to section handler
   const handleScrollToSection = React.useCallback((sectionId) => {
@@ -733,14 +734,14 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
             Cancel
           </Button>
           <Tooltip 
-            title={isFormDisabled ? "Cannot edit records with 'Flown' or 'Deceased' status" : ""}
+            title={isFormDisabled && !isDirty ? "No changes to save. Change status to edit other fields." : ""}
             placement="top"
           >
             <span>
               <Button 
                 type="submit" 
                 variant="contained"
-                disabled={saving || isFormDisabled}
+                disabled={isSaveDisabled}
                 sx={{
                   borderRadius: 2,
                   fontWeight: 'medium',

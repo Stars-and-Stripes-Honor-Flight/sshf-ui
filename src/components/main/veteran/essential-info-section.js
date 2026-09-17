@@ -480,7 +480,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                 control={control}
                 name="flight.status"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.status)} fullWidth disabled={disabled}>
+                  <FormControl error={Boolean(errors.flight?.status)} fullWidth>
                     <InputLabel required>Status</InputLabel>
                     <Select {...field}>
                       <Option value="Active">Active</Option>
