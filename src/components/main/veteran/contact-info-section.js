@@ -454,12 +454,13 @@ export function ContactInfoSection({
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
                     name="mail_call.received"
                     render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
                     )}
                   />
                 }
@@ -468,12 +469,13 @@ export function ContactInfoSection({
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
                     name="mail_call.adopt"
                     render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
+                      <Checkbox {...field} checked={field.value} disabled={disabled} />
                     )}
                   />
                 }

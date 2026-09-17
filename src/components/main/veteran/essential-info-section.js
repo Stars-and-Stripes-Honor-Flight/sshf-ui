@@ -208,6 +208,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
               </Typography>
               <Stack direction="row" spacing={2} flexWrap="wrap">
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -220,6 +221,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Cane"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -232,6 +234,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Walker"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -244,6 +247,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Wheelchair"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -259,6 +263,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -273,6 +278,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -287,6 +293,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -301,6 +308,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -315,6 +323,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -430,6 +439,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -444,6 +454,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
             </Grid>
             <Grid xs={12} md={6}>
               <FormControlLabel
+                disabled={disabled}
                 control={
                   <Controller
                     control={control}
@@ -584,6 +595,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
               </Typography>
               <Stack direction="row" spacing={2} flexWrap="wrap">
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -596,6 +608,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Liability Waiver Received"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -608,6 +621,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Media Waiver Received"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -620,6 +634,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Vaccinated"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
@@ -632,6 +647,7 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                   label="Infection Tested"
                 />
                 <FormControlLabel
+                  disabled={disabled}
                   control={
                     <Controller
                       control={control}
