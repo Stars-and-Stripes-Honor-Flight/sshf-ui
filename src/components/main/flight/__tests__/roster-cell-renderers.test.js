@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
-import { renderSeatCell, renderBusCell } from '../roster-cell-renderers';
+import { renderSeatCell, renderBusCell, renderGroupCell } from '../roster-cell-renderers';
 
 function MockEditableField({ value, onBlur, placeholder, maxWidth, minWidth, inputProps }) {
   return (
@@ -84,5 +84,25 @@ describe('renderBusCell', () => {
 
     expect(screen.queryByTestId('bus-selector')).not.toBeInTheDocument();
     expect(screen.getByText('Alpha3')).toBeInTheDocument();
+  });
+});
+
+describe('renderGroupCell', () => {
+  test('shows trimmed group for veteran', () => {
+    render(renderGroupCell({ type: 'Veteran', group: '  Bravo  ' }, 'Veteran'));
+
+    expect(screen.getByText('Bravo')).toBeInTheDocument();
+  });
+
+  test('shows em dash for empty veteran group', () => {
+    render(renderGroupCell({ type: 'Veteran', group: ' ' }, 'Veteran'));
+
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('shows em dash for guardian row', () => {
+    render(renderGroupCell({ type: 'Guardian', group: 'Alpha' }, 'Guardian'));
+
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,7 @@
 import {
   getAssignedTo,
+  getVeteranGroup,
+  getPairSortGroup,
   getUniqueAssignedCallers,
   getPairStatusIssues,
   pairHasIssues,
@@ -29,6 +31,32 @@ describe('roster-helpers', () => {
     test('prefers flat assigned_to over nested', () => {
       const person = { assigned_to: 'Karyn', call: { assigned_to: 'Jim K' } };
       expect(getAssignedTo(person)).toBe('Karyn');
+    });
+  });
+
+  describe('getVeteranGroup', () => {
+    test('returns trimmed group for veterans', () => {
+      expect(getVeteranGroup({ type: 'Veteran', group: '  Alpha  ' })).toBe('Alpha');
+    });
+
+    test('returns empty string for whitespace-only group', () => {
+      expect(getVeteranGroup({ type: 'Veteran', group: ' ' })).toBe('');
+    });
+
+    test('returns empty string for guardians', () => {
+      expect(getVeteranGroup({ type: 'Guardian', group: 'Alpha' })).toBe('');
+    });
+  });
+
+  describe('getPairSortGroup', () => {
+    test('uses veteran group from pair', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', group: 'Bravo' },
+          { type: 'Guardian', group: 'Ignored' },
+        ],
+      };
+      expect(getPairSortGroup(pair)).toBe('Bravo');
     });
   });
 
@@ -539,6 +567,25 @@ describe('roster-helpers', () => {
       expect(result[0].pairId).toBe('3');
       expect(result[1].pairId).toBe('2');
       expect(result[2].pairId).toBe('1');
+    });
+
+    test('sorts by flight group (veteran group, trimmed)', () => {
+      const groupPairs = [
+        {
+          pairId: 'z',
+          people: [{ type: 'Veteran', name_last: 'Z', name_first: 'Z', group: '  Zulu  ' }],
+        },
+        {
+          pairId: 'a',
+          people: [{ type: 'Veteran', name_last: 'A', name_first: 'A', group: 'Alpha' }],
+        },
+        {
+          pairId: 'm',
+          people: [{ type: 'Veteran', name_last: 'M', name_first: 'M', group: ' ' }],
+        },
+      ];
+      const result = sortPairs(groupPairs, 'group');
+      expect(result.map((p) => p.pairId)).toEqual(['m', 'a', 'z']);
     });
 
     test('sorts by status (issues first, then OK)', () => {

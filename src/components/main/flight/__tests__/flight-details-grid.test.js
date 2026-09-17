@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { FlightDetailsGrid } from '../flight-details-grid';
+import { ACTIVITY_PRESETS } from '../column-configs';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({ push: jest.fn() })),
@@ -66,6 +67,8 @@ function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
 }
 
 describe('FlightDetailsGrid - assigned_to display', () => {
+  const callerGridProps = { activityPreset: ACTIVITY_PRESETS.CALLER };
+
   test('shows flat assigned_to from flight detail API on veteran and guardian rows', () => {
     render(
       <FlightDetailsGrid
@@ -76,6 +79,7 @@ describe('FlightDetailsGrid - assigned_to display', () => {
         busFilter="all"
         flightId="flight-1"
         flightName="Test Flight"
+        {...callerGridProps}
       />
     );
 
@@ -97,6 +101,7 @@ describe('FlightDetailsGrid - assigned_to display', () => {
         busFilter="all"
         flightId="flight-1"
         flightName="Test Flight"
+        {...callerGridProps}
       />
     );
 
@@ -114,6 +119,7 @@ describe('FlightDetailsGrid - assigned_to display', () => {
         busFilter="all"
         flightId="flight-1"
         flightName="Test Flight"
+        {...callerGridProps}
       />
     );
 
@@ -176,6 +182,7 @@ describe('FlightDetailsGrid - assigned_to display', () => {
         busFilter="all"
         flightId="flight-1"
         flightName="Test Flight"
+        {...callerGridProps}
       />
     );
 
@@ -190,6 +197,32 @@ describe('FlightDetailsGrid - assigned_to display', () => {
     expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', {
       call: { assigned_to: 'New Caller' },
     });
+  });
+});
+
+describe('FlightDetailsGrid - ops flight group column (issue #165)', () => {
+  test('shows veteran flight group on ops preset and em dash on guardian row', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people[0].group = '  Alpha Flight  ';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        activityPreset={ACTIVITY_PRESETS.OPS}
+      />
+    );
+
+    expect(screen.getByText('Alpha Flight')).toBeInTheDocument();
+    expect(screen.getByText('Flt Grp')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Karyn')).not.toBeInTheDocument();
+    const dashes = screen.getAllByText('—');
+    expect(dashes.length).toBeGreaterThanOrEqual(1);
   });
 });
 
