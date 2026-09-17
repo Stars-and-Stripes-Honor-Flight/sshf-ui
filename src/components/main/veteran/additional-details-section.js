@@ -134,7 +134,7 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
                 name="apparel.delivery"
                 render={({ field }) => (
                   <FormControl error={Boolean(errors.apparel?.delivery)} fullWidth disabled={disabled}>
-                    <InputLabel>Delivery Status</InputLabel>
+                    <InputLabel>Delivery Method</InputLabel>
                     <Select {...field}>
                       <Option value="">None</Option>
                       <Option value="Mailed">Mailed</Option>

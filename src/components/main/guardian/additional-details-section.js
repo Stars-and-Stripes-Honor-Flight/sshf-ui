@@ -43,6 +43,23 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
             <Grid xs={12} md={4}>
               <Controller
                 control={control}
+                name="apparel.item"
+                render={({ field }) => (
+                  <FormControl fullWidth disabled={disabled}>
+                    <InputLabel>Apparel Item</InputLabel>
+                    <Select {...field}>
+                      <Option value="None">None</Option>
+                      <Option value="Jacket">Jacket</Option>
+                      <Option value="Polo">Polo</Option>
+                      <Option value="Both">Both</Option>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={4}>
+              <Controller
+                control={control}
                 name="apparel.jacket_size"
                 render={({ field }) => (
                   <FormControl error={Boolean(errors.apparel?.jacket_size)} fullWidth disabled={disabled}>
@@ -60,40 +77,6 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
                       <Option value="5XL">5X-Large</Option>
                     </Select>
                     {errors.apparel?.jacket_size && <FormHelperText>{errors.apparel.jacket_size.message}</FormHelperText>}
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={4}>
-              <Controller
-                control={control}
-                name="apparel.delivery"
-                render={({ field }) => (
-                  <FormControl fullWidth disabled={disabled}>
-                    <InputLabel>Delivery Method</InputLabel>
-                    <Select {...field}>
-                      <Option value="None">None</Option>
-                      <Option value="Mailed">Mailed</Option>
-                      <Option value="Training">Training</Option>
-                      <Option value="Home">Home</Option>
-                    </Select>
-                  </FormControl>
-                )}
-              />
-            </Grid>
-            <Grid xs={12} md={4}>
-              <Controller
-                control={control}
-                name="apparel.item"
-                render={({ field }) => (
-                  <FormControl fullWidth disabled={disabled}>
-                    <InputLabel>Apparel Items</InputLabel>
-                    <Select {...field}>
-                      <Option value="None">None</Option>
-                      <Option value="Jacket">Jacket</Option>
-                      <Option value="Polo">Polo</Option>
-                      <Option value="Both">Both</Option>
-                    </Select>
                   </FormControl>
                 )}
               />
@@ -140,6 +123,23 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
                     <InputLabel>Date Sent</InputLabel>
                     <OutlinedInput {...field} type="date" />
                     {errors.apparel?.date ? <FormHelperText>{errors.apparel.date.message}</FormHelperText> : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={4}>
+              <Controller
+                control={control}
+                name="apparel.delivery"
+                render={({ field }) => (
+                  <FormControl fullWidth disabled={disabled}>
+                    <InputLabel>Delivery Method</InputLabel>
+                    <Select {...field}>
+                      <Option value="None">None</Option>
+                      <Option value="Mailed">Mailed</Option>
+                      <Option value="Training">Training</Option>
+                      <Option value="Home">Home</Option>
+                    </Select>
                   </FormControl>
                 )}
               />

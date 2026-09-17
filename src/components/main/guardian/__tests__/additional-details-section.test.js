@@ -42,6 +42,27 @@ describe('AdditionalDetailsSection', () => {
     expect(screen.getByTestId('form-text-field-metadata.created_at')).toBeInTheDocument();
   });
 
+  test('renders apparel fields in the same order as the veteran form', () => {
+    const { container } = render(
+      <TestWrapper defaultValues={{ apparel: { item: '', jacket_size: '', shirt_size: '', date: '', delivery: '', by: '', notes: '' } }}>
+        <AdditionalDetailsSection errors={{}} />
+      </TestWrapper>
+    );
+
+    const apparelFields = [...container.querySelectorAll('[name^="apparel."]')].map((el) => el.getAttribute('name'));
+    expect(apparelFields).toEqual([
+      'apparel.item',
+      'apparel.jacket_size',
+      'apparel.shirt_size',
+      'apparel.date',
+      'apparel.delivery',
+      'apparel.by',
+      'apparel.notes',
+    ]);
+    expect(screen.getByText('Apparel Item')).toBeInTheDocument();
+    expect(screen.queryByText('Apparel Items')).not.toBeInTheDocument();
+  });
+
   test('renders apparel information fields', () => {
     const { container } = render(
       <TestWrapper defaultValues={{ shirt: { size: 'M' }, apparel: { item: '', jacket_size: 'M', shirt_size: 'M', delivery: '' } }}>
