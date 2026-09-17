@@ -293,6 +293,29 @@ describe('VeteranEditForm - Update Functionality', () => {
     });
   });
 
+  test('renders FM # in guardian pairing section with initial value', () => {
+    render(<VeteranEditForm veteran={mockVeteran} />);
+
+    expect(document.querySelector('input[name="call.fm_number"]')).toHaveValue('12345');
+  });
+
+  test('includes call.fm_number in save payload when FM # is edited', async () => {
+    const user = userEvent.setup();
+    render(<VeteranEditForm veteran={mockVeteran} />);
+
+    const fmInput = document.querySelector('input[name="call.fm_number"]');
+    await user.clear(fmInput);
+    await user.type(fmInput, '16');
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      const payload = mockUpdateVeteran.mock.calls[0][1];
+      expect(payload.call).toEqual(expect.objectContaining({ fm_number: '16' }));
+    });
+  });
+
   test('excludes history arrays from API call', async () => {
     const user = userEvent.setup();
     render(<VeteranEditForm veteran={mockVeteran} />);
@@ -607,6 +630,7 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
     expect(screen.getByRole('checkbox', { name: /liability waiver received/i })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /mail call received/i })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /mail call adoption/i })).toBeDisabled();
+    expect(document.querySelector('input[name="call.fm_number"]')).toBeDisabled();
   });
 
   test('dims checkbox labels when form is locked', () => {

@@ -34,7 +34,8 @@ export function PairingInformationCard({
   onOpenHistory, // Optional callback to open history dialog
   showHiddenFields = false, // Only for veteran form
   entity, // The main entity (veteran or guardian) for accessing pairing data
-  searchButton // Optional button to render next to preference notes label
+  searchButton, // Optional button to render next to preference notes label
+  disabled = false,
 }) {
   const router = useRouter();
   
@@ -203,6 +204,28 @@ export function PairingInformationCard({
               />
             </>
           )}
+        </Grid>
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          <Grid xs={12} sm={4} md={3}>
+            <Controller
+              control={control}
+              name="call.fm_number"
+              render={({ field }) => (
+                <FormControl error={Boolean(errors.call?.fm_number)} fullWidth disabled={disabled}>
+                  <InputLabel>FM #</InputLabel>
+                  <OutlinedInput
+                    {...field}
+                    value={field.value ?? ''}
+                    label="FM #"
+                    inputProps={{ maxLength: 5 }}
+                  />
+                  {errors.call?.fm_number ? (
+                    <FormHelperText>{errors.call.fm_number.message}</FormHelperText>
+                  ) : null}
+                </FormControl>
+              )}
+            />
+          </Grid>
         </Grid>
       </CardContent>
     </Card>

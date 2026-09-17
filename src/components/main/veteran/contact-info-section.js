@@ -357,6 +357,7 @@ export function ContactInfoSection({
           showHiddenFields={true}
           entity={veteran}
           watch={watch}
+          disabled={disabled}
           searchButton={
             watch && (watch('guardian.pref_notes') || '').trim() ? (
               <Button

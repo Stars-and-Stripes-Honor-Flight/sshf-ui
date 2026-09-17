@@ -100,7 +100,7 @@ export const guardianSchema = z.object({
 
   // Call Center Info
   call: z.object({
-    fm_number: z.string().optional(),
+    fm_number: z.string().max(5).optional(),
     notes: z.string().optional(),
     email_sent: z.boolean().default(false),
     assigned_to: z.string().optional(),

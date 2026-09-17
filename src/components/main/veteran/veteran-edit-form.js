@@ -239,6 +239,7 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
     call: {
       assigned_to: '',
       notes: '',
+      fm_number: '',
       how_heard_about: 'Unknown',
       mail_sent: false,
       email_sent: false,

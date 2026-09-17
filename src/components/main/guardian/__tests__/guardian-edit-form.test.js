@@ -261,6 +261,29 @@ describe('GuardianEditForm - Update Functionality', () => {
     });
   });
 
+  test('renders FM # in veteran pairing section with initial value', () => {
+    render(<GuardianEditForm guardian={mockGuardian} />);
+
+    expect(document.querySelector('input[name="call.fm_number"]')).toHaveValue('12345');
+  });
+
+  test('includes call.fm_number in save payload when FM # is edited', async () => {
+    const user = userEvent.setup();
+    render(<GuardianEditForm guardian={mockGuardian} />);
+
+    const fmInput = document.querySelector('input[name="call.fm_number"]');
+    await user.clear(fmInput);
+    await user.type(fmInput, '16');
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      const payload = mockUpdateGuardian.mock.calls[0][1];
+      expect(payload.call).toEqual(expect.objectContaining({ fm_number: '16' }));
+    });
+  });
+
   test('excludes history arrays from API call', async () => {
     const user = userEvent.setup();
     render(<GuardianEditForm guardian={mockGuardian} />);

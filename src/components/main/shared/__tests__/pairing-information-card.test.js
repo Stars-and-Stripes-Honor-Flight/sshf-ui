@@ -211,5 +211,69 @@ describe('PairingInformationCard', () => {
     expect(hiddenIdField).toBeInTheDocument();
     expect(hiddenNameField).toBeInTheDocument();
   });
+
+  test('renders FM # field bound to call.fm_number', () => {
+    render(
+      <TestWrapper defaultValues={{ call: { fm_number: '16' } }}>
+        <PairingInformationCard
+          errors={{}}
+          cardId="test-pairing-card"
+          title="Guardian Pairing Information"
+          pairingType="guardian"
+          preferenceNotesFieldName="guardian.pref_notes"
+          preferenceNotesPlaceholder="Guardian preference notes"
+          onManagePairing={jest.fn()}
+          entity={{}}
+        />
+      </TestWrapper>
+    );
+
+    const fmInput = document.querySelector('input[name="call.fm_number"]');
+    expect(fmInput).toBeInTheDocument();
+    expect(fmInput).toHaveValue('16');
+  });
+
+  test('allows editing FM # up to maxLength 5', async () => {
+    const user = userEvent.setup();
+    render(
+      <TestWrapper defaultValues={{ call: { fm_number: '' } }}>
+        <PairingInformationCard
+          errors={{}}
+          cardId="test-pairing-card"
+          title="Veteran Pairing Information"
+          pairingType="veteran"
+          preferenceNotesFieldName="veteran.pref_notes"
+          preferenceNotesPlaceholder="Veteran preference notes"
+          onManagePairing={jest.fn()}
+          entity={{}}
+        />
+      </TestWrapper>
+    );
+
+    const fmInput = document.querySelector('input[name="call.fm_number"]');
+    await user.type(fmInput, '12345');
+    expect(fmInput).toHaveValue('12345');
+    expect(fmInput).toHaveAttribute('maxlength', '5');
+  });
+
+  test('disables FM # field when disabled is true', () => {
+    render(
+      <TestWrapper defaultValues={{ call: { fm_number: '16' } }}>
+        <PairingInformationCard
+          errors={{}}
+          cardId="test-pairing-card"
+          title="Guardian Pairing Information"
+          pairingType="guardian"
+          preferenceNotesFieldName="guardian.pref_notes"
+          preferenceNotesPlaceholder="Guardian preference notes"
+          onManagePairing={jest.fn()}
+          entity={{}}
+          disabled
+        />
+      </TestWrapper>
+    );
+
+    expect(document.querySelector('input[name="call.fm_number"]')).toBeDisabled();
+  });
 });
 
