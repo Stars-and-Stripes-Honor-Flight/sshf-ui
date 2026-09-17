@@ -2,37 +2,25 @@
 
 import * as React from 'react';
 import { Controller } from 'react-hook-form';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
-import Grid from '@mui/material/Grid2';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
-export function FormCheckboxField({ 
-  control, 
-  name, 
-  label, 
-  error, 
-  gridProps = {},
-  ...other 
-}) {
+/**
+ * Checkbox wired to react-hook-form with Controller wrapping FormControlLabel
+ * so fields register correctly (required for isDirty / save-disable logic).
+ */
+export function FormCheckboxField({ control, name, label, disabled = false }) {
   return (
-    <Grid {...gridProps}>
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <FormControlLabel
-            control={
-              <Checkbox 
-                {...field} 
-                checked={field.value || false}
-                {...other}
-              />
-            }
-            label={label}
-          />
-        )}
-      />
-    </Grid>
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormControlLabel
+          disabled={disabled}
+          control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
+          label={label}
+        />
+      )}
+    />
   );
 }
-
