@@ -82,6 +82,13 @@ export const veteranSchema = z.object({
     review: z.string(),
   }),
 
+  // Call Center Info (edit form fields; full contract in veteranApiSchema)
+  call: z
+    .object({
+      fm_number: z.string().max(5).optional(),
+    })
+    .optional(),
+
   // Flight Info
   flight: z.object({
     status: z.enum(['Active', 'Flown', 'Deceased', 'Removed', 'Future-Spring', 'Future-Fall', 'Future-PostRestriction']),

@@ -193,6 +193,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     call: {
       assigned_to: '',
       notes: '',
+      fm_number: '',
       how_heard_about: 'Unknown',
       email_sent: false,
       ...(guardian.call || {}),

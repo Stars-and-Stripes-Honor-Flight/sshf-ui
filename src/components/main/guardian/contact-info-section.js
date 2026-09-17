@@ -139,6 +139,7 @@ export function ContactInfoSection({
         onOpenHistory={onOpenHistory}
         showHiddenFields={false}
         entity={entityWithFormState}
+        disabled={disabled}
       />
     </Stack>
   );
