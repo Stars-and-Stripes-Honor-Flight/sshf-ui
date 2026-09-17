@@ -154,5 +154,29 @@ describe('ContactInfoSection', () => {
 
     expect(screen.getByTestId('pairing-information-card')).toBeInTheDocument();
   });
+
+  test('disables Mail Call checkboxes when section is disabled', () => {
+    render(
+      <TestWrapper
+        defaultValues={{
+          mail_call: { received: false, adopt: false, address: { phone: '', email: '' } },
+        }}
+      >
+        <ContactInfoSection
+          errors={{}}
+          veteran={mockVeteran}
+          onOpenHistory={mockOnOpenHistory}
+          onManagePairing={mockOnManagePairing}
+          disabled
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByRole('checkbox', { name: /mail call received/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /mail call adoption/i })).toBeDisabled();
+    expect(
+      screen.getByRole('checkbox', { name: /mail call received/i }).closest('.MuiFormControlLabel-root')
+    ).toHaveClass('Mui-disabled');
+  });
 });
 

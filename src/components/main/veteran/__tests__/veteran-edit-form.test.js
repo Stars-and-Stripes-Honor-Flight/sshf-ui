@@ -436,8 +436,10 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
       city: 'Anytown',
       state: 'WI',
       zip: '12345',
+      county: '',
       phone_day: '555-1234',
       phone_mbl: '555-5678',
+      phone_eve: '',
       email: 'john.doe@example.com',
     },
     service: { branch: 'Army', rank: 'E5', dates: '1965-1970', activity: 'Infantry' },
@@ -463,6 +465,7 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
     },
     flight: {
       status: 'Active',
+      id: '',
       group: '',
       bus: '',
       seat: '',
@@ -495,11 +498,18 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
       adopt: false,
       address: { phone: '', email: '' },
     },
-    call: { assigned_to: '', notes: '', mail_sent: false, email_sent: false, history: [] },
+    call: {
+      assigned_to: '',
+      notes: '',
+      how_heard_about: 'Unknown',
+      mail_sent: false,
+      email_sent: false,
+      history: [],
+    },
     shirt: { size: '' },
     apparel: {
       jacket_size: '',
-      delivery: 'None',
+      delivery: '',
       item: '',
       shirt_size: '',
       date: '',
@@ -583,5 +593,36 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
     const flightSection = document.getElementById('flight-section');
     expect(within(flightSection).getAllByRole('combobox')[0]).toBeEnabled();
+  });
+
+  test('disables all checkboxes including Mail Call when form is locked', () => {
+    const flownVeteran = {
+      ...baseVeteran,
+      flight: { ...baseVeteran.flight, status: 'Flown' },
+    };
+
+    render(<VeteranEditForm veteran={flownVeteran} />);
+
+    expect(screen.getByRole('checkbox', { name: /cane/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /liability waiver received/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /mail call received/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /mail call adoption/i })).toBeDisabled();
+  });
+
+  test('dims checkbox labels when form is locked', () => {
+    const deceasedVeteran = {
+      ...baseVeteran,
+      flight: { ...baseVeteran.flight, status: 'Deceased' },
+    };
+
+    render(<VeteranEditForm veteran={deceasedVeteran} />);
+
+    const mailCallLabel = screen
+      .getByRole('checkbox', { name: /mail call received/i })
+      .closest('.MuiFormControlLabel-root');
+    expect(mailCallLabel).toHaveClass('Mui-disabled');
+
+    const caneLabel = screen.getByRole('checkbox', { name: /cane/i }).closest('.MuiFormControlLabel-root');
+    expect(caneLabel).toHaveClass('Mui-disabled');
   });
 });

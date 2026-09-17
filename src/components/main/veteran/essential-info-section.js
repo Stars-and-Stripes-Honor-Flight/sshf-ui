@@ -5,9 +5,7 @@ import { Controller } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
@@ -21,6 +19,7 @@ import { FormSectionHeader } from '@/components/main/shared/form-section-header'
 import { HistoryButton } from '@/components/main/shared/history-button';
 import { PersonalInformationCard } from '@/components/main/shared/personal-information-card';
 import { FormSelectField } from '@/components/main/shared/form-select-field';
+import { FormCheckboxField } from '@/components/main/shared/form-checkbox-field';
 import { howHeardAboutOptions } from '@/schemas/call';
 import { FlightGroupField } from './flight-group-field';
 
@@ -207,124 +206,55 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                 Mobility Equipment Used:
               </Typography>
               <Stack direction="row" spacing={2} flexWrap="wrap">
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="medical.usesCane"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
-                  label="Cane"
-                />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="medical.usesWalker"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
-                  label="Walker"
-                />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="medical.usesWheelchair"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
+                <FormCheckboxField control={control} name="medical.usesCane" label="Cane" disabled={disabled} />
+                <FormCheckboxField control={control} name="medical.usesWalker" label="Walker" disabled={disabled} />
+                <FormCheckboxField
+                  control={control}
+                  name="medical.usesWheelchair"
                   label="Wheelchair"
+                  disabled={disabled}
                 />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="medical.usesScooter"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
-                  label="Scooter"
-                />
+                <FormCheckboxField control={control} name="medical.usesScooter" label="Scooter" disabled={disabled} />
               </Stack>
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="medical.isWheelchairBound"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="medical.isWheelchairBound"
                 label="Wheelchair Bound (unable to transfer)"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="medical.requiresOxygen"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="medical.requiresOxygen"
                 label="Requires Oxygen"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="medical.examRequired"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="medical.examRequired"
                 label="Medical Exam Required"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="medical.release"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="medical.release"
                 label="Medical Waiver Received"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="medical.form"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="medical.form"
                 label="Medical Form Received"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12}>
@@ -429,31 +359,19 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="call.mail_sent"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="call.mail_sent"
                 label="Veteran Mail Sent"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="call.email_sent"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} disabled={disabled} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="call.email_sent"
                 label="Email Veteran"
+                disabled={disabled}
               />
             </Grid>
           </Grid>
@@ -583,66 +501,31 @@ export function EssentialInfoSection({ control, errors, veteran, onOpenHistory, 
                 Flight Requirements:
               </Typography>
               <Stack direction="row" spacing={2} flexWrap="wrap">
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="flight.waiver"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
+                <FormCheckboxField
+                  control={control}
+                  name="flight.waiver"
                   label="Liability Waiver Received"
+                  disabled={disabled}
                 />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="flight.mediaWaiver"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
+                <FormCheckboxField
+                  control={control}
+                  name="flight.mediaWaiver"
                   label="Media Waiver Received"
+                  disabled={disabled}
                 />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="flight.vaccinated"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
+                <FormCheckboxField
+                  control={control}
+                  name="flight.vaccinated"
                   label="Vaccinated"
+                  disabled={disabled}
                 />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="flight.infection_test"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
+                <FormCheckboxField
+                  control={control}
+                  name="flight.infection_test"
                   label="Infection Tested"
+                  disabled={disabled}
                 />
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="flight.nofly"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} disabled={disabled} />
-                      )}
-                    />
-                  }
-                  label="Not Flying"
-                />
+                <FormCheckboxField control={control} name="flight.nofly" label="Not Flying" disabled={disabled} />
               </Stack>
             </Grid>
           </Grid>

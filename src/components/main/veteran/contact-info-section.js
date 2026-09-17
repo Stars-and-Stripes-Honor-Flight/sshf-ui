@@ -6,9 +6,7 @@ import { Controller } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
@@ -21,6 +19,7 @@ import { paths } from '@/paths';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
 import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
+import { FormCheckboxField } from '@/components/main/shared/form-checkbox-field';
 
 export function ContactInfoSection({ 
   control, 
@@ -453,31 +452,19 @@ export function ContactInfoSection({
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="mail_call.received"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="mail_call.received"
                 label="Mail Call Received"
+                disabled={disabled}
               />
             </Grid>
             <Grid xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="mail_call.adopt"
-                    render={({ field }) => (
-                      <Checkbox {...field} checked={field.value} />
-                    )}
-                  />
-                }
+              <FormCheckboxField
+                control={control}
+                name="mail_call.adopt"
                 label="Mail Call Adoption"
+                disabled={disabled}
               />
             </Grid>
           </Grid>
