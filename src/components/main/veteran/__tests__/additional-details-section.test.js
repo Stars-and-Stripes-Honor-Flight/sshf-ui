@@ -44,6 +44,27 @@ describe('AdditionalDetailsSection', () => {
     expect(screen.getByTestId('form-text-field-metadata.created_at')).toBeInTheDocument();
   });
 
+  test('renders apparel fields in consistent order with Delivery Method label', () => {
+    const { container } = render(
+      <TestWrapper defaultValues={{ apparel: { item: '', jacket_size: '', shirt_size: '', date: '', delivery: '', by: '', notes: '' } }}>
+        <AdditionalDetailsSection errors={{}} />
+      </TestWrapper>
+    );
+
+    const apparelFields = [...container.querySelectorAll('[name^="apparel."]')].map((el) => el.getAttribute('name'));
+    expect(apparelFields).toEqual([
+      'apparel.item',
+      'apparel.jacket_size',
+      'apparel.shirt_size',
+      'apparel.date',
+      'apparel.delivery',
+      'apparel.by',
+      'apparel.notes',
+    ]);
+    expect(screen.getByText('Delivery Method')).toBeInTheDocument();
+    expect(screen.queryByText('Delivery Status')).not.toBeInTheDocument();
+  });
+
   test('renders apparel information fields', () => {
     const { container } = render(
       <TestWrapper defaultValues={{ apparel: { item: 'Jacket', jacket_size: 'L', shirt_size: 'L' } }}>
