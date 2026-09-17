@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { GuardianEditForm } from '../guardian-edit-form';
@@ -395,5 +395,158 @@ describe('GuardianEditForm - Update Functionality', () => {
       expect(payload.flight.status).toBe('Active');
       expect(payload.medical.level).toBe('A');
     });
+  });
+});
+
+describe('GuardianEditForm - Flown/Deceased lock', () => {
+  const mockHandleGoBack = jest.fn();
+
+  const baseGuardian = {
+    _id: 'test-guardian-123',
+    _rev: '1-abc123def456',
+    type: 'Guardian',
+    name: { first: 'Jane', middle: '', last: 'Smith', nickname: '' },
+    address: {
+      street: '456 Oak Ave',
+      city: 'Springfield',
+      state: 'IL',
+      zip: '62701',
+      county: 'Sangamon',
+      phone_day: '555-1234',
+      phone_mbl: '555-5678',
+      email: 'jane.smith@example.com',
+    },
+    birth_date: '1985-03-15',
+    gender: 'F',
+    occupation: 'Teacher',
+    app_date: '2024-01-01',
+    notes: { service: 'N', other: '' },
+    medical: {
+      level: 'A',
+      food_restriction: 'None',
+      can_push: true,
+      can_lift: true,
+      limitations: '',
+      experience: '',
+      release: false,
+      form: false,
+    },
+    flight: {
+      status: 'Active',
+      id: '',
+      group: '',
+      bus: '',
+      seat: '',
+      waiver: false,
+      vaccinated: false,
+      training: 'None',
+      training_complete: false,
+      training_see_doc: false,
+      training_notes: '',
+      status_note: '',
+      mediaWaiver: false,
+      infection_test: false,
+      nofly: false,
+      booksOrdered: 0,
+      confirmed_date: '',
+      confirmed_by: '',
+      paid: false,
+      exempt: false,
+      history: [],
+    },
+    call: { assigned_to: '', notes: '', email_sent: false, history: [] },
+    emerg_contact: {
+      name: '',
+      relation: '',
+      address: { phone: '', email: '' },
+    },
+    veteran: { pref_notes: '', pairings: [] },
+    shirt: { size: 'None' },
+    apparel: {
+      item: 'None',
+      jacket_size: 'None',
+      shirt_size: 'None',
+      delivery: 'None',
+      date: '',
+      by: '',
+      notes: '',
+    },
+    accommodations: {
+      hotel_name: '',
+      room_type: 'None',
+      arrival_date: '',
+      departure_date: '',
+      arrival_time: '',
+      arrival_flight: '',
+      attend_banquette: false,
+      banquette_guest: '',
+      departure_time: '',
+      departure_flight: '',
+      notes: '',
+    },
+    metadata: {
+      created_at: '2024-01-01T00:00:00Z',
+      created_by: 'System',
+      updated_at: '2024-01-01T00:00:00Z',
+      updated_by: 'System',
+    },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    sessionStorage.clear();
+    useRouter.mockReturnValue({ push: jest.fn(), back: jest.fn() });
+    useNavigationBack.mockReturnValue(mockHandleGoBack);
+    Object.defineProperty(window, 'history', {
+      value: { length: 2 },
+      writable: true,
+    });
+    api.updateGuardian = jest.fn().mockResolvedValue({
+      ...baseGuardian,
+      flight: { ...baseGuardian.flight, status: 'Deceased' },
+      _rev: '2-newrev',
+    });
+  });
+
+  test('keeps Save enabled after changing status to Deceased and persists the change', async () => {
+    const user = userEvent.setup();
+    render(<GuardianEditForm guardian={baseGuardian} />);
+
+    const flightSection = document.getElementById('flight-section');
+    const [statusSelect] = within(flightSection).getAllByRole('combobox');
+    expect(statusSelect).toBeEnabled();
+
+    fireEvent.mouseDown(statusSelect);
+    await user.click(screen.getByRole('option', { name: 'Deceased' }));
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    expect(saveButton).toBeEnabled();
+
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(api.updateGuardian).toHaveBeenCalledWith(
+        'test-guardian-123',
+        expect.objectContaining({
+          flight: expect.objectContaining({ status: 'Deceased' }),
+        })
+      );
+    });
+  });
+
+  test('disables Save for Flown/Deceased guardians when there are no pending changes', () => {
+    const deceasedGuardian = {
+      ...baseGuardian,
+      flight: { ...baseGuardian.flight, status: 'Deceased' },
+    };
+
+    render(<GuardianEditForm guardian={deceasedGuardian} />);
+
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
+    const flightSection = document.getElementById('flight-section');
+    expect(within(flightSection).getAllByRole('combobox')[0]).toBeEnabled();
+
+    expect(screen.getByRole('checkbox', { name: /can push wheelchair/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /waiver received/i })).toBeDisabled();
   });
 });

@@ -157,7 +157,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="medical.can_push"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Can Push Wheelchair"
                     />
                   )}
@@ -167,7 +167,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="medical.can_lift"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Can Lift"
                     />
                   )}
@@ -210,7 +210,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="medical.release"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Medical Release Signed"
                     />
                   )}
@@ -220,7 +220,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="medical.form"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Medical Form Completed"
                     />
                   )}
@@ -313,7 +313,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 name="call.email_sent"
                 render={({ field }) => (
                   <FormControlLabel
-                    control={<Checkbox {...field} checked={field.value} />}
+                    control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                     label="Email Sent"
                   />
                 )}
@@ -343,7 +343,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 control={control}
                 name="flight.status"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.flight?.status)} fullWidth disabled={disabled}>
+                  <FormControl error={Boolean(errors.flight?.status)} fullWidth>
                     <InputLabel required>Status</InputLabel>
                     <Select {...field}>
                       <Option value="Active">Active</Option>
@@ -428,7 +428,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 name="flight.waiver"
                 render={({ field }) => (
                   <FormControlLabel
-                    control={<Checkbox {...field} checked={field.value} />}
+                    control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                     label="Waiver Received"
                   />
                 )}
@@ -440,7 +440,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 name="flight.vaccinated"
                 render={({ field }) => (
                   <FormControlLabel
-                    control={<Checkbox {...field} checked={field.value} />}
+                    control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                     label="Vaccinated"
                   />
                 )}
@@ -452,7 +452,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                 name="flight.paid"
                 render={({ field }) => (
                   <FormControlLabel
-                    control={<Checkbox {...field} checked={field.value} />}
+                    control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                     label="Paid"
                   />
                 )}
@@ -526,7 +526,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.training_complete"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Training Complete"
                     />
                   )}
@@ -536,7 +536,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.training_see_doc"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Training See Doc"
                     />
                   )}
@@ -546,7 +546,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.mediaWaiver"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Media Waiver"
                     />
                   )}
@@ -556,7 +556,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.infection_test"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Infection Test"
                     />
                   )}
@@ -566,7 +566,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.nofly"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Not Flying"
                     />
                   )}
@@ -576,7 +576,7 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                   name="flight.exempt"
                   render={({ field }) => (
                     <FormControlLabel
-                      control={<Checkbox {...field} checked={field.value} />}
+                      control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                       label="Exempt"
                     />
                   )}
