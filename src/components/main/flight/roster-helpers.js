@@ -83,6 +83,29 @@ export function getPairSortSeat(pair) {
 }
 
 /**
+ * Bus used for roster sort and filtering: veteran's bus when set, otherwise guardian's.
+ * For crew (guardian-only pairs), uses the guardian's bus.
+ * @param {Object} pair - Flight roster pair
+ * @returns {string} Bus assignment or 'None' when empty
+ */
+export function getPairSortBus(pair) {
+  const veteran = pair.people?.find((p) => p.type === 'Veteran');
+  const guardian = pair.people?.find((p) => p.type === 'Guardian');
+
+  const veteranBus = veteran?.bus;
+  if (veteranBus && veteranBus !== 'None' && veteranBus.trim() !== '') {
+    return veteranBus;
+  }
+
+  const guardianBus = guardian?.bus;
+  if (guardianBus && guardianBus !== 'None' && guardianBus.trim() !== '') {
+    return guardianBus;
+  }
+
+  return 'None';
+}
+
+/**
  * Compare two seat labels for roster ordering: row (numeric), then letter.
  * Empty or unparseable seats sort after valid seats.
  * @param {string} seatA
@@ -250,8 +273,8 @@ export function filterPairs(pairs, filters) {
     
     // Bus filter
     if (busFilter !== 'all') {
-      const veteranBus = veteran?.bus;
-      if (veteranBus !== busFilter) {
+      const pairBus = getPairSortBus(pair);
+      if (pairBus !== busFilter) {
         return false;
       }
     }
@@ -292,10 +315,8 @@ export function sortPairs(pairs, sortBy) {
       
     case 'bus':
       sorted.sort((a, b) => {
-        const vetA = a.people.find(p => p.type === 'Veteran');
-        const vetB = b.people.find(p => p.type === 'Veteran');
-        const busA = vetA?.bus || 'None';
-        const busB = vetB?.bus || 'None';
+        const busA = getPairSortBus(a);
+        const busB = getPairSortBus(b);
         return busA.localeCompare(busB);
       });
       break;

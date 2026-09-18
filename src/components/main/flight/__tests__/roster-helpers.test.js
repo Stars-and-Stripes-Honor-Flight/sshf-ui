@@ -8,6 +8,7 @@ import {
   filterPairs,
   sortPairs,
   getPairSortSeat,
+  getPairSortBus,
   compareSeatNumbers,
 } from '../roster-helpers';
 
@@ -772,6 +773,193 @@ describe('roster-helpers', () => {
 
     test('sorts unparseable seats after valid seats', () => {
       expect(compareSeatNumbers('TBD', '2A')).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getPairSortBus', () => {
+    test('uses veteran bus when present', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', bus: 'Alpha1' },
+          { type: 'Guardian', bus: 'Alpha2' },
+        ],
+      };
+      expect(getPairSortBus(pair)).toBe('Alpha1');
+    });
+
+    test('uses guardian bus when veteran is missing (crew)', () => {
+      const pair = {
+        people: [{ type: 'Guardian', bus: 'Bravo1' }],
+      };
+      expect(getPairSortBus(pair)).toBe('Bravo1');
+    });
+
+    test('uses guardian bus when veteran has no bus', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', bus: '' },
+          { type: 'Guardian', bus: 'Alpha1' },
+        ],
+      };
+      expect(getPairSortBus(pair)).toBe('Alpha1');
+    });
+
+    test('uses guardian bus when veteran bus is None', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', bus: 'None' },
+          { type: 'Guardian', bus: 'Alpha1' },
+        ],
+      };
+      expect(getPairSortBus(pair)).toBe('Alpha1');
+    });
+
+    test('returns None when no buses assigned', () => {
+      const pair = {
+        people: [
+          { type: 'Veteran', bus: '' },
+          { type: 'Guardian', bus: '' },
+        ],
+      };
+      expect(getPairSortBus(pair)).toBe('None');
+    });
+
+    test('returns None when only guardian has no bus', () => {
+      const pair = {
+        people: [{ type: 'Guardian', bus: '' }],
+      };
+      expect(getPairSortBus(pair)).toBe('None');
+    });
+  });
+
+  describe('sortPairs - bus sorting with crew', () => {
+    test('sorts crew by guardian bus along with veteran+guardian pairs', () => {
+      const pairs = [
+        {
+          pairId: 'crew-bravo',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'Bravo', bus: 'Bravo1' },
+          ],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'Alpha', bus: 'Alpha1' },
+            { type: 'Guardian', name_first: 'Grd', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+        {
+          pairId: 'crew-alpha',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+      ];
+
+      const result = sortPairs(pairs, 'bus');
+      expect(result.map((p) => p.pairId)).toEqual(['vet-alpha', 'crew-alpha', 'crew-bravo']);
+    });
+
+    test('sorts crew with None bus along with other None buses', () => {
+      const pairs = [
+        {
+          pairId: 'crew-none',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'None', bus: 'None' },
+          ],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+        {
+          pairId: 'vet-none',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'None', bus: 'None' },
+          ],
+        },
+      ];
+
+      const result = sortPairs(pairs, 'bus');
+      expect(result[0].pairId).toBe('vet-alpha');
+      const noneBuses = result.slice(1).map((p) => p.pairId);
+      expect(noneBuses).toContain('crew-none');
+      expect(noneBuses).toContain('vet-none');
+    });
+  });
+
+  describe('filterPairs - bus filtering with crew', () => {
+    test('includes crew when filtering by guardian bus', () => {
+      const pairs = [
+        {
+          pairId: 'crew-alpha',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'Alpha', bus: 'Alpha1' },
+            { type: 'Guardian', name_first: 'Grd', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+        {
+          pairId: 'crew-bravo',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'Bravo', bus: 'Bravo1' },
+          ],
+        },
+      ];
+
+      const result = filterPairs(pairs, { busFilter: 'Alpha1' });
+      expect(result).toHaveLength(2);
+      expect(result.some((p) => p.pairId === 'crew-alpha')).toBe(true);
+      expect(result.some((p) => p.pairId === 'vet-alpha')).toBe(true);
+    });
+
+    test('excludes crew when their guardian bus does not match filter', () => {
+      const pairs = [
+        {
+          pairId: 'crew-bravo',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'Bravo', bus: 'Bravo1' },
+          ],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+      ];
+
+      const result = filterPairs(pairs, { busFilter: 'Alpha1' });
+      expect(result).toHaveLength(1);
+      expect(result[0].pairId).toBe('vet-alpha');
+    });
+
+    test('includes crew with None bus when filtering by None', () => {
+      const pairs = [
+        {
+          pairId: 'crew-none',
+          people: [
+            { type: 'Guardian', name_first: 'Crew', name_last: 'None', bus: 'None' },
+          ],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'Vet', name_last: 'Alpha', bus: 'Alpha1' },
+          ],
+        },
+      ];
+
+      const result = filterPairs(pairs, { busFilter: 'None' });
+      expect(result).toHaveLength(1);
+      expect(result[0].pairId).toBe('crew-none');
     });
   });
 });
