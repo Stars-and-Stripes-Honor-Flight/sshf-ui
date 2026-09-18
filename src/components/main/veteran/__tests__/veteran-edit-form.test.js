@@ -22,6 +22,9 @@ jest.mock('@/components/core/toaster', () => ({
 }));
 
 describe('VeteranEditForm - Update Functionality', () => {
+  // Full-form render + userEvent save can exceed 5s under parallel Jest workers.
+  jest.setTimeout(15000);
+
   const mockPush = jest.fn();
   const mockBack = jest.fn();
   const mockUpdateVeteran = jest.fn();
