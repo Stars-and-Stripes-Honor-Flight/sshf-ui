@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { alpha } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
@@ -10,11 +9,13 @@ import IconButton from '@mui/material/IconButton';
 import { List as ListIcon } from '@phosphor-icons/react/dist/ssr/List';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
-import { Warning } from '@phosphor-icons/react';
 
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
+import { useAppHeaderOffset } from '@/hooks/use-app-header-offset';
 import { getEnvironmentBanner } from '@/lib/environment';
+import { APP_HEADER_OFFSET_CSS_VAR } from '@/lib/app-header-offset';
+import { EnvironmentWarningBanner } from '@/components/main/shared/environment-warning-banner';
 
 import { MobileNav } from '../mobile-nav';
 import { UserPopover } from '../user-popover/user-popover';
@@ -23,6 +24,8 @@ export function MainNav({ items }) {
   const [openNav, setOpenNav] = React.useState(false);
   const { user } = useUser();
   const [environmentBanner, setEnvironmentBanner] = React.useState(null);
+  const headerRef = React.useRef(null);
+  const showEnvironmentBanner = Boolean(environmentBanner?.show);
 
   // Banner shows for any non-production NEXT_PUBLIC_ENVIRONMENT.
   // Only check on client side to avoid hydration mismatches.
@@ -30,20 +33,45 @@ export function MainNav({ items }) {
     setEnvironmentBanner(getEnvironmentBanner());
   }, []);
 
+  useAppHeaderOffset(headerRef, showEnvironmentBanner);
+
+  const headerPositionSx = showEnvironmentBanner
+    ? {
+        position: 'fixed',
+        top: 0,
+        left: { xs: 0, lg: 'var(--SideNav-width)' },
+        right: 0,
+        zIndex: 'var(--MainNav-zIndex)',
+      }
+    : {
+        left: 0,
+        position: 'sticky',
+        top: 0,
+        width: '100%',
+        zIndex: 'var(--MainNav-zIndex)',
+      };
+
   return (
     <React.Fragment>
+      {showEnvironmentBanner ? (
+        <Box
+          aria-hidden
+          sx={{
+            height: `var(${APP_HEADER_OFFSET_CSS_VAR}, 0px)`,
+            flexShrink: 0,
+          }}
+        />
+      ) : null}
       <Box
         component="header"
+        ref={headerRef}
+        data-testid="main-nav-header"
         sx={{
           '--MainNav-background': 'var(--mui-palette-background-default)',
           '--MainNav-divider': 'var(--mui-palette-divider)',
           bgcolor: 'var(--MainNav-background)',
-          left: 0,
-          position: 'sticky',
           pt: { lg: 'var(--Layout-gap)' },
-          top: 0,
-          width: '100%',
-          zIndex: 'var(--MainNav-zIndex)',
+          ...headerPositionSx,
         }}
       >
         <Box
@@ -57,7 +85,7 @@ export function MainNav({ items }) {
             position: 'relative',
           }}
         >
-          {environmentBanner?.show ? (
+          {showEnvironmentBanner ? (
             <>
               {/* Mobile menu button - positioned absolutely on the left */}
               <IconButton
@@ -74,65 +102,7 @@ export function MainNav({ items }) {
                 <ListIcon />
               </IconButton>
               
-              {/* Test Environment Banner - takes up full width */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  px: { xs: 5, md: 3 },
-                  mr: { xs: 4, md: 4 },
-                  ml: { xs: 4, md: 0 },
-                  py: 1,
-                  backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.35),
-                  width: '100%',
-                  justifyContent: 'center',
-                  animation: 'pulse 2s ease-in-out infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': {
-                      opacity: 1,
-                      boxShadow: '0 0 0 0 rgba(255, 152, 0, 0.4)',
-                    },
-                    '50%': {
-                      opacity: 0.95,
-                      boxShadow: '0 0 0 6px rgba(255, 152, 0, 0.1)',
-                    },
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    animation: 'wiggle 2s ease-in-out infinite',
-                    '@keyframes wiggle': {
-                      '0%, 100%': { transform: 'rotate(0deg)' },
-                      '25%': { transform: 'rotate(-10deg)' },
-                      '75%': { transform: 'rotate(10deg)' },
-                    },
-                  }}
-                >
-                  <Warning 
-                    weight="fill" 
-                    size={20}
-                    style={{
-                      color: 'var(--mui-palette-warning-dark)',
-                    }}
-                  />
-                </Box>
-                <Box
-                  component="span"
-                  sx={{
-                    fontWeight: 'bold',
-                    fontSize: { xs: '0.7rem', md: '0.8rem' },
-                    color: 'warning.darker',
-                    letterSpacing: '0.1em',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  🧪 {environmentBanner?.label}
-                </Box>
-              </Box>
+              <EnvironmentWarningBanner label={environmentBanner?.label} />
               
               {/* Avatar - positioned absolutely on the right */}
               <Box
@@ -236,4 +206,3 @@ function UserButton({ user }) {
     </React.Fragment>
   );
 }
-

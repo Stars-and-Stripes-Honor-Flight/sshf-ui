@@ -7,6 +7,9 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Slide from '@mui/material/Slide';
 
+import { getEnvironmentBanner } from '@/lib/environment';
+import { environmentStickySurfaceSx } from '@/components/main/shared/environment-warning-banner';
+
 export function StickyHeader({ 
   name, 
   status, 
@@ -17,6 +20,11 @@ export function StickyHeader({
   fullName
 }) {
   const [isVisible, setIsVisible] = React.useState(false);
+  const [environmentBanner, setEnvironmentBanner] = React.useState(null);
+
+  React.useEffect(() => {
+    setEnvironmentBanner(getEnvironmentBanner());
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -32,12 +40,15 @@ export function StickyHeader({
   const displayName = nickname || name;
   if (!displayName) return null;
 
+  const showEnvironmentBanner = Boolean(environmentBanner?.show);
+
   return (
     <Slide direction="down" in={isVisible} mountOnEnter unmountOnExit>
       <Box
+        data-testid="sticky-header-bar"
         sx={{
           position: 'fixed',
-          top: 0,
+          top: 'var(--App-header-offset, 0px)',
           left: { xs: 0, lg: 'var(--SideNav-width)' },
           right: 0,
           zIndex: 1300,
@@ -46,7 +57,8 @@ export function StickyHeader({
           borderColor: 'divider',
           boxShadow: (theme) => theme.shadows[4],
           px: 3,
-          py: 2
+          py: 2,
+          ...environmentStickySurfaceSx(showEnvironmentBanner),
         }}
       >
         <Stack 
@@ -61,6 +73,24 @@ export function StickyHeader({
           }}
         >
           <Stack direction="row" spacing={2} alignItems="center" flex={1} sx={{ minWidth: 0 }}>
+            {showEnvironmentBanner ? (
+              <Chip
+                data-testid="sticky-header-env-label"
+                label={environmentBanner.label}
+                size="small"
+                color="warning"
+                sx={{
+                  display: { xs: 'inline-flex', md: 'none' },
+                  flexShrink: 0,
+                  fontWeight: 'bold',
+                  maxWidth: { xs: 120 },
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                }}
+              />
+            ) : null}
             {nickname ? (
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography 
@@ -149,4 +179,3 @@ export function StickyHeader({
     </Slide>
   );
 }
-
