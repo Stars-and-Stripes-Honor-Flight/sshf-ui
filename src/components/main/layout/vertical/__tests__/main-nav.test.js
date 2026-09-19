@@ -44,4 +44,22 @@ describe('MainNav environment banner', () => {
       expect(screen.queryByText(/ENVIRONMENT/)).not.toBeInTheDocument();
     });
   });
+
+  test('uses a fixed header when the environment banner is shown', async () => {
+    process.env.NEXT_PUBLIC_ENVIRONMENT = 'Development';
+
+    render(<MainNav items={[]} />);
+
+    const header = await screen.findByTestId('main-nav-header');
+    expect(header).toHaveStyle({ position: 'fixed' });
+  });
+
+  test('keeps a sticky header in production', async () => {
+    process.env.NEXT_PUBLIC_ENVIRONMENT = 'Production';
+
+    render(<MainNav items={[]} />);
+
+    const header = await screen.findByTestId('main-nav-header');
+    expect(header).toHaveStyle({ position: 'sticky' });
+  });
 });

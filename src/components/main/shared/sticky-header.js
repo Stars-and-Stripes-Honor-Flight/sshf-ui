@@ -7,6 +7,9 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Slide from '@mui/material/Slide';
 
+import { getEnvironmentBanner } from '@/lib/environment';
+import { stickyHeaderBarSurfaceSx } from '@/components/main/shared/sticky-header-surface';
+
 export function StickyHeader({ 
   name, 
   status, 
@@ -17,6 +20,11 @@ export function StickyHeader({
   fullName
 }) {
   const [isVisible, setIsVisible] = React.useState(false);
+  const [environmentBanner, setEnvironmentBanner] = React.useState(null);
+
+  React.useEffect(() => {
+    setEnvironmentBanner(getEnvironmentBanner());
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -32,21 +40,25 @@ export function StickyHeader({
   const displayName = nickname || name;
   if (!displayName) return null;
 
+  const showEnvironmentBanner = Boolean(environmentBanner?.show);
+
   return (
     <Slide direction="down" in={isVisible} mountOnEnter unmountOnExit>
       <Box
+        data-testid="sticky-header-bar"
+        data-translucent={showEnvironmentBanner ? 'true' : 'false'}
         sx={{
           position: 'fixed',
           top: 0,
           left: { xs: 0, lg: 'var(--SideNav-width)' },
           right: 0,
           zIndex: 1300,
-          backgroundColor: 'background.paper',
           borderBottom: 1,
           borderColor: 'divider',
           boxShadow: (theme) => theme.shadows[4],
           px: 3,
-          py: 2
+          py: 2,
+          ...stickyHeaderBarSurfaceSx(showEnvironmentBanner),
         }}
       >
         <Stack 
@@ -149,4 +161,3 @@ export function StickyHeader({
     </Slide>
   );
 }
-
