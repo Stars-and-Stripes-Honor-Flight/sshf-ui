@@ -70,15 +70,3 @@ export function EnvironmentWarningBanner({ label }) {
     </Box>
   );
 }
-
-/** Shared warning tint for surfaces that cover the main nav (e.g. edit-form sticky header). */
-export function environmentStickySurfaceSx(showEnvironmentBanner) {
-  if (!showEnvironmentBanner) {
-    return {};
-  }
-
-  return {
-    backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.35),
-    borderBottomColor: (theme) => alpha(theme.palette.warning.dark, 0.4),
-  };
-}

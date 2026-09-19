@@ -4,6 +4,17 @@ import '@testing-library/jest-dom';
 
 import { StickyHeader } from '../sticky-header';
 
+function showStickyHeader() {
+  Object.defineProperty(window, 'scrollY', {
+    value: 200,
+    writable: true,
+    configurable: true,
+  });
+  act(() => {
+    window.dispatchEvent(new Event('scroll'));
+  });
+}
+
 describe('StickyHeader', () => {
   const originalEnvironment = process.env.NEXT_PUBLIC_ENVIRONMENT;
 
@@ -13,49 +24,44 @@ describe('StickyHeader', () => {
     } else {
       process.env.NEXT_PUBLIC_ENVIRONMENT = originalEnvironment;
     }
-    document.documentElement.style.removeProperty('--App-header-offset');
+    Object.defineProperty(window, 'scrollY', {
+      value: 0,
+      writable: true,
+      configurable: true,
+    });
   });
 
-  test('positions below the app header offset when the environment banner is shown', async () => {
+  test('stays at top: 0 when visible', async () => {
     process.env.NEXT_PUBLIC_ENVIRONMENT = 'Development';
-    document.documentElement.style.setProperty('--App-header-offset', '64px');
 
     render(<StickyHeader name="Jane Doe" type="veteran" />);
-
-    act(() => {
-      window.scrollY = 200;
-      window.dispatchEvent(new Event('scroll'));
-    });
+    showStickyHeader();
 
     const bar = await screen.findByTestId('sticky-header-bar');
-    expect(bar).toHaveStyle({ top: 'var(--App-header-offset, 0px)' });
+    expect(bar).toHaveStyle({ top: '0px' });
   });
 
-  test('shows a compact environment label on small screens when not in production', async () => {
+  test('is translucent when the environment banner is shown', async () => {
     process.env.NEXT_PUBLIC_ENVIRONMENT = 'Development';
 
-    render(<StickyHeader name="Jane Doe" type="guardian" />);
+    render(<StickyHeader name="Jane Doe" type="veteran" />);
+    showStickyHeader();
 
-    act(() => {
-      window.scrollY = 200;
-      window.dispatchEvent(new Event('scroll'));
-    });
-
-    expect(await screen.findByTestId('sticky-header-env-label')).toHaveTextContent(
-      /DEVELOPMENT ENVIRONMENT/
+    expect(await screen.findByTestId('sticky-header-bar')).toHaveAttribute(
+      'data-translucent',
+      'true'
     );
   });
 
-  test('does not show the environment label in production', async () => {
+  test('is not translucent in production', async () => {
     process.env.NEXT_PUBLIC_ENVIRONMENT = 'Production';
 
     render(<StickyHeader name="Jane Doe" type="veteran" />);
+    showStickyHeader();
 
-    act(() => {
-      window.scrollY = 200;
-      window.dispatchEvent(new Event('scroll'));
-    });
-
-    expect(screen.queryByTestId('sticky-header-env-label')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('sticky-header-bar')).toHaveAttribute(
+      'data-translucent',
+      'false'
+    );
   });
 });

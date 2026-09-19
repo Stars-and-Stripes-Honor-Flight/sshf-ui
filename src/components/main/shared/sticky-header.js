@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import Slide from '@mui/material/Slide';
 
 import { getEnvironmentBanner } from '@/lib/environment';
-import { environmentStickySurfaceSx } from '@/components/main/shared/environment-warning-banner';
+import { stickyHeaderBarSurfaceSx } from '@/components/main/shared/sticky-header-surface';
 
 export function StickyHeader({ 
   name, 
@@ -46,19 +46,19 @@ export function StickyHeader({
     <Slide direction="down" in={isVisible} mountOnEnter unmountOnExit>
       <Box
         data-testid="sticky-header-bar"
+        data-translucent={showEnvironmentBanner ? 'true' : 'false'}
         sx={{
           position: 'fixed',
-          top: 'var(--App-header-offset, 0px)',
+          top: 0,
           left: { xs: 0, lg: 'var(--SideNav-width)' },
           right: 0,
           zIndex: 1300,
-          backgroundColor: 'background.paper',
           borderBottom: 1,
           borderColor: 'divider',
           boxShadow: (theme) => theme.shadows[4],
           px: 3,
           py: 2,
-          ...environmentStickySurfaceSx(showEnvironmentBanner),
+          ...stickyHeaderBarSurfaceSx(showEnvironmentBanner),
         }}
       >
         <Stack 
@@ -73,24 +73,6 @@ export function StickyHeader({
           }}
         >
           <Stack direction="row" spacing={2} alignItems="center" flex={1} sx={{ minWidth: 0 }}>
-            {showEnvironmentBanner ? (
-              <Chip
-                data-testid="sticky-header-env-label"
-                label={environmentBanner.label}
-                size="small"
-                color="warning"
-                sx={{
-                  display: { xs: 'inline-flex', md: 'none' },
-                  flexShrink: 0,
-                  fontWeight: 'bold',
-                  maxWidth: { xs: 120 },
-                  '& .MuiChip-label': {
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  },
-                }}
-              />
-            ) : null}
             {nickname ? (
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography 
