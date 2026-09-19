@@ -5,10 +5,12 @@ import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { Warning } from '@phosphor-icons/react';
 
-export function EnvironmentWarningBanner({ label }) {
+export function EnvironmentWarningBanner({ label, layout = 'overlay' }) {
   if (!label) {
     return null;
   }
+
+  const isInline = layout === 'inline';
 
   return (
     <Box
@@ -17,7 +19,7 @@ export function EnvironmentWarningBanner({ label }) {
         display: 'flex',
         alignItems: 'center',
         gap: 1.5,
-        px: { xs: 5, md: 3 },
+        px: isInline ? { xs: 1, md: 2 } : { xs: 5, md: 3 },
         py: 1,
         backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.35),
         width: '100%',

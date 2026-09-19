@@ -13,7 +13,7 @@ describe('stickyHeaderBarSurfaceSx', () => {
     expect(sx.WebkitBackdropFilter).toBe('blur(8px)');
     expect(typeof sx.backgroundColor).toBe('string');
     expect(sx.backgroundColor).toContain('color-mix');
-    expect(sx.backgroundColor).toContain('58%');
+    expect(sx.backgroundColor).toContain('42%');
     expect(sx.backgroundColor).toContain('var(--mui-palette-background-paper)');
     expect(sx.backgroundColor).not.toMatch(/alpha\(/);
   });
