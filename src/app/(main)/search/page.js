@@ -2,17 +2,15 @@
 
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
 
 import { config } from '@/config';
 import { ApiTable } from '@/components/core/table/api-table';
 import { Option } from '@/components/core/option';
+import { ListPageLayout } from '@/components/main/layout/list-page-layout';
 
 import { searchColumns } from '@/components/main/search/search-columns';
 import { SearchCardView } from '@/components/main/search/search-card-view';
@@ -238,53 +236,35 @@ export default function Page() {
   }, [searchFilters.length])
 
   return (
-    <React.Suspense>
-      <React.Fragment>
-        <Box
-          sx={{
-            maxWidth: 'var(--Content-maxWidth)',
-            m: 'var(--Content-margin)',
-            p: 'var(--Content-padding)',
-            width: 'var(--Content-width)',
-          }}
-        >
-          <Stack spacing={4}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ alignItems: 'flex-start' }}>
-              <Box sx={{ flex: '1 1 auto' }}>
-                <Typography variant="h4">Search Veterans & Guardians</Typography>
-              </Box>
-            </Stack>
-            <OutlinedInput
-              inputRef={searchInputRef}
-              placeholder="Quick search by last name..."
-              value={quickSearch}
-              onChange={handleQuickSearch}
-              startAdornment={
-                <InputAdornment position="start">
-                  <MagnifyingGlassIcon fontSize="var(--icon-fontSize-md)" />
-                </InputAdornment>
-              }
-              sx={{
-                maxWidth: '500px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}
-            />
-            <Card>
-              <ApiTable 
-                entity='VeteransAndGuardians'
-                entityFriendlyName='Search Veterans & Guardians'
-                columns={searchColumns}
-                readyToFetch={readyToFetch}
-                updatesearchFilters={updatesearchFilters}
-                filters={searchFilters}
-                defaultRowsPerPage={25}
-                hidePagination={true}
-                mobileCardView={<SearchCardView />}
-                flights={flights} />
-            </Card>
-          </Stack>
-        </Box>
-      </React.Fragment>
-    </React.Suspense>
+    <ListPageLayout title="Search Veterans & Guardians">
+      <OutlinedInput
+        inputRef={searchInputRef}
+        placeholder="Quick search by last name..."
+        value={quickSearch}
+        onChange={handleQuickSearch}
+        startAdornment={
+          <InputAdornment position="start">
+            <MagnifyingGlassIcon fontSize="var(--icon-fontSize-md)" />
+          </InputAdornment>
+        }
+        sx={{
+          maxWidth: '500px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      />
+      <Card>
+        <ApiTable 
+          entity='VeteransAndGuardians'
+          entityFriendlyName='Search Veterans & Guardians'
+          columns={searchColumns}
+          readyToFetch={readyToFetch}
+          updatesearchFilters={updatesearchFilters}
+          filters={searchFilters}
+          defaultRowsPerPage={25}
+          hidePagination={true}
+          mobileCardView={<SearchCardView />}
+          flights={flights} />
+      </Card>
+    </ListPageLayout>
   );
 }

@@ -12,9 +12,7 @@ import Tooltip from '@mui/material/Tooltip';
 
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
-import { useAppHeaderOffset } from '@/hooks/use-app-header-offset';
 import { getEnvironmentBanner } from '@/lib/environment';
-import { APP_HEADER_OFFSET_CSS_VAR } from '@/lib/app-header-offset';
 import { EnvironmentWarningBanner } from '@/components/main/shared/environment-warning-banner';
 
 import { MobileNav } from '../mobile-nav';
@@ -24,7 +22,6 @@ export function MainNav({ items }) {
   const [openNav, setOpenNav] = React.useState(false);
   const { user } = useUser();
   const [environmentBanner, setEnvironmentBanner] = React.useState(null);
-  const headerRef = React.useRef(null);
   const showEnvironmentBanner = Boolean(environmentBanner?.show);
 
   // Banner shows for any non-production NEXT_PUBLIC_ENVIRONMENT.
@@ -33,45 +30,21 @@ export function MainNav({ items }) {
     setEnvironmentBanner(getEnvironmentBanner());
   }, []);
 
-  useAppHeaderOffset(headerRef, showEnvironmentBanner);
-
-  const headerPositionSx = showEnvironmentBanner
-    ? {
-        position: 'fixed',
-        top: 0,
-        left: { xs: 0, lg: 'var(--SideNav-width)' },
-        right: 0,
-        zIndex: 'var(--MainNav-zIndex)',
-      }
-    : {
-        left: 0,
-        position: 'sticky',
-        top: 0,
-        width: '100%',
-        zIndex: 'var(--MainNav-zIndex)',
-      };
-
   return (
     <React.Fragment>
-      {showEnvironmentBanner ? (
-        <Box
-          aria-hidden
-          sx={{
-            height: `var(${APP_HEADER_OFFSET_CSS_VAR}, 0px)`,
-            flexShrink: 0,
-          }}
-        />
-      ) : null}
       <Box
         component="header"
-        ref={headerRef}
         data-testid="main-nav-header"
         sx={{
           '--MainNav-background': 'var(--mui-palette-background-default)',
           '--MainNav-divider': 'var(--mui-palette-divider)',
           bgcolor: 'var(--MainNav-background)',
+          left: 0,
+          position: 'sticky',
           pt: { lg: 'var(--Layout-gap)' },
-          ...headerPositionSx,
+          top: 0,
+          width: '100%',
+          zIndex: 'var(--MainNav-zIndex)',
         }}
       >
         <Box

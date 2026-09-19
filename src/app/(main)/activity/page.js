@@ -1,37 +1,20 @@
 'use client'
 
 import * as React from 'react';
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 
-import { config } from '@/config';
 import { ActivityList } from '@/components/main/activity/activity-list';
+import { ListPageLayout } from '@/components/main/layout/list-page-layout';
 
 export default function Page() {
   return (
-    <Box
-      sx={{
-        maxWidth: 'var(--Content-maxWidth)',
-        m: 'var(--Content-margin)',
-        p: 'var(--Content-padding)',
-        width: 'var(--Content-width)',
-      }}
+    <ListPageLayout
+      title="Recent Activity"
+      description="View recent changes to veterans, guardians, flights, and calls"
     >
-      <Stack spacing={4}>
-        <Stack direction="row" spacing={3} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <Typography variant="h4">Recent Activity</Typography>
-            <Typography color="textSecondary" sx={{ mt: 1 }} variant="body2">
-              View recent changes to veterans, guardians, flights, and calls
-            </Typography>
-          </div>
-        </Stack>
-        <Card>
-          <ActivityList />
-        </Card>
-      </Stack>
-    </Box>
+      <Card>
+        <ActivityList />
+      </Card>
+    </ListPageLayout>
   );
 }

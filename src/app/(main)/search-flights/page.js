@@ -17,6 +17,7 @@ import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/di
 import { config } from '@/config';
 import { getFlightsSorted, refreshFlights } from '@/lib/flights';
 import { FlightCard } from '@/components/main/flight/flight-card';
+import { ListPageLayout } from '@/components/main/layout/list-page-layout';
 
 function FlightsListPage() {
   const router = useRouter();
@@ -173,26 +174,10 @@ function FlightsListPage() {
   const hasActiveFilters = debouncedSearch || statusFilter !== 'all';
 
   return (
-    <Box
-      sx={{
-        maxWidth: 'var(--Content-maxWidth)',
-        m: 'var(--Content-margin)',
-        p: 'var(--Content-padding)',
-        width: 'var(--Content-width)',
-      }}
+    <ListPageLayout
+      title="Search Flights"
+      description="View all available flights and their details"
     >
-      <Stack spacing={4}>
-        {/* Header */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ alignItems: 'flex-start' }}>
-          <Box sx={{ flex: '1 1 auto' }}>
-            <Typography variant="h4">Search Flights</Typography>
-            <Typography color="text.secondary" variant="body1" sx={{ mt: 1 }}>
-              View all available flights and their details
-            </Typography>
-          </Box>
-        </Stack>
-
-        {/* Search and Filters */}
         <Stack spacing={2}>
           <OutlinedInput
             inputRef={searchInputRef}
@@ -300,8 +285,7 @@ function FlightsListPage() {
             ))}
           </Box>
         )}
-      </Stack>
-    </Box>
+    </ListPageLayout>
   );
 }
 
