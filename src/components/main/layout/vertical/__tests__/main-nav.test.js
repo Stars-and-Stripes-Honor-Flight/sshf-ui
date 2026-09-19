@@ -51,7 +51,7 @@ describe('MainNav environment banner', () => {
     render(<MainNav items={[]} />);
 
     const header = await screen.findByTestId('main-nav-header');
-    expect(header).toHaveStyle({ position: 'sticky' });
+    expect(header).toHaveStyle({ position: 'sticky', alignSelf: 'flex-start' });
   });
 
   test('keeps a sticky header in production', async () => {

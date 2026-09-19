@@ -38,6 +38,7 @@ export function MainNav({ items }) {
         sx={{
           '--MainNav-background': 'var(--mui-palette-background-default)',
           '--MainNav-divider': 'var(--mui-palette-divider)',
+          alignSelf: 'flex-start',
           bgcolor: 'var(--MainNav-background)',
           left: 0,
           position: 'sticky',
@@ -55,39 +56,30 @@ export function MainNav({ items }) {
             minHeight: 'var(--MainNav-height)',
             px: { xs: 2, lg: 3 },
             py: 1,
-            position: 'relative',
           }}
         >
           {showEnvironmentBanner ? (
-            <>
-              {/* Mobile menu button - positioned absolutely on the left */}
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ width: '100%', minWidth: 0 }}
+            >
               <IconButton
                 onClick={() => {
                   setOpenNav(true);
                 }}
-                sx={{ 
-                  display: { lg: 'none' },
-                  position: 'absolute',
-                  left: { xs: 2 },
-                  zIndex: 1,
-                }}
+                sx={{ display: { lg: 'none' }, flexShrink: 0 }}
               >
                 <ListIcon />
               </IconButton>
-              
-              <EnvironmentWarningBanner label={environmentBanner?.label} />
-              
-              {/* Avatar - positioned absolutely on the right */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  right: { xs: 2, lg: 3 },
-                  zIndex: 1,
-                }}
-              >
-                <UserButton user={ user } />
+              <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+                <EnvironmentWarningBanner label={environmentBanner?.label} layout="inline" />
               </Box>
-            </>
+              <Box sx={{ flexShrink: 0 }}>
+                <UserButton user={user} />
+              </Box>
+            </Stack>
           ) : (
             <>
               <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flex: '1 1 auto' }}>
@@ -111,7 +103,7 @@ export function MainNav({ items }) {
                   orientation="vertical"
                   sx={{ borderColor: 'var(--MainNav-divider)', display: { xs: 'none', lg: 'block' } }}
                 />
-                <UserButton user={ user } />
+                <UserButton user={user} />
               </Stack>
             </>
           )}
