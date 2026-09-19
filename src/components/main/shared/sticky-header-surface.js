@@ -1,5 +1,3 @@
-import { alpha } from '@mui/material/styles';
-
 /** Bar surface for the edit-form sticky name header. */
 export function stickyHeaderBarSurfaceSx(showEnvironmentBanner) {
   if (!showEnvironmentBanner) {
@@ -8,8 +6,10 @@ export function stickyHeaderBarSurfaceSx(showEnvironmentBanner) {
     };
   }
 
+  // MUI CSS variables: theme.palette.background.paper is a var(...) string; do not pass it to alpha().
   return {
-    backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.72),
+    backgroundColor:
+      'color-mix(in srgb, var(--mui-palette-background-paper) 72%, transparent)',
     backdropFilter: 'blur(8px)',
     WebkitBackdropFilter: 'blur(8px)',
   };
