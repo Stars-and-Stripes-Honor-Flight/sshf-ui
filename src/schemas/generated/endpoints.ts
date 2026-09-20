@@ -16,6 +16,11 @@ import {
   QueryRequest,
   QueryResults,
   RecentActivityEntry,
+  ReviewApplication,
+  ReviewApplicationAcceptResult,
+  ReviewApplicationIntake,
+  ReviewApplicationList,
+  ReviewApplicationStatusUpdate,
   SearchResults,
   Veteran,
   WaitlistVeteranGroup
@@ -306,6 +311,83 @@ export const GetRecentActivityQueryParams = zod.object({
 
 export const GetRecentActivityResponseItem = RecentActivityEntry
 export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem)
+
+
+/**
+ * Called by the hf_appcollector Cloud Function with the raw website form payload. Requires a Google-signed service-account ID token whose email is listed in REVIEW_INTAKE_SERVICE_ACCOUNTS. Legacy credential fields (cburi, cbusr, cbpwd) and full_message are stripped before storage. The application is stored with app_status "New". Intake is permissive: only `type` (VeteranApp or GuardianApp) is required; incomplete form payloads are stored as-is for reviewers to fix in the UI. Logistics model validation runs only on accept.
+ * @summary Submit a new application for review (website intake)
+ */
+export const PostReviewApplicationsBody = ReviewApplicationIntake
+
+export const PostReviewApplicationsResponse = ReviewApplication
+
+
+/**
+ * Returns applications with the given status, newest first, using the legacy hf-app-review/new_apps view in the review database.
+ * @summary List applications awaiting review
+ */
+export const getReviewApplicationsQueryStatusDefault = `New`;
+export const getReviewApplicationsQueryLimitDefault = 25;
+export const getReviewApplicationsQueryLimitMax = 500;
+
+
+
+export const GetReviewApplicationsQueryParams = zod.object({
+  "status": zod.enum(['New', 'Hold', 'Accepted', 'Rejected', 'Trash']).default(getReviewApplicationsQueryStatusDefault).describe('Application status to list'),
+  "limit": zod.number().int().min(1).max(getReviewApplicationsQueryLimitMax).default(getReviewApplicationsQueryLimitDefault).describe('Maximum number of rows to return (clamped to 1-500)')
+})
+
+export const GetReviewApplicationsResponse = ReviewApplicationList
+
+
+/**
+ * @summary Retrieve an application under review
+ */
+export const GetReviewApplicationsIdParams = zod.object({
+  "id": zod.string().describe('Review application document ID')
+})
+
+export const GetReviewApplicationsIdResponse = ReviewApplication
+
+
+/**
+ * Replaces the editable (normalized) fields of the application. Submission metadata (date_time, ip_address, accepted_as_rev, created_*) is preserved and unknown legacy fields in the stored document are kept. Setting app_status to "Accepted" is rejected; use the accept endpoint instead.
+ * @summary Edit an application under review
+ */
+export const PutReviewApplicationsIdParams = zod.object({
+  "id": zod.string().describe('Review application document ID')
+})
+
+export const PutReviewApplicationsIdBody = ReviewApplication
+
+export const PutReviewApplicationsIdResponse = ReviewApplication
+
+
+/**
+ * @summary Set the review status of an application (Hold, Rejected, Trash, New)
+ */
+export const PatchReviewApplicationsIdStatusParams = zod.object({
+  "id": zod.string().describe('Review application document ID')
+})
+
+export const PatchReviewApplicationsIdStatusBody = ReviewApplicationStatusUpdate
+
+export const PatchReviewApplicationsIdStatusResponse = ReviewApplication
+
+
+/**
+ * Builds a Veteran or Guardian record from the application (using the standard models and validation) and writes it to the logistics database with the same document ID. If the application was accepted before, the logistics record is updated only when its revision still matches the revision recorded at the previous acceptance (accepted_as_rev); otherwise 409 is returned and nothing is changed. On success the application is marked Accepted and accepted_as_rev is updated.
+ * @summary Accept an application and copy it into the logistics database
+ */
+export const PostReviewApplicationsIdAcceptParams = zod.object({
+  "id": zod.string().describe('Review application document ID')
+})
+
+export const PostReviewApplicationsIdAcceptBody = zod.object({
+  "app_status_note": zod.string().optional().describe('Optional reviewer note stored with the application')
+})
+
+export const PostReviewApplicationsIdAcceptResponse = ReviewApplicationAcceptResult
 
 
 /**

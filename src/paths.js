@@ -39,6 +39,12 @@ export const paths = {
     waitlist: {
       list: '/waitlist'
     },
+    review: {
+      applications: {
+        list: '/review/applications',
+        detail: (applicationId) => `/review/applications/detail?id=${applicationId}`,
+      },
+    },
     exports: {
       flight: '/exports/flight',
       callCenterFollowup: '/exports/callcenterfollowup',
