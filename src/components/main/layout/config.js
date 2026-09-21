@@ -91,6 +91,19 @@ export const layoutConfig = {
           ],
         },
         {
+          key: 'review',
+          title: 'Application Review',
+          icon: 'file-dashed',
+          items: [
+            {
+              key: 'review:applications',
+              title: 'Review Queue',
+              href: paths.main.review.applications.list,
+              matcher: { type: 'startsWith', href: '/review/applications' },
+            },
+          ],
+        },
+        {
           key: 'flights',
           title: 'Flights',
           icon: 'airplane',

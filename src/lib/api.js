@@ -609,6 +609,84 @@ class ApiClient {
     }
   }
 
+  // --- Review applications (website intake queue) ---
+
+  async listReviewApplications({ status = 'New', limit = 100 } = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      if (status) queryParams.append('status', status);
+      if (limit) queryParams.append('limit', limit);
+
+      const response = await this.request(`/review/applications?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+      const data = await response.json();
+      return Array.isArray(data?.rows) ? data.rows : [];
+    } catch (error) {
+      toast.error(`Failed to fetch review applications: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getReviewApplication(id) {
+    try {
+      const response = await this.request(`/review/applications/${id}`, {
+        method: 'GET',
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to fetch application: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async updateReviewApplication(id, data) {
+    try {
+      const response = await this.request(`/review/applications/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to save application: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async updateReviewApplicationStatus(id, { app_status, app_status_note } = {}) {
+    try {
+      const response = await this.request(`/review/applications/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ app_status, app_status_note }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update application status: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Accept into logistics (server maps to Veteran/Guardian and enforces accepted_as_rev).
+   */
+  async acceptReviewApplication(id, { app_status_note } = {}) {
+    try {
+      const body = app_status_note ? { app_status_note } : {};
+      const response = await this.request(`/review/applications/${id}/accept`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      return await response.json();
+    } catch (error) {
+      if (error.status === 409) {
+        toast.error(error.message || 'Logistics record was modified since the last accept.');
+      } else {
+        toast.error(`Failed to accept application: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
   // Export tour lead as CSV
   async exportTourLead(flightName = '') {
     try {
