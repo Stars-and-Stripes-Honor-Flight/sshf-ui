@@ -7,12 +7,7 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Bell as BellIcon } from '@phosphor-icons/react/dist/ssr/Bell';
-import { CreditCard as CreditCardIcon } from '@phosphor-icons/react/dist/ssr/CreditCard';
-import { LockKey as LockKeyIcon } from '@phosphor-icons/react/dist/ssr/LockKey';
-import { PlugsConnected as PlugsConnectedIcon } from '@phosphor-icons/react/dist/ssr/PlugsConnected';
 import { UserCircle as UserCircleIcon } from '@phosphor-icons/react/dist/ssr/UserCircle';
-import { UsersThree as UsersThreeIcon } from '@phosphor-icons/react/dist/ssr/UsersThree';
 
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
@@ -30,12 +25,7 @@ const navItems = [
 ];
 
 const icons = {
-  'credit-card': CreditCardIcon,
-  'lock-key': LockKeyIcon,
-  'plugs-connected': PlugsConnectedIcon,
   'user-circle': UserCircleIcon,
-  'users-three': UsersThreeIcon,
-  bell: BellIcon,
 };
 
 export function SideNav() {
