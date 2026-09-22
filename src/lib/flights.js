@@ -17,14 +17,6 @@ export const getFlights = () => {
 };
 
 /**
- * Get a single flight by ID from session storage
- */
-export const getFlightById = (id) => {
-  const flights = getFlights();
-  return flights.find(flight => flight._id === id);
-};
-
-/**
  * Get flights sorted by date (most recent first)
  */
 export const getFlightsSorted = () => {
@@ -32,16 +24,6 @@ export const getFlightsSorted = () => {
   return [...flights].sort((a, b) => {
     return new Date(b.flight_date) - new Date(a.flight_date);
   });
-};
-
-/**
- * Clear flights from local storage
- * Useful for logout or refresh scenarios
- */
-export const clearFlights = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('flights-list');
-  }
 };
 
 /**
