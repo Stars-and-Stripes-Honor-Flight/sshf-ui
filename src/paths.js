@@ -9,8 +9,6 @@ export const paths = {
     overview: '/',
     settings: {
       account: '/settings/account',
-      notifications: '/settings/notifications',
-      security: '/settings/security',
       team: '/settings/team',
     },
     search: {
