@@ -1,55 +1,62 @@
 import { NextResponse } from 'next/server';
 
-// Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from '@/lib/auth/refresh-cookie';
 
 export async function POST(request) {
-  try {
-    const { refreshToken } = await request.json();
-    
-    if (!refreshToken) {
-      return NextResponse.json(
-        { error: 'Refresh token is required' },
-        { status: 400 }
-      );
-    }
+  const refreshToken = readRefreshCookie(request);
 
-    // Exchange refresh token for a new access token
+  if (!refreshToken) {
+    const missing = NextResponse.json(
+      { error: 'Refresh token is required' },
+      { status: 400 }
+    );
+    clearRefreshCookie(missing);
+    return missing;
+  }
+
+  try {
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Token refresh failed:', errorData);
-      return NextResponse.json(
+      console.error('Token refresh failed with status', response.status);
+      const failed = NextResponse.json(
         { error: 'Failed to refresh token' },
         { status: response.status }
       );
+      clearRefreshCookie(failed);
+      return failed;
     }
 
     const tokenData = await response.json();
-    
-    return NextResponse.json({
+    const result = NextResponse.json({
       accessToken: tokenData.access_token,
       expiresIn: tokenData.expires_in,
       tokenType: tokenData.token_type,
     });
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    return NextResponse.json(
+
+    if (tokenData.refresh_token) {
+      setRefreshCookie(result, tokenData.refresh_token);
+    }
+
+    return result;
+  } catch {
+    console.error('Token refresh error');
+    const failed = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    clearRefreshCookie(failed);
+    return failed;
   }
-} 
+}
