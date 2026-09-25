@@ -19,6 +19,7 @@ For protected data, keep authentication predictable so token attachment and refr
 - Components should assume `api` already handles auth; they react to resolved data or thrown errors.
 - A failed refresh must clear tokens and redirect once, through the existing `handleUnauthorized` flow.
 - Tests should cover unauthorized (401 → redirect) and authenticated success paths.
+- Application pages under `src/app/(main)/` are protected in the client by `AuthGuard`. There is no Next.js middleware. `(main)` is a route group and does not create a `/main` URL. Do not reintroduce `src/middleware.js` or a matcher that treats `/main` as the protected area. The access token is in `localStorage` and the refresh cookie is scoped to `/api/auth`, so edge middleware cannot see a session on page requests.
 
 ## Guardrails
 
