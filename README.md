@@ -23,6 +23,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Authentication
+
+Page protection is client-side. This app does not use Next.js middleware.
+
+`src/app/(main)/layout.js` wraps every application page in `AuthGuard`. `AuthGuard` stays on the loading state until `UserProvider` finishes `authClient.getUser()`, then redirects a visitor with no session to `/auth/domain/sign-in`. Sign-in and error pages live outside that layout. The `(main)` directory is a route group, so those pages are served at `/search`, `/flights`, `/veterans`, and the other paths in `src/app` — there is no `/main` URL prefix.
+
+An edge middleware check cannot see a session on those requests. The access token is stored in `localStorage`, and the refresh token is an httpOnly cookie scoped to `/api/auth`, so the browser does not send it with document requests. Treating cookie presence as a login, or matching a `/main` prefix, would not match this design. API authorization stays on the backend.
+
+`src/lib/auth/__tests__/route-protection.test.js` lists the protected and public page paths discovered from `src/app` and asserts that no middleware file is present.
+
 Before a Cloud Run deploy, CI runs `npm run check-build-env` to ensure the four
 `NEXT_PUBLIC_*` build variables are set.
 
