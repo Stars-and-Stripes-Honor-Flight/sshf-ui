@@ -52,6 +52,7 @@ class AuthClient {
     try {
       const response = await fetch('/api/auth/token', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -62,10 +63,11 @@ class AuthClient {
         throw new Error('Failed to exchange code for tokens');
       }
 
-      const { accessToken, refreshToken, expiresIn } = await response.json();
-      
-      // Store tokens using the token manager
-      tokenManager.storeTokenData(accessToken, refreshToken, expiresIn);
+      const { accessToken, expiresIn, hasRefreshSession } = await response.json();
+
+      tokenManager.storeTokenData(accessToken, expiresIn, {
+        hasRefreshSession: Boolean(hasRefreshSession),
+      });
       
       if (this.authCallback) {
         this.authCallback();
@@ -202,7 +204,7 @@ class AuthClient {
         return { data: user };
       } catch (error) {
         console.error('Error fetching user:', error);
-        tokenManager.clearTokens();
+        await tokenManager.clearTokens();
         localStorage.removeItem('user-data');
         return { data: null };
       } finally {
@@ -215,7 +217,7 @@ class AuthClient {
   }
 
   async signOut() {
-    tokenManager.clearTokens();
+    await tokenManager.clearTokens();
     localStorage.removeItem('user-data');
     return {};
   }

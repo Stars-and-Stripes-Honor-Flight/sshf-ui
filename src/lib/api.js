@@ -15,7 +15,7 @@ class ApiClient {
   // Handle unauthorized errors by clearing tokens and redirecting to login
   handleUnauthorized() {
     try {
-      tokenManager.clearTokens();
+      void tokenManager.clearTokens();
       // Clear user and flights data
       if (typeof window !== 'undefined') {
         localStorage.removeItem('user-data');
@@ -71,9 +71,9 @@ class ApiClient {
       if (!response.ok) {
         // If unauthorized and we have a refresh token, try to refresh and retry
         if (response.status === 401) {
-          const hasRefreshToken = tokenManager.getRefreshToken();
-          
-          if (hasRefreshToken) {
+          const hasRefreshSession = tokenManager.hasRefreshSession();
+
+          if (hasRefreshSession) {
             const newToken = await tokenManager.refreshToken();
             
             // If token refresh successful, retry the request

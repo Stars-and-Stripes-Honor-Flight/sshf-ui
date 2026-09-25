@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 
-// Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+import { setRefreshCookie } from '@/lib/auth/refresh-cookie';
 
 export async function POST(request) {
   try {
     const { code } = await request.json();
-    
+
     if (!code) {
       return NextResponse.json(
         { error: 'Authorization code is required' },
@@ -15,24 +13,22 @@ export async function POST(request) {
       );
     }
 
-    // Exchange authorization code for tokens
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: 'postmessage', // For popup flows
+        redirect_uri: 'postmessage',
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Token exchange failed:', errorData);
+      console.error('Token exchange failed with status', response.status);
       return NextResponse.json(
         { error: 'Failed to exchange authorization code for tokens' },
         { status: response.status }
@@ -40,18 +36,25 @@ export async function POST(request) {
     }
 
     const tokenData = await response.json();
-    
-    return NextResponse.json({
+    const refreshToken = tokenData.refresh_token || '';
+
+    const result = NextResponse.json({
       accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
       expiresIn: tokenData.expires_in,
       tokenType: tokenData.token_type,
+      hasRefreshSession: Boolean(refreshToken),
     });
-  } catch (error) {
-    console.error('Token exchange error:', error);
+
+    if (refreshToken) {
+      setRefreshCookie(result, refreshToken);
+    }
+
+    return result;
+  } catch {
+    console.error('Token exchange error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-} 
+}
