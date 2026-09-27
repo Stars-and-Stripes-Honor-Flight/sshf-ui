@@ -56,6 +56,7 @@ describe('column-configs', () => {
       const medicalColumns = COLUMN_CONFIGS[ACTIVITY_PRESETS.MEDICAL];
       expect(medicalColumns).toHaveLength(3);
       expect(medicalColumns[0].id).toBe('medical_level');
+      expect(medicalColumns[0].label).toBe('Med Notes / Med Experience');
       expect(medicalColumns[1].id).toBe('medical_form');
       expect(medicalColumns[2].id).toBe('limitations');
     });
