@@ -230,3 +230,178 @@ describe('Flight details roster — unpaired veterans (issue #214)', () => {
     expect(screen.getByText('No Guardian')).toBeInTheDocument();
   });
 });
+
+describe('Flight details roster — training preset (issue #212)', () => {
+  const trainingDetails = {
+    flight: {
+      name: 'Oct 2026',
+      completed: false,
+      flight_date: '2026-10-10',
+      capacity: 40,
+    },
+    stats: {
+      flight: { Alpha: 2, Bravo: 0, None: 0 },
+      tours: { Alpha: 2, Bravo: 0, None: 0 },
+      buses: { Alpha2: 2 },
+    },
+    pairs: [
+      {
+        pairId: 'main-pair',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({
+            id: 'vet-main',
+            name_first: 'Dawn',
+            name_last: 'Brust',
+            name_middle: 'M',
+            phone_mbl: '414-111-1111',
+            birth_date: '1945-01-02',
+          }),
+          guardian({
+            id: 'grd-main',
+            name_first: 'Gail',
+            name_last: 'Main',
+            name_middle: 'Marie',
+            phone_mbl: '414-327-5999',
+            birth_date: '1969-05-07',
+            training: 'Main',
+            training_complete: false,
+            flight_training_notes: 'Passport later',
+            flight_waiver: true,
+            flight_training_see_doc: true,
+          }),
+        ],
+      },
+      {
+        pairId: 'web-pair',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({ id: 'vet-web', name_first: 'Wes', name_last: 'Webber' }),
+          guardian({
+            id: 'grd-web',
+            name_first: 'Wendy',
+            name_last: 'Web',
+            training: 'Web',
+            training_complete: true,
+            flight_training_notes: '',
+            flight_waiver: false,
+            flight_training_see_doc: false,
+          }),
+        ],
+      },
+      {
+        pairId: 'solo',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [veteran({ id: 'vet-solo', name_first: 'Uma', name_last: 'Unpaired' })],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue(trainingDetails);
+    api.getFlightAssignments.mockResolvedValue({
+      veterans: [],
+      guardians: [],
+      counts: { veterans: 0, guardians: 0 },
+    });
+    api.getGuardian = jest.fn().mockResolvedValue({
+      _id: 'grd-main',
+      _rev: '3-rev',
+      type: 'Guardian',
+      name: { first: 'Gail', last: 'Main', middle: 'Marie' },
+      address: {
+        street: '1 Main',
+        city: 'Milwaukee',
+        state: 'WI',
+        zip: '53202',
+        county: 'Milwaukee',
+        phone_day: '414-555-0100',
+        phone_mbl: '414-327-5999',
+      },
+      flight: {
+        id: 'flight-214',
+        bus: 'Alpha1',
+        training: 'Main',
+        training_complete: false,
+        training_notes: 'Passport later',
+        waiver: true,
+        training_see_doc: true,
+      },
+    });
+    api.updateGuardian = jest.fn().mockResolvedValue({ ok: true });
+    api.getFlightDetails.mockResolvedValue(trainingDetails);
+  });
+
+  async function openTrainingPreset(user) {
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Columns' }));
+    await user.click(await screen.findByRole('option', { name: 'Training' }));
+  }
+
+  test('selects the training preset, filters by type, and focuses on guardians', async () => {
+    const user = userEvent.setup();
+    await openTrainingPreset(user);
+
+    expect(screen.getByRole('columnheader', { name: 'Training notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Gender' })).not.toBeInTheDocument();
+    expect(localStorage.getItem('sshf-flight-detail-activity-preset')).toBe('training');
+
+    expect(screen.getByRole('button', { name: 'Guardians focus' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('link', { name: 'Dawn Brust' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Gail Main' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Wendy Web' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Training type' }));
+    expect(await screen.findByRole('option', { name: 'Main' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Web' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Alt' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'Web' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('link', { name: 'Gail Main' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Wendy Web' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Uma Unpaired' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Guardians focus' }));
+    expect(screen.getByRole('link', { name: 'Wes Webber' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Dawn Brust' })).not.toBeInTheDocument();
+  });
+
+  test('saves guardian training notes through the full guardian record', async () => {
+    const user = userEvent.setup();
+    await openTrainingPreset(user);
+
+    const gailRow = screen.getByRole('link', { name: 'Gail Main' }).closest('tr');
+    const notes = within(gailRow).getByRole('textbox', { name: 'Training notes' });
+    await user.clear(notes);
+    await user.type(notes, 'Passport after email');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(api.updateGuardian).toHaveBeenCalledWith(
+        'grd-main',
+        expect.objectContaining({
+          _rev: '3-rev',
+          name: expect.objectContaining({ first: 'Gail', last: 'Main', middle: 'Marie' }),
+          flight: expect.objectContaining({
+            training: 'Main',
+            training_notes: 'Passport after email',
+            training_complete: false,
+            waiver: true,
+          }),
+        })
+      );
+    });
+
+    const payload = api.updateGuardian.mock.calls[0][1];
+    expect(payload.flight.history).toBeUndefined();
+    expect(payload.metadata).toBeUndefined();
+    expect(payload.address.phone_mbl).toBe('414-327-5999');
+  });
+});

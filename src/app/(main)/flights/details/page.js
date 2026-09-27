@@ -60,8 +60,10 @@ import {
   filterPairs, 
   sortPairs, 
   getUniqueAssignedCallers, 
+  getTrainingTypeOptions,
   pairHasIssues 
 } from '@/components/main/flight/roster-helpers';
+import { buildPersonUpdatePayload } from '@/components/main/flight/person-update';
 import {
   loadFlightRosterControls,
   saveFlightRosterControls,
@@ -90,6 +92,8 @@ function FlightDetailsPage() {
   const [busFilter, setBusFilter] = React.useState('all');
   const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
   const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
+  const [trainingTypeFilter, setTrainingTypeFilter] = React.useState([]);
+  const [trainingGuardiansFocus, setTrainingGuardiansFocus] = React.useState(true);
   const [sortBy, setSortBy] = React.useState('name'); // name, bus, assignment, group, status, seat
   const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
@@ -248,6 +252,8 @@ function FlightDetailsPage() {
     setBusFilter(savedControls.busFilter);
     setAssignedCallerFilter(savedControls.assignedCallerFilter);
     setNoGuardianOnly(savedControls.noGuardianOnly);
+    setTrainingTypeFilter(savedControls.trainingTypeFilter);
+    setTrainingGuardiansFocus(savedControls.trainingGuardiansFocus);
     setSortBy(savedControls.sortBy);
   }, [flightId]);
 
@@ -274,16 +280,18 @@ function FlightDetailsPage() {
         assignedCallerFilter,
         sortBy,
         noGuardianOnly,
+        trainingTypeFilter,
+        trainingGuardiansFocus,
       });
     },
-    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly]
+    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus]
   );
 
   // Persist roster controls when values change. The coordinator skips the first persist
   // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
-  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, persistRosterControls]);
+  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, persistRosterControls]);
 
   // Debounce name filter persistence while typing
   React.useEffect(() => {
@@ -309,6 +317,8 @@ function FlightDetailsPage() {
     setBusFilter(defaults.busFilter);
     setAssignedCallerFilter(defaults.assignedCallerFilter);
     setNoGuardianOnly(defaults.noGuardianOnly);
+    setTrainingTypeFilter(defaults.trainingTypeFilter);
+    setTrainingGuardiansFocus(defaults.trainingGuardiansFocus);
     setSortBy(defaults.sortBy);
     rosterPersistCoordinatorRef.current = {
       skipNextPersist: false,
@@ -334,36 +344,7 @@ function FlightDetailsPage() {
           fullPerson = await api.getGuardian(personId);
         }
 
-        // Deep merge the updates into the full person object
-        const payload = {
-          ...fullPerson,
-          ...updates,
-          _rev: fullPerson._rev,
-          type: personType
-        };
-
-        // Deep merge nested objects (flight, call, etc.)
-        if (updates.flight) {
-          payload.flight = {
-            ...fullPerson.flight,
-            ...updates.flight
-          };
-        }
-        if (updates.call) {
-          payload.call = {
-            ...fullPerson.call,
-            ...updates.call
-          };
-        }
-
-        // Remove metadata (API handles this)
-        delete payload.metadata;
-
-        // Remove history arrays from nested objects
-        if (payload.flight?.history) delete payload.flight.history;
-        if (payload.veteran?.history) delete payload.veteran.history;
-        if (payload.guardian?.history) delete payload.guardian.history;
-        if (payload.call?.history) delete payload.call.history;
+        const payload = buildPersonUpdatePayload(fullPerson, updates, personType);
 
         if (personType === 'Veteran') {
           await api.updateVeteran(personId, payload);
@@ -702,6 +683,7 @@ function FlightDetailsPage() {
                     busFilter,
                     assignedCallerFilter,
                     noGuardianOnly,
+                    trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
                   });
                   
                   const statusCounts = {
@@ -764,6 +746,7 @@ function FlightDetailsPage() {
                   )).sort();
                   
                   const allCallers = getUniqueAssignedCallers(pairs);
+                  const trainingTypeOptions = getTrainingTypeOptions(pairs);
                   
                   return (
                     <Stack spacing={2}>
@@ -813,6 +796,43 @@ function FlightDetailsPage() {
                         </Button>
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        {activityPreset === ACTIVITY_PRESETS.TRAINING && (
+                          <>
+                            <Chip
+                              label="Guardians focus"
+                              clickable
+                              color={trainingGuardiansFocus ? 'primary' : 'default'}
+                              variant={trainingGuardiansFocus ? 'filled' : 'outlined'}
+                              aria-pressed={trainingGuardiansFocus}
+                              onClick={() => setTrainingGuardiansFocus((current) => !current)}
+                              sx={{ alignSelf: 'center' }}
+                            />
+                            <TextField
+                              select
+                              size="small"
+                              label="Training type"
+                              value={trainingTypeFilter}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setTrainingTypeFilter(typeof value === 'string' ? value.split(',') : value);
+                              }}
+                              SelectProps={{
+                                multiple: true,
+                                displayEmpty: true,
+                                renderValue: (selected) => (
+                                  selected.length === 0 ? 'All types' : selected.join(', ')
+                                ),
+                              }}
+                              sx={{ minWidth: 180 }}
+                            >
+                              {trainingTypeOptions.map((type) => (
+                                <MenuItem key={type} value={type}>
+                                  {type}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          </>
+                        )}
                         <TextField
                           placeholder="Search by name, phone, or city..."
                           size="small"
@@ -893,6 +913,7 @@ function FlightDetailsPage() {
                     busFilter,
                     assignedCallerFilter,
                     noGuardianOnly,
+                    trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
                   });
                   const sortedPairs = sortPairs(filteredPairs, sortBy);
 
@@ -907,6 +928,7 @@ function FlightDetailsPage() {
                       flightId={flightId}
                       flightName={flight.name}
                       activityPreset={activityPreset}
+                      guardiansFocus={activityPreset === ACTIVITY_PRESETS.TRAINING && trainingGuardiansFocus}
                     />
                   );
                 })()}

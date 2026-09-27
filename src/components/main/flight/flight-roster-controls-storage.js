@@ -11,6 +11,8 @@ export const DEFAULT_ROSTER_CONTROLS = {
   assignedCallerFilter: 'all',
   sortBy: 'name',
   noGuardianOnly: false,
+  trainingTypeFilter: [],
+  trainingGuardiansFocus: true,
 };
 
 const STATUS_FILTER_VALUES = new Set(['all', 'ok', 'issues', 'nofly']);
@@ -53,6 +55,18 @@ function normalizeBoolean(value, fallback) {
 }
 
 /**
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item) => typeof item === 'string' && item.trim() !== '');
+}
+
+/**
  * Load saved roster controls for a flight.
  * @param {string | null | undefined} flightId
  * @returns {typeof DEFAULT_ROSTER_CONTROLS}
@@ -87,6 +101,11 @@ export function loadFlightRosterControls(flightId) {
       ),
       sortBy: normalizeEnum(parsed.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
       noGuardianOnly: normalizeBoolean(parsed.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
+      trainingTypeFilter: normalizeStringArray(parsed.trainingTypeFilter),
+      trainingGuardiansFocus: normalizeBoolean(
+        parsed.trainingGuardiansFocus,
+        DEFAULT_ROSTER_CONTROLS.trainingGuardiansFocus
+      ),
     };
   } catch (error) {
     console.warn('Failed to load flight roster controls:', error);
@@ -119,6 +138,11 @@ export function saveFlightRosterControls(flightId, controls) {
     ),
     sortBy: normalizeEnum(controls.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
     noGuardianOnly: normalizeBoolean(controls.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
+    trainingTypeFilter: normalizeStringArray(controls.trainingTypeFilter),
+    trainingGuardiansFocus: normalizeBoolean(
+      controls.trainingGuardiansFocus,
+      DEFAULT_ROSTER_CONTROLS.trainingGuardiansFocus
+    ),
   };
 
   try {

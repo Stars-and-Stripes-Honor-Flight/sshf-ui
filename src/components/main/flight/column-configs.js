@@ -7,6 +7,7 @@ export const ACTIVITY_PRESETS = {
   CALLER: 'caller',
   MEDICAL: 'medical',
   APPAREL: 'apparel',
+  TRAINING: 'training',
 };
 
 export const ACTIVITY_PRESET_LABELS = {
@@ -14,6 +15,7 @@ export const ACTIVITY_PRESET_LABELS = {
   [ACTIVITY_PRESETS.CALLER]: 'Caller',
   [ACTIVITY_PRESETS.MEDICAL]: 'Medical',
   [ACTIVITY_PRESETS.APPAREL]: 'Apparel',
+  [ACTIVITY_PRESETS.TRAINING]: 'Training',
 };
 
 /**
@@ -43,11 +45,20 @@ export const COLUMN_CONFIGS = {
     { id: 'jacket_size', label: 'Jacket size', width: 120 },
     { id: 'notes', label: 'Notes', width: 200 },
   ],
+  [ACTIVITY_PRESETS.TRAINING]: [
+    { id: 'name_middle', label: 'Middle', width: 120 },
+    { id: 'phone_mbl', label: 'Mobile', width: 160 },
+    { id: 'birth_date', label: 'DOB', width: 120 },
+    { id: 'training', label: 'Training', width: 160 },
+    { id: 'training_notes', label: 'Training notes', width: 260, minWidth: 200 },
+    { id: 'flight_waiver', label: 'Waivers', width: 96, align: 'center' },
+    { id: 'flight_training_see_doc', label: 'See Doc', width: 96, align: 'center' },
+  ],
 };
 
 /**
  * Get the column configuration for a given activity preset
- * @param {string} preset - The activity preset (ops, caller, medical, apparel)
+ * @param {string} preset - The activity preset (ops, caller, medical, apparel, training)
  * @returns {Array} Array of column definitions
  */
 export function getColumnConfig(preset) {

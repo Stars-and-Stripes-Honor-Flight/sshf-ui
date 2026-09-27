@@ -6,6 +6,7 @@ import {
   getPairStatusIssues,
   pairHasIssues,
   filterPairs,
+  getTrainingTypeOptions,
   sortPairs,
   getPairSortSeat,
   getPairSortBus,
@@ -622,6 +623,65 @@ describe('roster-helpers', () => {
         noGuardianOnly: true,
       });
       expect(result).toHaveLength(0);
+    });
+
+    test('training type filter keeps guardians whose training matches the selection', () => {
+      const pairs = [
+        {
+          pairId: 'main',
+          people: [
+            { type: 'Veteran', name_first: 'A', name_last: 'Vet' },
+            { type: 'Guardian', name_first: 'Main', name_last: 'Guard', training: 'Main' },
+          ],
+        },
+        {
+          pairId: 'web',
+          people: [
+            { type: 'Guardian', name_first: 'Web', name_last: 'Guard', training: 'Web' },
+          ],
+        },
+        {
+          pairId: 'alt',
+          people: [
+            { type: 'Guardian', name_first: 'Alt', name_last: 'Guard', training: ' Alt ' },
+          ],
+        },
+        {
+          pairId: 'unpaired',
+          people: [{ type: 'Veteran', name_first: 'Solo', name_last: 'Vet' }],
+        },
+      ];
+
+      expect(filterPairs(pairs, { trainingTypeFilter: [] }).map((pair) => pair.pairId)).toEqual([
+        'main',
+        'web',
+        'alt',
+        'unpaired',
+      ]);
+      expect(filterPairs(pairs, { trainingTypeFilter: ['Web', 'Alt'] }).map((pair) => pair.pairId)).toEqual([
+        'web',
+        'alt',
+      ]);
+      expect(filterPairs(pairs, { trainingTypeFilter: ['Main'] }).map((pair) => pair.pairId)).toEqual(['main']);
+    });
+  });
+
+  describe('getTrainingTypeOptions', () => {
+    test('always offers Main and Web and adds other types present on guardians', () => {
+      const pairs = [
+        { people: [{ type: 'Guardian', training: 'Alt' }] },
+        { people: [{ type: 'Guardian', training: 'Make-up' }] },
+        { people: [{ type: 'Guardian', training: 'Zoom' }] },
+        { people: [{ type: 'Veteran', training: 'Ignored' }] },
+        { people: [{ type: 'Guardian', training: '  ' }] },
+      ];
+
+      expect(getTrainingTypeOptions(pairs)).toEqual(['Main', 'Web', 'Alt', 'Make-up', 'Zoom']);
+    });
+
+    test('omits Alt when no guardian has that training type', () => {
+      const pairs = [{ people: [{ type: 'Guardian', training: 'Web' }] }];
+      expect(getTrainingTypeOptions(pairs)).toEqual(['Main', 'Web']);
     });
   });
 
