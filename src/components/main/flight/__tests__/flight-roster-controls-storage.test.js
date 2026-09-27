@@ -57,7 +57,55 @@ describe('flight-roster-controls-storage', () => {
         assignedCallerFilter: 'Jane Doe',
         sortBy: 'seat',
         noGuardianOnly: false,
+        trainingTypeFilter: [],
+        trainingGuardiansFocus: true,
       });
+    });
+
+    test('round-trips the training type filter and guardians focus', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        trainingTypeFilter: ['Web', 'Alt'],
+        trainingGuardiansFocus: false,
+      });
+
+      const loaded = loadFlightRosterControls('flight-1');
+      expect(loaded.trainingTypeFilter).toEqual(['Web', 'Alt']);
+      expect(loaded.trainingGuardiansFocus).toBe(false);
+    });
+
+    test('defaults training controls for legacy saved controls', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('legacy-training'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          nameFilter: '',
+          statusFilter: 'all',
+          busFilter: 'all',
+          assignedCallerFilter: 'all',
+          sortBy: 'name',
+          noGuardianOnly: false,
+        })
+      );
+
+      const loaded = loadFlightRosterControls('legacy-training');
+      expect(loaded.trainingTypeFilter).toEqual([]);
+      expect(loaded.trainingGuardiansFocus).toBe(true);
+    });
+
+    test('drops invalid training type filter values', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('flight-bad-training'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          trainingTypeFilter: ['Web', 3, '', 'Alt'],
+          trainingGuardiansFocus: 'yes',
+        })
+      );
+
+      const loaded = loadFlightRosterControls('flight-bad-training');
+      expect(loaded.trainingTypeFilter).toEqual(['Web', 'Alt']);
+      expect(loaded.trainingGuardiansFocus).toBe(true);
     });
 
     test('round-trips the No guardian filter', () => {

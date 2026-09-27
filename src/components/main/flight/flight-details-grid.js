@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
@@ -137,6 +138,9 @@ function EditableField({
   maxWidth = 150,
   minWidth,
   inputProps,
+  multiline = false,
+  minRows,
+  maxRows,
 }) {
   const [localValue, setLocalValue] = React.useState(value);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -165,6 +169,9 @@ function EditableField({
       onBlur={handleBlur}
       disabled={disabled || isSaving}
       variant="outlined"
+      multiline={multiline}
+      minRows={minRows}
+      maxRows={maxRows}
       fullWidth={Boolean(minWidth)}
       sx={{
         maxWidth,
@@ -182,6 +189,39 @@ function EditableField({
           <CircularProgress size={16} sx={{ mr: 1 }} />
         ) : null,
       }}
+    />
+  );
+}
+
+function EditableCheckbox({ checked, onChange, ariaLabel, disabled = false }) {
+  const [localChecked, setLocalChecked] = React.useState(Boolean(checked));
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    setLocalChecked(Boolean(checked));
+  }, [checked]);
+
+  const handleChange = async (event) => {
+    const next = event.target.checked;
+    setLocalChecked(next);
+    setIsSaving(true);
+    try {
+      await onChange(next);
+    } catch (error) {
+      setLocalChecked(Boolean(checked));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Checkbox
+      size="small"
+      checked={localChecked}
+      onChange={handleChange}
+      disabled={disabled || isSaving}
+      inputProps={{ 'aria-label': ariaLabel }}
+      sx={{ p: 0.5 }}
     />
   );
 }
@@ -255,7 +295,7 @@ const BusSelector = React.memo(function BusSelector({ value, onChange, personId,
 
 // Memoized so a parent render (new callback, filter state that does not change
 // this pair) does not re-render every visible row's Select/TextField.
-const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS }) {
+const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false }) {
   const [open, setOpen] = React.useState(false);
   const [localAssignedTo, setLocalAssignedTo] = React.useState(null);
   const veteran = pair.people.find(p => p.type === 'Veteran');
@@ -349,22 +389,75 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       onOpenPairingDialog(veteran);
     }
   };
+
+  const handleMiddleNameChange = async (newValue, personId, personType) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, personType, { name: { middle: newValue } });
+        toast.success('Middle name updated');
+      } catch (error) {
+        toast.error('Failed to update middle name');
+      }
+    }
+  };
+
+  const handleMobilePhoneChange = async (newValue, personId, personType) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, personType, { address: { phone_mbl: newValue } });
+        toast.success('Mobile phone updated');
+      } catch (error) {
+        toast.error('Failed to update mobile phone');
+      }
+    }
+  };
+
+  const handleTrainingCompleteChange = async (nextValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Guardian', { flight: { training_complete: nextValue } });
+        toast.success('Training updated');
+      } catch (error) {
+        toast.error('Failed to update training');
+        throw error;
+      }
+    }
+  };
+
+  const handleTrainingNotesChange = async (newValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Guardian', { flight: { training_notes: newValue } });
+        toast.success('Training notes updated');
+      } catch (error) {
+        toast.error('Failed to update training notes');
+      }
+    }
+  };
   
   // Cell renderer handlers for activity cells
   const handlers = {
     EditableField,
+    EditableCheckbox,
     BusSelector,
     handleSeatChange,
     handleBusChange,
     handleAssignedToCallChange,
     handleSyncCallAssignment,
+    handleMiddleNameChange,
+    handleMobilePhoneChange,
+    handleTrainingCompleteChange,
+    handleTrainingNotesChange,
   };
 
-  return (
+  // Guardians focus keeps the guardian row as the one staff see first. A veteran
+  // row stays when that pair has no guardian, so unpaired veterans can still be edited.
+  const showVeteranRow = !guardiansFocus || (Boolean(veteran) && !guardian);
+
+  const renderLeadingCells = (isPrimary) => (
     <>
-      {/* Veteran Row */}
-      <TableRow sx={{ backgroundColor: pairBg }}>
-        <TableCell width={40} sx={{ borderBottom: 'none' }}>
+      <TableCell width={40} sx={{ borderBottom: 'none' }}>
+        {isPrimary ? (
           <IconButton
             aria-label="expand row"
             size="small"
@@ -372,12 +465,24 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
           >
             {open ? <CaretUpIcon /> : <CaretDownIcon />}
           </IconButton>
-        </TableCell>
-        <TableCell width={40} sx={{ textAlign: 'center', borderBottom: 'none' }}>
+        ) : null}
+      </TableCell>
+      <TableCell width={40} sx={{ textAlign: 'center', borderBottom: 'none' }}>
+        {isPrimary ? (
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {index + 1}
           </Typography>
-        </TableCell>
+        ) : null}
+      </TableCell>
+    </>
+  );
+
+  return (
+    <>
+      {/* Veteran Row */}
+      {showVeteranRow && (
+      <TableRow sx={{ backgroundColor: pairBg }}>
+        {renderLeadingCells(true)}
         <TableCell sx={{ borderBottom: 'none' }}>
           <PersonDisplay person={veteran} type="Veteran" />
         </TableCell>
@@ -395,12 +500,12 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
           </TableCell>
         ))}
       </TableRow>
+      )}
 
       {/* Guardian Row (if guardian exists) - same background as veteran */}
       {guardian && (
         <TableRow sx={{ backgroundColor: pairBg }}>
-          <TableCell colSpan={1} sx={{ borderBottom: 'none' }} />
-          <TableCell sx={{ borderBottom: 'none' }} />
+          {renderLeadingCells(!showVeteranRow)}
           <TableCell sx={{ borderBottom: 'none' }}>
             <PersonDisplay person={guardian} type="Guardian" />
           </TableCell>
@@ -537,7 +642,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
 });
 
 // Main FlightDetailsGrid component
-export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS }) {
+export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false }) {
   const columns = getColumnConfig(activityPreset);
   const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
   const [selectedVeteranForPairing, setSelectedVeteranForPairing] = React.useState(null);
@@ -593,6 +698,7 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
                 statusFilter={statusFilter}
                 busFilter={busFilter}
                 activityPreset={activityPreset}
+                guardiansFocus={guardiansFocus}
                 onOpenPairingDialog={handleOpenPairingDialog}
               />
             ))}

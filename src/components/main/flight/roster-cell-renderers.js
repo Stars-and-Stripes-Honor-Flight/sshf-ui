@@ -5,6 +5,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -271,6 +272,148 @@ export function renderJacketSizeCell(person) {
   return <Typography variant="body2">{person.apparel_jacket_size || '—'}</Typography>;
 }
 
+function RolePlaceholder() {
+  return <Typography variant="body2">—</Typography>;
+}
+
+/**
+ * Format a YYYY-MM-DD birth date for the roster without timezone shifting.
+ * @param {string|undefined|null} value
+ * @returns {string}
+ */
+function formatRosterBirthDate(value) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return '—';
+  }
+
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) {
+    return value;
+  }
+
+  return `${match[2]}/${match[3]}/${match[1]}`;
+}
+
+/**
+ * Read-only date of birth for veteran and guardian.
+ */
+export function renderBirthDateCell(person) {
+  if (!person) return null;
+  return <Typography variant="body2">{formatRosterBirthDate(person.birth_date)}</Typography>;
+}
+
+/**
+ * Editable middle name for veteran and guardian.
+ */
+export function renderMiddleNameCell(person, personType, handlers) {
+  if (!person) return null;
+
+  const { EditableField, handleMiddleNameChange } = handlers;
+  return (
+    <EditableField
+      value={person.name_middle || ''}
+      onBlur={(newValue) => handleMiddleNameChange(newValue, person.id, personType)}
+      placeholder="Middle"
+      maxWidth={140}
+      inputProps={{ 'aria-label': 'Middle name' }}
+    />
+  );
+}
+
+/**
+ * Editable mobile phone for veteran and guardian.
+ */
+export function renderMobilePhoneCell(person, personType, handlers) {
+  if (!person) return null;
+
+  const { EditableField, handleMobilePhoneChange } = handlers;
+  return (
+    <EditableField
+      value={person.phone_mbl || ''}
+      onBlur={(newValue) => handleMobilePhoneChange(newValue, person.id, personType)}
+      placeholder="Mobile"
+      maxWidth={170}
+      inputProps={{ 'aria-label': 'Mobile phone' }}
+    />
+  );
+}
+
+/**
+ * Guardian training type plus an editable training-complete checkbox.
+ * Veterans show an em dash.
+ */
+export function renderTrainingCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Guardian') return <RolePlaceholder />;
+
+  const { EditableCheckbox, handleTrainingCompleteChange } = handlers;
+  const typeLabel = (person.training || '').trim();
+
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+      <Typography variant="body2">{typeLabel || '—'}</Typography>
+      <EditableCheckbox
+        checked={Boolean(person.training_complete)}
+        onChange={(next) => handleTrainingCompleteChange(next, person.id)}
+        ariaLabel="Training complete"
+      />
+    </Stack>
+  );
+}
+
+/**
+ * Multiline training notes for guardians. Veterans show an em dash.
+ */
+export function renderTrainingNotesCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Guardian') return <RolePlaceholder />;
+
+  const { EditableField, handleTrainingNotesChange } = handlers;
+  return (
+    <EditableField
+      value={person.flight_training_notes || ''}
+      onBlur={(newValue) => handleTrainingNotesChange(newValue, person.id)}
+      placeholder="Training notes"
+      multiline
+      minRows={2}
+      maxRows={4}
+      maxWidth={280}
+      minWidth={180}
+      inputProps={{ 'aria-label': 'Training notes' }}
+    />
+  );
+}
+
+function ReadOnlyCheckbox({ checked, ariaLabel }) {
+  return (
+    <Checkbox
+      size="small"
+      checked={Boolean(checked)}
+      disabled
+      inputProps={{ 'aria-label': ariaLabel, readOnly: true }}
+      sx={{ p: 0.5 }}
+    />
+  );
+}
+
+/**
+ * Read-only waiver checkbox for guardians. Veterans show an em dash.
+ */
+export function renderWaiverCell(person, personType) {
+  if (!person) return null;
+  if (personType !== 'Guardian') return <RolePlaceholder />;
+  return <ReadOnlyCheckbox checked={person.flight_waiver} ariaLabel="Waiver" />;
+}
+
+/**
+ * Read-only see-doc checkbox for guardians. Veterans show an em dash.
+ */
+export function renderSeeDocCell(person, personType) {
+  if (!person) return null;
+  if (personType !== 'Guardian') return <RolePlaceholder />;
+  return <ReadOnlyCheckbox checked={person.flight_training_see_doc} ariaLabel="See doc" />;
+}
+
 /**
  * Render apparel notes cell
  */
@@ -316,6 +459,20 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return renderJacketSizeCell(person);
     case 'notes':
       return renderNotesCell(person);
+    case 'name_middle':
+      return renderMiddleNameCell(person, personType, handlers);
+    case 'phone_mbl':
+      return renderMobilePhoneCell(person, personType, handlers);
+    case 'birth_date':
+      return renderBirthDateCell(person);
+    case 'training':
+      return renderTrainingCell(person, personType, handlers);
+    case 'training_notes':
+      return renderTrainingNotesCell(person, personType, handlers);
+    case 'flight_waiver':
+      return renderWaiverCell(person, personType);
+    case 'flight_training_see_doc':
+      return renderSeeDocCell(person, personType);
     default:
       return null;
   }

@@ -20,6 +20,7 @@ describe('column-configs', () => {
       expect(ACTIVITY_PRESETS.CALLER).toBe('caller');
       expect(ACTIVITY_PRESETS.MEDICAL).toBe('medical');
       expect(ACTIVITY_PRESETS.APPAREL).toBe('apparel');
+      expect(ACTIVITY_PRESETS.TRAINING).toBe('training');
     });
   });
 
@@ -29,6 +30,7 @@ describe('column-configs', () => {
       expect(ACTIVITY_PRESET_LABELS[ACTIVITY_PRESETS.CALLER]).toBe('Caller');
       expect(ACTIVITY_PRESET_LABELS[ACTIVITY_PRESETS.MEDICAL]).toBe('Medical');
       expect(ACTIVITY_PRESET_LABELS[ACTIVITY_PRESETS.APPAREL]).toBe('Apparel');
+      expect(ACTIVITY_PRESET_LABELS[ACTIVITY_PRESETS.TRAINING]).toBe('Training');
     });
   });
 
@@ -68,6 +70,30 @@ describe('column-configs', () => {
       expect(apparelColumns[1].id).toBe('jacket_size');
       expect(apparelColumns[2].id).toBe('notes');
     });
+
+    test('training preset lists middle, mobile, dob, training, notes, waivers, and see doc', () => {
+      const trainingColumns = COLUMN_CONFIGS[ACTIVITY_PRESETS.TRAINING];
+      expect(trainingColumns.map((column) => column.id)).toEqual([
+        'name_middle',
+        'phone_mbl',
+        'birth_date',
+        'training',
+        'training_notes',
+        'flight_waiver',
+        'flight_training_see_doc',
+      ]);
+      expect(trainingColumns.map((column) => column.label)).toEqual([
+        'Middle',
+        'Mobile',
+        'DOB',
+        'Training',
+        'Training notes',
+        'Waivers',
+        'See Doc',
+      ]);
+      expect(trainingColumns.map((column) => column.id)).not.toContain('gender');
+      expect(trainingColumns.map((column) => column.id)).not.toContain('bus');
+    });
   });
 
   describe('getColumnConfig', () => {
@@ -79,6 +105,11 @@ describe('column-configs', () => {
     test('returns caller config for caller preset', () => {
       const config = getColumnConfig(ACTIVITY_PRESETS.CALLER);
       expect(config).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.CALLER]);
+    });
+
+    test('returns training config for training preset', () => {
+      const config = getColumnConfig(ACTIVITY_PRESETS.TRAINING);
+      expect(config).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.TRAINING]);
     });
 
     test('returns ops config as fallback for invalid preset', () => {
@@ -106,6 +137,11 @@ describe('column-configs', () => {
     test('saves and loads medical preset', () => {
       savePreset(ACTIVITY_PRESETS.MEDICAL);
       expect(loadSavedPreset()).toBe(ACTIVITY_PRESETS.MEDICAL);
+    });
+
+    test('saves and loads training preset', () => {
+      savePreset(ACTIVITY_PRESETS.TRAINING);
+      expect(loadSavedPreset()).toBe(ACTIVITY_PRESETS.TRAINING);
     });
 
     test('returns default for invalid saved value', () => {

@@ -250,6 +250,7 @@ export function pairHasIssues(pair) {
  * @param {string} filters.busFilter - Bus filter
  * @param {string} filters.assignedCallerFilter - Assigned caller filter
  * @param {boolean} filters.noGuardianOnly - When true, keep only veterans with no guardian
+ * @param {string[]} filters.trainingTypeFilter - Guardian training types to keep; empty means all
  * @returns {Array} Filtered pairs
  */
 export function filterPairs(pairs, filters) {
@@ -259,6 +260,7 @@ export function filterPairs(pairs, filters) {
     busFilter = 'all',
     assignedCallerFilter = 'all',
     noGuardianOnly = false,
+    trainingTypeFilter = [],
   } = filters;
   
   return pairs.filter(pair => {
@@ -321,9 +323,44 @@ export function filterPairs(pairs, filters) {
     if (noGuardianOnly && !veteranHasNoGuardian(pair)) {
       return false;
     }
+
+    if (Array.isArray(trainingTypeFilter) && trainingTypeFilter.length > 0) {
+      const selected = new Set(trainingTypeFilter.map((type) => String(type).trim()));
+      const training = (guardian?.training ?? '').trim();
+      if (!selected.has(training)) {
+        return false;
+      }
+    }
     
     return true;
   });
+}
+
+const PREFERRED_TRAINING_TYPES = ['Main', 'Web', 'Alt', 'Previous', 'Phone', 'Make-up', 'None'];
+
+/**
+ * Training-type choices for the roster filter.
+ * Main and Web are always offered. Alt and any other type appear when a guardian has that value.
+ * @param {Array} pairs
+ * @returns {string[]}
+ */
+export function getTrainingTypeOptions(pairs) {
+  const present = new Set(['Main', 'Web']);
+
+  for (const pair of pairs || []) {
+    const guardian = pair.people?.find((person) => person.type === 'Guardian');
+    const training = (guardian?.training ?? '').trim();
+    if (training) {
+      present.add(training);
+    }
+  }
+
+  const preferred = PREFERRED_TRAINING_TYPES.filter((type) => present.has(type));
+  const extras = [...present]
+    .filter((type) => !PREFERRED_TRAINING_TYPES.includes(type))
+    .sort((left, right) => left.localeCompare(right));
+
+  return [...preferred, ...extras];
 }
 
 /**
