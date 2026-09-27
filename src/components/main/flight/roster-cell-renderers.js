@@ -205,13 +205,13 @@ export function renderFmNumberCell(person) {
 }
 
 /**
- * Render medical level / experience cell (vet: level, grd: experience)
+ * Render med notes / experience cell (vet: medical_review, grd: med_exprnc)
  */
 export function renderMedicalLevelCell(person, personType) {
   if (!person) return null;
   
   if (personType === 'Veteran') {
-    return <Typography variant="body2">{person.medical_level || '—'}</Typography>;
+    return <Typography variant="body2">{person.medical_review || '—'}</Typography>;
   }
   
   return <Typography variant="body2">{person.med_exprnc || '—'}</Typography>;

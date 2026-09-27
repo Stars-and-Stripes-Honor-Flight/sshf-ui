@@ -3,7 +3,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
-import { renderSeatCell, renderBusCell, renderGroupCell } from '../roster-cell-renderers';
+import {
+  renderSeatCell,
+  renderBusCell,
+  renderGroupCell,
+  renderMedicalLevelCell,
+} from '../roster-cell-renderers';
 
 function MockEditableField({ value, onBlur, placeholder, maxWidth, minWidth, inputProps }) {
   return (
@@ -84,6 +89,32 @@ describe('renderBusCell', () => {
 
     expect(screen.queryByTestId('bus-selector')).not.toBeInTheDocument();
     expect(screen.getByText('Alpha3')).toBeInTheDocument();
+  });
+});
+
+describe('renderMedicalLevelCell', () => {
+  test('shows veteran medical review notes', () => {
+    render(
+      renderMedicalLevelCell(
+        { medical_review: 'Needs wheelchair assist at gate', medical_level: '2' },
+        'Veteran'
+      )
+    );
+
+    expect(screen.getByText('Needs wheelchair assist at gate')).toBeInTheDocument();
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+  });
+
+  test('shows em dash when veteran has no medical review notes', () => {
+    render(renderMedicalLevelCell({ medical_level: '2' }, 'Veteran'));
+
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('shows guardian medical experience unchanged', () => {
+    render(renderMedicalLevelCell({ med_exprnc: 'RN, ICU experience' }, 'Guardian'));
+
+    expect(screen.getByText('RN, ICU experience')).toBeInTheDocument();
   });
 });
 

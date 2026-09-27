@@ -34,7 +34,7 @@ export const COLUMN_CONFIGS = {
     { id: 'fm_number', label: 'FM #', width: 80 },
   ],
   [ACTIVITY_PRESETS.MEDICAL]: [
-    { id: 'medical_level', label: 'Level / Med Experience', width: 180 },
+    { id: 'medical_level', label: 'Med Notes / Med Experience', width: 180 },
     { id: 'medical_form', label: 'Form complete', width: 130, align: 'center' },
     { id: 'limitations', label: 'Limitations / No-Fly', width: 200 },
   ],
