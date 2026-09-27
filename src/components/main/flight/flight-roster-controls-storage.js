@@ -10,6 +10,7 @@ export const DEFAULT_ROSTER_CONTROLS = {
   busFilter: 'all',
   assignedCallerFilter: 'all',
   sortBy: 'name',
+  noGuardianOnly: false,
 };
 
 const STATUS_FILTER_VALUES = new Set(['all', 'ok', 'issues', 'nofly']);
@@ -40,6 +41,15 @@ function normalizeEnum(value, allowed, fallback) {
  */
 function normalizeString(value, fallback) {
   return typeof value === 'string' ? value : fallback;
+}
+
+/**
+ * @param {unknown} value
+ * @param {boolean} fallback
+ * @returns {boolean}
+ */
+function normalizeBoolean(value, fallback) {
+  return typeof value === 'boolean' ? value : fallback;
 }
 
 /**
@@ -76,6 +86,7 @@ export function loadFlightRosterControls(flightId) {
         DEFAULT_ROSTER_CONTROLS.assignedCallerFilter
       ),
       sortBy: normalizeEnum(parsed.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
+      noGuardianOnly: normalizeBoolean(parsed.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
     };
   } catch (error) {
     console.warn('Failed to load flight roster controls:', error);
@@ -107,6 +118,7 @@ export function saveFlightRosterControls(flightId, controls) {
       DEFAULT_ROSTER_CONTROLS.assignedCallerFilter
     ),
     sortBy: normalizeEnum(controls.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
+    noGuardianOnly: normalizeBoolean(controls.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
   };
 
   try {

@@ -56,7 +56,46 @@ describe('flight-roster-controls-storage', () => {
         busFilter: 'Bus 2',
         assignedCallerFilter: 'Jane Doe',
         sortBy: 'seat',
+        noGuardianOnly: false,
       });
+    });
+
+    test('round-trips the No guardian filter', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        noGuardianOnly: true,
+      });
+
+      expect(loadFlightRosterControls('flight-1').noGuardianOnly).toBe(true);
+    });
+
+    test('defaults noGuardianOnly to false for legacy saved controls', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('legacy'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          nameFilter: 'smith',
+          statusFilter: 'issues',
+          busFilter: 'all',
+          assignedCallerFilter: 'all',
+          sortBy: 'name',
+        })
+      );
+
+      expect(loadFlightRosterControls('legacy').noGuardianOnly).toBe(false);
+    });
+
+    test('coerces a non-boolean noGuardianOnly value to false', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('flight-bad-flag'),
+        JSON.stringify({
+          ...DEFAULT_ROSTER_CONTROLS,
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          noGuardianOnly: 'yes',
+        })
+      );
+
+      expect(loadFlightRosterControls('flight-bad-flag').noGuardianOnly).toBe(false);
     });
 
     test('persists flight group sort option', () => {

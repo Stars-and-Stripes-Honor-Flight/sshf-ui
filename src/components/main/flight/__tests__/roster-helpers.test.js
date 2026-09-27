@@ -267,6 +267,62 @@ describe('roster-helpers', () => {
       expect(issues).toContainEqual({ id: 'guardianNoBus', label: 'Grd No Bus', severity: 'warning', personType: 'Guardian' });
     });
 
+    test('includes No Guardian when a veteran has no guardian and is otherwise complete', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({
+        id: 'noGuardian',
+        label: 'No Guardian',
+        severity: 'error',
+        personType: 'Veteran',
+      });
+    });
+
+    test('does not flag a no-fly guardian who is on the pair as No Guardian', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          {
+            type: 'Guardian',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
+            bus: 'Alpha1',
+            nofly: true,
+          },
+        ],
+      };
+      expect(getPairStatusIssues(pair).some((issue) => issue.id === 'noGuardian')).toBe(false);
+      expect(getPairStatusIssues(pair)).toEqual([]);
+    });
+
+    test('does not flag guardian-only crew as No Guardian', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          {
+            type: 'Guardian',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
+            bus: 'Alpha1',
+          },
+        ],
+      };
+      expect(getPairStatusIssues(pair).some((issue) => issue.id === 'noGuardian')).toBe(false);
+    });
+
     test('returns multiple issues when pair has multiple problems', () => {
       const pair = {
         busMismatch: true,
@@ -312,6 +368,17 @@ describe('roster-helpers', () => {
         busMismatch: false,
         missingPairedPerson: false,
         people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'None' }],
+      };
+      expect(pairHasIssues(pair)).toBe(true);
+    });
+
+    test('returns true when veteran has no guardian and is otherwise complete', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+        ],
       };
       expect(pairHasIssues(pair)).toBe(true);
     });
@@ -492,6 +559,70 @@ describe('roster-helpers', () => {
       expect(result).toHaveLength(1);
       expect(result[0].pairId).toBe('2');
     });
+
+    test('issues filter includes an otherwise complete veteran with no guardian', () => {
+      const pairs = [
+        testPairs[0],
+        {
+          pairId: 'unpaired-clean',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Uma',
+              name_last: 'Unpaired',
+              bus: 'Alpha1',
+              confirmed: true,
+              medical_form: true,
+              medical_level: 'Level 1',
+              nofly: false,
+            },
+          ],
+        },
+      ];
+
+      const issues = filterPairs(pairs, { statusFilter: 'issues' });
+      expect(issues.map((pair) => pair.pairId)).toEqual(['unpaired-clean']);
+
+      const ok = filterPairs(pairs, { statusFilter: 'ok' });
+      expect(ok.map((pair) => pair.pairId)).toEqual(['1']);
+    });
+
+    test('noGuardianOnly shows only veterans without a guardian', () => {
+      const pairs = [
+        ...testPairs,
+        {
+          pairId: 'crew',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Guardian',
+              name_first: 'Crew',
+              name_last: 'Only',
+              bus: 'Alpha1',
+              confirmed: true,
+              medical_form: true,
+              training_complete: true,
+              training: 'Complete',
+              nofly: false,
+            },
+          ],
+        },
+      ];
+
+      const result = filterPairs(pairs, { noGuardianOnly: true });
+      expect(result.map((pair) => pair.pairId)).toEqual(['3']);
+    });
+
+    test('noGuardianOnly combines with the name filter', () => {
+      const result = filterPairs(testPairs, {
+        nameFilter: 'doe',
+        noGuardianOnly: true,
+      });
+      expect(result).toHaveLength(0);
+    });
   });
 
   describe('sortPairs', () => {
@@ -510,6 +641,14 @@ describe('roster-helpers', () => {
             confirmed: true,
             medical_form: true,
             medical_level: 'Level 1',
+          },
+          {
+            type: 'Guardian',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
+            bus: 'Alpha2',
           },
         ],
       },
@@ -544,6 +683,14 @@ describe('roster-helpers', () => {
             confirmed: true,
             medical_form: true,
             medical_level: 'Level 1',
+          },
+          {
+            type: 'Guardian',
+            confirmed: true,
+            medical_form: true,
+            training_complete: true,
+            training: 'Complete',
+            bus: 'Bravo1',
           },
         ],
       },
@@ -596,6 +743,53 @@ describe('roster-helpers', () => {
       expect(result[0].pairId).toBe('2');
       expect(result[1].pairId).toBe('3');
       expect(result[2].pairId).toBe('1');
+    });
+
+    test('sorts an otherwise complete unpaired veteran ahead of a paired OK row', () => {
+      const pairs = [
+        {
+          pairId: 'ok',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Pat',
+              name_last: 'Apple',
+              bus: 'Alpha1',
+              confirmed: true,
+              medical_form: true,
+              medical_level: 'Level 1',
+            },
+            {
+              type: 'Guardian',
+              confirmed: true,
+              medical_form: true,
+              training_complete: true,
+              training: 'Complete',
+              bus: 'Alpha1',
+            },
+          ],
+        },
+        {
+          pairId: 'unpaired',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'Uma',
+              name_last: 'Zebra',
+              bus: 'Alpha1',
+              confirmed: true,
+              medical_form: true,
+              medical_level: 'Level 1',
+            },
+          ],
+        },
+      ];
+
+      expect(sortPairs(pairs, 'status').map((pair) => pair.pairId)).toEqual(['unpaired', 'ok']);
     });
 
     test('does not mutate original array', () => {

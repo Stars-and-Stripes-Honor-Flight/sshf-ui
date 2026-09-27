@@ -89,6 +89,7 @@ function FlightDetailsPage() {
   const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues, nofly
   const [busFilter, setBusFilter] = React.useState('all');
   const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
+  const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
   const [sortBy, setSortBy] = React.useState('name'); // name, bus, assignment, group, status, seat
   const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
@@ -246,6 +247,7 @@ function FlightDetailsPage() {
     setStatusFilter(savedControls.statusFilter);
     setBusFilter(savedControls.busFilter);
     setAssignedCallerFilter(savedControls.assignedCallerFilter);
+    setNoGuardianOnly(savedControls.noGuardianOnly);
     setSortBy(savedControls.sortBy);
   }, [flightId]);
 
@@ -271,16 +273,17 @@ function FlightDetailsPage() {
         busFilter,
         assignedCallerFilter,
         sortBy,
+        noGuardianOnly,
       });
     },
-    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy]
+    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly]
   );
 
   // Persist roster controls when values change. The coordinator skips the first persist
   // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
-  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, persistRosterControls]);
+  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, persistRosterControls]);
 
   // Debounce name filter persistence while typing
   React.useEffect(() => {
@@ -305,11 +308,94 @@ function FlightDetailsPage() {
     setStatusFilter(defaults.statusFilter);
     setBusFilter(defaults.busFilter);
     setAssignedCallerFilter(defaults.assignedCallerFilter);
+    setNoGuardianOnly(defaults.noGuardianOnly);
     setSortBy(defaults.sortBy);
     rosterPersistCoordinatorRef.current = {
       skipNextPersist: false,
       hydratedFlightId: flightId,
     };
+  }, [flightId]);
+
+  const handleUpdatePerson = React.useCallback(async (personId, personType, updates) => {
+    try {
+      // Handle seat updates using dedicated endpoints
+      if (updates.flight?.seat !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranSeat(personId, updates.flight.seat);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardianSeat(personId, updates.flight.seat);
+        }
+      } else {
+        // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
+        let fullPerson;
+        if (personType === 'Veteran') {
+          fullPerson = await api.getVeteran(personId);
+        } else if (personType === 'Guardian') {
+          fullPerson = await api.getGuardian(personId);
+        }
+
+        // Deep merge the updates into the full person object
+        const payload = {
+          ...fullPerson,
+          ...updates,
+          _rev: fullPerson._rev,
+          type: personType
+        };
+
+        // Deep merge nested objects (flight, call, etc.)
+        if (updates.flight) {
+          payload.flight = {
+            ...fullPerson.flight,
+            ...updates.flight
+          };
+        }
+        if (updates.call) {
+          payload.call = {
+            ...fullPerson.call,
+            ...updates.call
+          };
+        }
+
+        // Remove metadata (API handles this)
+        delete payload.metadata;
+
+        // Remove history arrays from nested objects
+        if (payload.flight?.history) delete payload.flight.history;
+        if (payload.veteran?.history) delete payload.veteran.history;
+        if (payload.guardian?.history) delete payload.guardian.history;
+        if (payload.call?.history) delete payload.call.history;
+
+        if (personType === 'Veteran') {
+          await api.updateVeteran(personId, payload);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardian(personId, payload);
+        }
+      }
+      // Refresh data after update
+      const [detailsData, newAssignmentData] = await Promise.all([
+        api.getFlightDetails(flightId),
+        api.getFlightAssignments(flightId),
+      ]);
+      setFlightData(detailsData);
+      setAssignmentData(newAssignmentData);
+    } catch (error) {
+      console.error('Failed to update person:', error);
+      throw error;
+    }
+  }, [flightId]);
+
+  const handlePairingComplete = React.useCallback(async () => {
+    try {
+      const [detailsData, newAssignmentData] = await Promise.all([
+        api.getFlightDetails(flightId),
+        api.getFlightAssignments(flightId),
+      ]);
+      setFlightData(detailsData);
+      setAssignmentData(newAssignmentData);
+    } catch (error) {
+      console.error('Failed to refresh flight data:', error);
+      toast.error('Failed to refresh flight data');
+    }
   }, [flightId]);
 
   // If no flightId, don't render anything (will redirect)
@@ -615,6 +701,7 @@ function FlightDetailsPage() {
                     statusFilter,
                     busFilter,
                     assignedCallerFilter,
+                    noGuardianOnly,
                   });
                   
                   const statusCounts = {
@@ -759,6 +846,15 @@ function FlightDetailsPage() {
                           <MenuItem value="issues">Issues Only</MenuItem>
                           <MenuItem value="nofly">No Fly</MenuItem>
                         </TextField>
+                        <Chip
+                          label="No guardian"
+                          clickable
+                          color={noGuardianOnly ? 'primary' : 'default'}
+                          variant={noGuardianOnly ? 'filled' : 'outlined'}
+                          aria-pressed={noGuardianOnly}
+                          onClick={() => setNoGuardianOnly((current) => !current)}
+                          sx={{ alignSelf: 'center' }}
+                        />
                         <TextField
                           select
                           size="small"
@@ -790,95 +886,13 @@ function FlightDetailsPage() {
                 
                 {/* Participants Grid */}
                 {(() => {
-                  const handleUpdatePerson = async (personId, personType, updates) => {
-                    try {
-                      // Handle seat updates using dedicated endpoints
-                      if (updates.flight?.seat !== undefined) {
-                        if (personType === 'Veteran') {
-                          await api.updateVeteranSeat(personId, updates.flight.seat);
-                        } else if (personType === 'Guardian') {
-                          await api.updateGuardianSeat(personId, updates.flight.seat);
-                        }
-                      } else {
-                        // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
-                        let fullPerson;
-                        if (personType === 'Veteran') {
-                          fullPerson = await api.getVeteran(personId);
-                        } else if (personType === 'Guardian') {
-                          fullPerson = await api.getGuardian(personId);
-                        }
-                        
-                        // Deep merge the updates into the full person object
-                        const payload = {
-                          ...fullPerson,
-                          ...updates,
-                          _rev: fullPerson._rev,
-                          type: personType
-                        };
-                        
-                        // Deep merge nested objects (flight, call, etc.)
-                        if (updates.flight) {
-                          payload.flight = {
-                            ...fullPerson.flight,
-                            ...updates.flight
-                          };
-                        }
-                        if (updates.call) {
-                          payload.call = {
-                            ...fullPerson.call,
-                            ...updates.call
-                          };
-                        }
-                        
-                        // Remove metadata (API handles this)
-                        delete payload.metadata;
-                        
-                        // Remove history arrays from nested objects
-                        if (payload.flight?.history) delete payload.flight.history;
-                        if (payload.veteran?.history) delete payload.veteran.history;
-                        if (payload.guardian?.history) delete payload.guardian.history;
-                        if (payload.call?.history) delete payload.call.history;
-                        
-                        if (personType === 'Veteran') {
-                          await api.updateVeteran(personId, payload);
-                        } else if (personType === 'Guardian') {
-                          await api.updateGuardian(personId, payload);
-                        }
-                      }
-                      // Refresh data after update
-                      const [detailsData, newAssignmentData] = await Promise.all([
-                        api.getFlightDetails(flightId),
-                        api.getFlightAssignments(flightId),
-                      ]);
-                      setFlightData(detailsData);
-                      setAssignmentData(newAssignmentData);
-                    } catch (error) {
-                      console.error('Failed to update person:', error);
-                      throw error;
-                    }
-                  };
-
-                  const handlePairingComplete = async () => {
-                    // Refresh flight data after guardian pairing
-                    try {
-                      const [detailsData, newAssignmentData] = await Promise.all([
-                        api.getFlightDetails(flightId),
-                        api.getFlightAssignments(flightId),
-                      ]);
-                      setFlightData(detailsData);
-                      setAssignmentData(newAssignmentData);
-                    } catch (error) {
-                      console.error('Failed to refresh flight data:', error);
-                      toast.error('Failed to refresh flight data');
-                    }
-                  };
-
                   // Apply filtering and sorting
                   const filteredPairs = filterPairs(pairs, {
                     nameFilter,
                     statusFilter,
                     busFilter,
                     assignedCallerFilter,
+                    noGuardianOnly,
                   });
                   const sortedPairs = sortPairs(filteredPairs, sortBy);
 

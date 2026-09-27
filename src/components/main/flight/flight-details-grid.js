@@ -21,9 +21,9 @@ import Alert from '@mui/material/Alert';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import MuiLink from '@mui/material/Link';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
 import { CaretDown as CaretDownIcon } from '@phosphor-icons/react/dist/ssr/CaretDown';
 import { CaretUp as CaretUpIcon } from '@phosphor-icons/react/dist/ssr/CaretUp';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
@@ -44,6 +44,15 @@ import { VeteranGuardianSearchDialog } from '@/components/main/flight/veteran-gu
 import { getColumnConfig, ACTIVITY_PRESETS } from '@/components/main/flight/column-configs';
 import { getAssignedTo } from '@/components/main/flight/roster-helpers';
 import { renderActivityCell } from '@/components/main/flight/roster-cell-renderers';
+
+const BUS_OPTIONS = ['None', 'Alpha1', 'Alpha2', 'Alpha3', 'Alpha4', 'Alpha5', 'Bravo1', 'Bravo2', 'Bravo3', 'Bravo4', 'Bravo5'];
+
+// Injected once for the roster. Per-input copies of these keyframes are what
+// make a full flight's TextFields/Selects expensive to mount in dev.
+const ROSTER_INPUT_KEYFRAMES = {
+  '@keyframes mui-auto-fill': { from: { display: 'block' } },
+  '@keyframes mui-auto-fill-cancel': { from: { display: 'block' } },
+};
 
 // Helper component to render person name with status icons
 function PersonDisplay({ person, type = 'Veteran' }) {
@@ -168,6 +177,7 @@ function EditableField({
       }}
       inputProps={inputProps}
       InputProps={{
+        disableInjectingGlobalStyles: true,
         endAdornment: isSaving ? (
           <CircularProgress size={16} sx={{ mr: 1 }} />
         ) : null,
@@ -176,71 +186,76 @@ function EditableField({
   );
 }
 
-// Bus selector component - dropdown that looks like a chip
-function BusSelector({ value, onChange, personId, personType, disabled = false }) {
-  const buses = ['None', 'Alpha1', 'Alpha2', 'Alpha3', 'Alpha4', 'Alpha5', 'Bravo1', 'Bravo2', 'Bravo3', 'Bravo4', 'Bravo5'];
+// Bus selector component - dropdown that looks like a chip.
+// Not wrapped in FormControl: in dev, FormControl rebuilds `registerEffect`
+// every render and that new function is a context dependency, so every
+// visible Select re-runs InputBase effects for as long as the row renders.
+const BusSelector = React.memo(function BusSelector({ value, onChange, personId, personType, disabled = false }) {
   const isNone = value === 'None' || !value;
-  
-  return (
-    <FormControl size="small" sx={{ minWidth: 120 }}>
-      <Select
-        value={value || 'None'}
-        onChange={(e) => onChange(e.target.value, personId, personType)}
-        disabled={disabled}
-        renderValue={(selected) => (
-          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', display: 'flex' }}>
-            {isNone ? (
-              <>
-                <XIcon size={14} weight="bold" />
-                <span>None</span>
-              </>
-            ) : (
-              <>
-                <BusIcon size={14} weight="fill" />
-                <span>{selected}</span>
-              </>
-            )}
-          </Stack>
+  const menuItems = React.useMemo(() => BUS_OPTIONS.map((bus) => (
+    <MenuItem key={bus} value={bus}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        {bus === 'None' ? (
+          <>
+            <XIcon size={16} weight="bold" />
+            <span>{bus}</span>
+          </>
+        ) : (
+          <>
+            <BusIcon size={16} weight="fill" />
+            <span>{bus}</span>
+          </>
         )}
-        sx={{
-          backgroundColor: isNone ? '#FCE4EC' : '#c8e6c9',
-          color: isNone ? '#C2185B' : '#1b5e20',
-          borderRadius: '16px',
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: isNone ? '#C2185B' : '#4caf50'
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: isNone ? '#C2185B' : '#4caf50'
-          },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: isNone ? '#C2185B' : '#4caf50'
-          }
-        }}
-      >
-        {buses.map((bus) => (
-          <MenuItem key={bus} value={bus}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              {bus === 'None' ? (
-                <>
-                  <XIcon size={16} weight="bold" />
-                  <span>{bus}</span>
-                </>
-              ) : (
-                <>
-                  <BusIcon size={16} weight="fill" />
-                  <span>{bus}</span>
-                </>
-              )}
-            </Stack>
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-}
+      </Stack>
+    </MenuItem>
+  )), []);
 
-// Stacked row component showing Veteran above Guardian with different background colors
-function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS }) {
+  return (
+    <Select
+      size="small"
+      disableInjectingGlobalStyles
+      value={value || 'None'}
+      onChange={(e) => onChange(e.target.value, personId, personType)}
+      disabled={disabled}
+      renderValue={(selected) => (
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', display: 'flex' }}>
+          {isNone ? (
+            <>
+              <XIcon size={14} weight="bold" />
+              <span>None</span>
+            </>
+          ) : (
+            <>
+              <BusIcon size={14} weight="fill" />
+              <span>{selected}</span>
+            </>
+          )}
+        </Stack>
+      )}
+      sx={{
+        minWidth: 120,
+        backgroundColor: isNone ? '#FCE4EC' : '#c8e6c9',
+        color: isNone ? '#C2185B' : '#1b5e20',
+        borderRadius: '16px',
+        '& .MuiOutlinedInput-notchedOutline': {
+          borderColor: isNone ? '#C2185B' : '#4caf50'
+        },
+        '&:hover .MuiOutlinedInput-notchedOutline': {
+          borderColor: isNone ? '#C2185B' : '#4caf50'
+        },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+          borderColor: isNone ? '#C2185B' : '#4caf50'
+        }
+      }}
+    >
+      {menuItems}
+    </Select>
+  );
+});
+
+// Memoized so a parent render (new callback, filter state that does not change
+// this pair) does not re-render every visible row's Select/TextField.
+const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS }) {
   const [open, setOpen] = React.useState(false);
   const [localAssignedTo, setLocalAssignedTo] = React.useState(null);
   const veteran = pair.people.find(p => p.type === 'Veteran');
@@ -519,13 +534,17 @@ function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFi
       </TableRow>
     </>
   );
-}
+});
 
 // Main FlightDetailsGrid component
 export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS }) {
   const columns = getColumnConfig(activityPreset);
   const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
   const [selectedVeteranForPairing, setSelectedVeteranForPairing] = React.useState(null);
+  const handleOpenPairingDialog = React.useCallback((veteran) => {
+    setSelectedVeteranForPairing(veteran);
+    setPairingDialogOpen(true);
+  }, []);
 
   if (pairs.length === 0) {
     return (
@@ -540,6 +559,7 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
 
   return (
     <>
+      <GlobalStyles styles={ROSTER_INPUT_KEYFRAMES} />
       <TableContainer component={Card}>
         <Table>
           <TableHead>
@@ -573,10 +593,7 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
                 statusFilter={statusFilter}
                 busFilter={busFilter}
                 activityPreset={activityPreset}
-                onOpenPairingDialog={(veteran) => {
-                  setSelectedVeteranForPairing(veteran);
-                  setPairingDialogOpen(true);
-                }}
+                onOpenPairingDialog={handleOpenPairingDialog}
               />
             ))}
           </TableBody>
