@@ -730,13 +730,23 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
               
               // Get the veteran's flight assignment to add the guardian to the same flight
               const veteranFlightId = selectedVeteranForPairing.flight?.id;
+
+              // veteran.pairings is the guardian's full list. Add this veteran
+              // without dropping pairings that already exist.
+              const existingPairings = Array.isArray(fullGuardian.veteran?.pairings)
+                ? fullGuardian.veteran.pairings
+                : [];
+              const alreadyPaired = existingPairings.some((pairing) => pairing?.id === veteranPairing.id);
+              const pairings = alreadyPaired
+                ? existingPairings
+                : [...existingPairings, veteranPairing];
               
               // Update guardian's veteran.pairings array and flight assignment
               const updatedGuardian = {
                 ...fullGuardian,
                 veteran: {
                   ...fullGuardian.veteran,
-                  pairings: [veteranPairing] // Set the veteran pairing
+                  pairings
                 }
               };
               

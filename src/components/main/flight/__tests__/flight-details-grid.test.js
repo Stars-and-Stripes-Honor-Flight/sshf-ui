@@ -1,9 +1,13 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import '@testing-library/jest-dom';
-import { FlightDetailsGrid } from '../flight-details-grid';
+
+import { api } from '@/lib/api';
+
 import { ACTIVITY_PRESETS } from '../column-configs';
+import { FlightDetailsGrid } from '../flight-details-grid';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({ push: jest.fn() })),
@@ -15,7 +19,10 @@ jest.mock('next/link', () => ({
 }));
 
 jest.mock('@/lib/api', () => ({
-  api: {},
+  api: {
+    getGuardian: jest.fn(),
+    updateGuardian: jest.fn(),
+  },
 }));
 
 jest.mock('@/components/core/toaster', () => ({
@@ -26,7 +33,12 @@ jest.mock('@/components/core/toaster', () => ({
 }));
 
 jest.mock('@/components/main/flight/veteran-guardian-search-dialog', () => ({
-  VeteranGuardianSearchDialog: () => null,
+  VeteranGuardianSearchDialog: ({ open, onApply }) =>
+    open ? (
+      <button type="button" onClick={() => onApply({ id: 'guard-99' })}>
+        Apply selected guardian
+      </button>
+    ) : null,
 }));
 
 function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
@@ -654,5 +666,115 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
     expect(screen.getByRole('link', { name: 'Tracy Stouffer' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Guardian' })).toBeInTheDocument();
+  });
+});
+
+describe('FlightDetailsGrid - add guardian pairings', () => {
+  function renderUnpairedVeteran() {
+    const onPairingComplete = jest.fn().mockResolvedValue(undefined);
+    render(
+      <FlightDetailsGrid
+        pairs={[
+          {
+            pairId: 'pair-new',
+            busMismatch: false,
+            missingPairedPerson: true,
+            people: [
+              {
+                type: 'Veteran',
+                id: 'vet-3',
+                name_first: 'Daniel',
+                name_last: 'Schneider',
+                confirmed: true,
+                nofly: false,
+              },
+            ],
+          },
+        ]}
+        onUpdate={jest.fn()}
+        onPairingComplete={onPairingComplete}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Spring Mission"
+      />
+    );
+    return { onPairingComplete };
+  }
+
+  beforeEach(() => {
+    api.getGuardian.mockReset();
+    api.updateGuardian.mockReset();
+  });
+
+  test('keeps existing veteran pairings and adds the roster veteran in the PUT body', async () => {
+    const user = userEvent.setup();
+    const fullGuardian = {
+      _id: 'guard-99',
+      _rev: '4-rev',
+      veteran: {
+        pref_notes: 'morning',
+        pairings: [
+          { id: 'vet-1', name: 'Ada Lovelace' },
+          { id: 'vet-2', name: 'Grace Hopper' },
+        ],
+      },
+      flight: { status: 'Active', id: 'Earlier Flight', bus: 'Alpha1' },
+    };
+    api.getGuardian.mockResolvedValue(fullGuardian);
+    api.updateGuardian.mockResolvedValue({ ok: true });
+
+    const { onPairingComplete } = renderUnpairedVeteran();
+
+    await user.click(screen.getByRole('button', { name: 'Add Guardian' }));
+    await user.click(screen.getByRole('button', { name: 'Apply selected guardian' }));
+
+    expect(api.getGuardian).toHaveBeenCalledWith('guard-99');
+    expect(api.updateGuardian).toHaveBeenCalledTimes(1);
+
+    const [guardianId, payload] = api.updateGuardian.mock.calls[0];
+    expect(guardianId).toBe('guard-99');
+    expect(payload.veteran.pairings.map((pairing) => pairing.id)).toEqual(['vet-1', 'vet-2', 'vet-3']);
+    expect(payload.veteran.pairings).toEqual([
+      { id: 'vet-1', name: 'Ada Lovelace' },
+      { id: 'vet-2', name: 'Grace Hopper' },
+      { id: 'vet-3', name: 'Daniel Schneider' },
+    ]);
+    expect(payload.veteran.pref_notes).toBe('morning');
+    expect(payload._id).toBe('guard-99');
+    expect(payload._rev).toBe('4-rev');
+    expect(payload.flight).toEqual({
+      status: 'Active',
+      id: 'Spring Mission',
+      bus: 'Alpha1',
+    });
+    expect(onPairingComplete).toHaveBeenCalled();
+  });
+
+  test('does not duplicate a veteran already listed in the guardian pairings', async () => {
+    const user = userEvent.setup();
+    api.getGuardian.mockResolvedValue({
+      _id: 'guard-99',
+      _rev: '5-rev',
+      veteran: {
+        pairings: [
+          { id: 'vet-1', name: 'Ada Lovelace' },
+          { id: 'vet-3', name: 'Daniel Schneider' },
+        ],
+      },
+      flight: { status: 'Active', bus: 'Bravo2' },
+    });
+    api.updateGuardian.mockResolvedValue({ ok: true });
+
+    renderUnpairedVeteran();
+
+    await user.click(screen.getByRole('button', { name: 'Add Guardian' }));
+    await user.click(screen.getByRole('button', { name: 'Apply selected guardian' }));
+
+    const payload = api.updateGuardian.mock.calls[0][1];
+    expect(payload.veteran.pairings.map((pairing) => pairing.id)).toEqual(['vet-1', 'vet-3']);
+    expect(payload.flight.id).toBe('Spring Mission');
+    expect(payload.flight.bus).toBe('Bravo2');
   });
 });
