@@ -399,6 +399,47 @@ describe('FlightDetailsGrid - issue #141: OK status with validation issues', () 
     expect(screen.getByText('Grd Training', { selector: '.MuiChip-label' })).toBeInTheDocument();
   });
 
+  test('shows No Guardian instead of OK when the veteran has no guardian pairing', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people = [pair.people[0]];
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.queryByText('OK', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+    expect(screen.getByText('No Guardian', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add guardian/i })).toBeInTheDocument();
+  });
+
+  test('keeps OK when the guardian is no-fly but still paired', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people[1].nofly = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    expect(screen.getByText('OK', { selector: '.MuiChip-label' })).toBeInTheDocument();
+    expect(screen.queryByText('No Guardian', { selector: '.MuiChip-label' })).not.toBeInTheDocument();
+  });
+
   test('shows OK status only when pair has no validation issues', () => {
     const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
     pair.busMismatch = false;

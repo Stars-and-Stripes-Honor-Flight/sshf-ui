@@ -134,6 +134,26 @@ export function compareSeatNumbers(seatA, seatB) {
 }
 
 /**
+ * True when the pair has a veteran and no guardian.
+ * Crew (guardian-only) rows are not unpaired veterans.
+ * A no-fly / meet-in-DC guardian who is on the pair still counts as paired.
+ * This is separate from the API `missingPairedPerson` flag, which means a
+ * recorded partner is not on this flight.
+ * @param {Object} pair
+ * @returns {boolean}
+ */
+export function veteranHasNoGuardian(pair) {
+  const people = pair?.people;
+  if (!Array.isArray(people)) {
+    return false;
+  }
+
+  const hasVeteran = people.some((person) => person?.type === 'Veteran');
+  const hasGuardian = people.some((person) => person?.type === 'Guardian');
+  return hasVeteran && !hasGuardian;
+}
+
+/**
  * Get detailed list of status issues for a pair
  * @param {Object} pair - The pair object
  * @returns {Array} Array of issue objects { id, label, severity, personType }
@@ -147,6 +167,9 @@ export function getPairStatusIssues(pair) {
   }
   if (pair.missingPairedPerson) {
     issues.push({ id: 'missingPairedPerson', label: 'Missing Person', severity: 'error' });
+  }
+  if (veteranHasNoGuardian(pair)) {
+    issues.push({ id: 'noGuardian', label: 'No Guardian', severity: 'error', personType: 'Veteran' });
   }
   
   // Per-person readiness checks
@@ -226,10 +249,17 @@ export function pairHasIssues(pair) {
  * @param {string} filters.statusFilter - Status filter (all/ok/issues/nofly)
  * @param {string} filters.busFilter - Bus filter
  * @param {string} filters.assignedCallerFilter - Assigned caller filter
+ * @param {boolean} filters.noGuardianOnly - When true, keep only veterans with no guardian
  * @returns {Array} Filtered pairs
  */
 export function filterPairs(pairs, filters) {
-  const { nameFilter = '', statusFilter = 'all', busFilter = 'all', assignedCallerFilter = 'all' } = filters;
+  const {
+    nameFilter = '',
+    statusFilter = 'all',
+    busFilter = 'all',
+    assignedCallerFilter = 'all',
+    noGuardianOnly = false,
+  } = filters;
   
   return pairs.filter(pair => {
     const veteran = pair.people.find(p => p.type === 'Veteran');
@@ -286,6 +316,10 @@ export function filterPairs(pairs, filters) {
       if (veteranCaller !== assignedCallerFilter && guardianCaller !== assignedCallerFilter) {
         return false;
       }
+    }
+
+    if (noGuardianOnly && !veteranHasNoGuardian(pair)) {
+      return false;
     }
     
     return true;
