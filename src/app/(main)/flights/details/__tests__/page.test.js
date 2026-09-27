@@ -1,5 +1,5 @@
-import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import React, { Profiler } from 'react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '@testing-library/jest-dom';
@@ -185,5 +185,48 @@ describe('Flight details roster — unpaired veterans (issue #214)', () => {
     expect(screen.queryByRole('link', { name: 'Pat Paired' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ned District' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
+  });
+
+  test('stops rendering once the roster is idle, including after No guardian toggles', async () => {
+    const user = userEvent.setup();
+    let commits = 0;
+    render(
+      <Profiler id="flight-roster" onRender={() => { commits += 1; }}>
+        <Page />
+      </Profiler>
+    );
+
+    expect(await screen.findByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
+    expect(screen.getByText('No Guardian')).toBeInTheDocument();
+
+    async function waitUntilRenderIdle() {
+      let previous = -1;
+      let stablePolls = 0;
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        });
+        if (commits === previous) {
+          stablePolls += 1;
+          if (stablePolls >= 3) {
+            return commits;
+          }
+        } else {
+          stablePolls = 0;
+          previous = commits;
+        }
+      }
+      throw new Error(`roster kept rendering (${commits} commits)`);
+    }
+
+    const settled = await waitUntilRenderIdle();
+    await user.click(screen.getByRole('button', { name: 'No guardian' }));
+    expect(screen.queryByRole('link', { name: 'Pat Paired' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'No guardian' }));
+    expect(screen.getByRole('link', { name: 'Pat Paired' })).toBeInTheDocument();
+
+    const afterToggle = await waitUntilRenderIdle();
+    expect(afterToggle).toBeGreaterThanOrEqual(settled);
+    expect(screen.getByText('No Guardian')).toBeInTheDocument();
   });
 });

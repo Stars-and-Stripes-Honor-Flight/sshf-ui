@@ -316,6 +316,88 @@ function FlightDetailsPage() {
     };
   }, [flightId]);
 
+  const handleUpdatePerson = React.useCallback(async (personId, personType, updates) => {
+    try {
+      // Handle seat updates using dedicated endpoints
+      if (updates.flight?.seat !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranSeat(personId, updates.flight.seat);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardianSeat(personId, updates.flight.seat);
+        }
+      } else {
+        // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
+        let fullPerson;
+        if (personType === 'Veteran') {
+          fullPerson = await api.getVeteran(personId);
+        } else if (personType === 'Guardian') {
+          fullPerson = await api.getGuardian(personId);
+        }
+
+        // Deep merge the updates into the full person object
+        const payload = {
+          ...fullPerson,
+          ...updates,
+          _rev: fullPerson._rev,
+          type: personType
+        };
+
+        // Deep merge nested objects (flight, call, etc.)
+        if (updates.flight) {
+          payload.flight = {
+            ...fullPerson.flight,
+            ...updates.flight
+          };
+        }
+        if (updates.call) {
+          payload.call = {
+            ...fullPerson.call,
+            ...updates.call
+          };
+        }
+
+        // Remove metadata (API handles this)
+        delete payload.metadata;
+
+        // Remove history arrays from nested objects
+        if (payload.flight?.history) delete payload.flight.history;
+        if (payload.veteran?.history) delete payload.veteran.history;
+        if (payload.guardian?.history) delete payload.guardian.history;
+        if (payload.call?.history) delete payload.call.history;
+
+        if (personType === 'Veteran') {
+          await api.updateVeteran(personId, payload);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardian(personId, payload);
+        }
+      }
+      // Refresh data after update
+      const [detailsData, newAssignmentData] = await Promise.all([
+        api.getFlightDetails(flightId),
+        api.getFlightAssignments(flightId),
+      ]);
+      setFlightData(detailsData);
+      setAssignmentData(newAssignmentData);
+    } catch (error) {
+      console.error('Failed to update person:', error);
+      throw error;
+    }
+  }, [flightId]);
+
+  const handlePairingComplete = React.useCallback(async () => {
+    try {
+      const [detailsData, newAssignmentData] = await Promise.all([
+        api.getFlightDetails(flightId),
+        api.getFlightAssignments(flightId),
+      ]);
+      setFlightData(detailsData);
+      setAssignmentData(newAssignmentData);
+    } catch (error) {
+      console.error('Failed to refresh flight data:', error);
+      toast.error('Failed to refresh flight data');
+    }
+  }, [flightId]);
+
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
     return null;
@@ -804,89 +886,6 @@ function FlightDetailsPage() {
                 
                 {/* Participants Grid */}
                 {(() => {
-                  const handleUpdatePerson = async (personId, personType, updates) => {
-                    try {
-                      // Handle seat updates using dedicated endpoints
-                      if (updates.flight?.seat !== undefined) {
-                        if (personType === 'Veteran') {
-                          await api.updateVeteranSeat(personId, updates.flight.seat);
-                        } else if (personType === 'Guardian') {
-                          await api.updateGuardianSeat(personId, updates.flight.seat);
-                        }
-                      } else {
-                        // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
-                        let fullPerson;
-                        if (personType === 'Veteran') {
-                          fullPerson = await api.getVeteran(personId);
-                        } else if (personType === 'Guardian') {
-                          fullPerson = await api.getGuardian(personId);
-                        }
-                        
-                        // Deep merge the updates into the full person object
-                        const payload = {
-                          ...fullPerson,
-                          ...updates,
-                          _rev: fullPerson._rev,
-                          type: personType
-                        };
-                        
-                        // Deep merge nested objects (flight, call, etc.)
-                        if (updates.flight) {
-                          payload.flight = {
-                            ...fullPerson.flight,
-                            ...updates.flight
-                          };
-                        }
-                        if (updates.call) {
-                          payload.call = {
-                            ...fullPerson.call,
-                            ...updates.call
-                          };
-                        }
-                        
-                        // Remove metadata (API handles this)
-                        delete payload.metadata;
-                        
-                        // Remove history arrays from nested objects
-                        if (payload.flight?.history) delete payload.flight.history;
-                        if (payload.veteran?.history) delete payload.veteran.history;
-                        if (payload.guardian?.history) delete payload.guardian.history;
-                        if (payload.call?.history) delete payload.call.history;
-                        
-                        if (personType === 'Veteran') {
-                          await api.updateVeteran(personId, payload);
-                        } else if (personType === 'Guardian') {
-                          await api.updateGuardian(personId, payload);
-                        }
-                      }
-                      // Refresh data after update
-                      const [detailsData, newAssignmentData] = await Promise.all([
-                        api.getFlightDetails(flightId),
-                        api.getFlightAssignments(flightId),
-                      ]);
-                      setFlightData(detailsData);
-                      setAssignmentData(newAssignmentData);
-                    } catch (error) {
-                      console.error('Failed to update person:', error);
-                      throw error;
-                    }
-                  };
-
-                  const handlePairingComplete = async () => {
-                    // Refresh flight data after guardian pairing
-                    try {
-                      const [detailsData, newAssignmentData] = await Promise.all([
-                        api.getFlightDetails(flightId),
-                        api.getFlightAssignments(flightId),
-                      ]);
-                      setFlightData(detailsData);
-                      setAssignmentData(newAssignmentData);
-                    } catch (error) {
-                      console.error('Failed to refresh flight data:', error);
-                      toast.error('Failed to refresh flight data');
-                    }
-                  };
-
                   // Apply filtering and sorting
                   const filteredPairs = filterPairs(pairs, {
                     nameFilter,
