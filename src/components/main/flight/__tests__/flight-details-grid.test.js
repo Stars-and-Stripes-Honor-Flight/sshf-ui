@@ -669,6 +669,74 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
   });
 });
 
+describe('FlightDetailsGrid - confirmed icon display (issue #194)', () => {
+  test('shows not confirmed icon when confirmed is false', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people[0].confirmed = false;
+    pair.people[1].confirmed = false;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    const notConfirmedIcons = screen.getAllByLabelText('Not Confirmed - Needs to be called');
+    expect(notConfirmedIcons.length).toBe(2);
+    expect(screen.queryByLabelText('Confirmed')).not.toBeInTheDocument();
+  });
+
+  test('shows not confirmed icon when confirmed is undefined', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    delete pair.people[0].confirmed;
+    delete pair.people[1].confirmed;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    const notConfirmedIcons = screen.getAllByLabelText('Not Confirmed - Needs to be called');
+    expect(notConfirmedIcons.length).toBe(2);
+    expect(screen.queryByLabelText('Confirmed')).not.toBeInTheDocument();
+  });
+
+  test('shows confirmed icon when confirmed is true', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people[0].confirmed = true;
+    pair.people[1].confirmed = true;
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    const confirmedIcons = screen.getAllByLabelText('Confirmed');
+    expect(confirmedIcons.length).toBe(2);
+    expect(screen.queryByLabelText('Not Confirmed - Needs to be called')).not.toBeInTheDocument();
+  });
+});
+
 describe('FlightDetailsGrid - add guardian pairings', () => {
   function renderUnpairedVeteran() {
     const onPairingComplete = jest.fn().mockResolvedValue(undefined);
