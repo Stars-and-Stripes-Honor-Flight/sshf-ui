@@ -163,7 +163,7 @@ describe('roster-helpers', () => {
       expect(issues).toContainEqual({ id: 'missingPairedPerson', label: 'Missing Person', severity: 'error' });
     });
 
-    test('includes veteran not confirmed issue', () => {
+    test('includes veteran not confirmed issue when confirmed is false', () => {
       const pair = {
         busMismatch: false,
         missingPairedPerson: false,
@@ -171,6 +171,26 @@ describe('roster-helpers', () => {
       };
       const issues = getPairStatusIssues(pair);
       expect(issues).toContainEqual({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('includes veteran not confirmed issue when confirmed is undefined (issue #194)', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
+    });
+
+    test('does not include veteran not confirmed issue when confirmed is true', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [{ type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' }],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues.some(issue => issue.id === 'veteranNotConfirmed')).toBe(false);
     });
 
     test('includes veteran medical form issue', () => {
@@ -203,7 +223,7 @@ describe('roster-helpers', () => {
       expect(issues).toContainEqual({ id: 'veteranNoBus', label: 'Vet No Bus', severity: 'warning', personType: 'Veteran' });
     });
 
-    test('includes guardian not confirmed issue', () => {
+    test('includes guardian not confirmed issue when confirmed is false', () => {
       const pair = {
         busMismatch: false,
         missingPairedPerson: false,
@@ -214,6 +234,32 @@ describe('roster-helpers', () => {
       };
       const issues = getPairStatusIssues(pair);
       expect(issues).toContainEqual({ id: 'guardianNotConfirmed', label: 'Grd Not Confirmed', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('includes guardian not confirmed issue when confirmed is undefined (issue #194)', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', medical_form: true, training_complete: true, training: 'Yes', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues).toContainEqual({ id: 'guardianNotConfirmed', label: 'Grd Not Confirmed', severity: 'warning', personType: 'Guardian' });
+    });
+
+    test('does not include guardian not confirmed issue when confirmed is true', () => {
+      const pair = {
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          { type: 'Guardian', confirmed: true, medical_form: true, training_complete: true, training: 'Yes', bus: 'Alpha1' },
+        ],
+      };
+      const issues = getPairStatusIssues(pair);
+      expect(issues.some(issue => issue.id === 'guardianNotConfirmed')).toBe(false);
     });
 
     test('includes guardian medical form issue', () => {

@@ -178,7 +178,7 @@ export function getPairStatusIssues(pair) {
   
   // Check veteran
   if (veteran) {
-    if (veteran.confirmed === false) {
+    if (veteran.confirmed !== true) {
       issues.push({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
     }
     if (veteran.medical_form === false) {
@@ -194,7 +194,7 @@ export function getPairStatusIssues(pair) {
   
   // Check guardian
   if (guardian) {
-    if (guardian.confirmed === false) {
+    if (guardian.confirmed !== true) {
       issues.push({ id: 'guardianNotConfirmed', label: 'Grd Not Confirmed', severity: 'warning', personType: 'Guardian' });
     }
     if (guardian.medical_form === false) {
