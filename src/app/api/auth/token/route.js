@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
 
 import { setRefreshCookie } from '@/lib/auth/refresh-cookie';
+import { readSafeOAuthErrorReason } from '@/lib/auth/safe-oauth-error';
 
 export async function POST(request) {
   try {
     const { code } = await request.json();
 
     if (!code) {
-      return NextResponse.json(
-        { error: 'Authorization code is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
     }
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -28,7 +26,8 @@ export async function POST(request) {
     });
 
     if (!response.ok) {
-      console.error('Token exchange failed with status', response.status);
+      const reason = await readSafeOAuthErrorReason(response);
+      console.error('Token exchange failed with status', response.status, reason);
       return NextResponse.json(
         { error: 'Failed to exchange authorization code for tokens' },
         { status: response.status }
@@ -52,9 +51,6 @@ export async function POST(request) {
     return result;
   } catch {
     console.error('Token exchange error');
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

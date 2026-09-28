@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 
 import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from '@/lib/auth/refresh-cookie';
+import { readSafeOAuthErrorReason } from '@/lib/auth/safe-oauth-error';
 
 export async function POST(request) {
   const refreshToken = readRefreshCookie(request);
 
   if (!refreshToken) {
-    const missing = NextResponse.json(
-      { error: 'Refresh token is required' },
-      { status: 400 }
-    );
+    const missing = NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
     clearRefreshCookie(missing);
     return missing;
   }
@@ -29,11 +27,9 @@ export async function POST(request) {
     });
 
     if (!response.ok) {
-      console.error('Token refresh failed with status', response.status);
-      const failed = NextResponse.json(
-        { error: 'Failed to refresh token' },
-        { status: response.status }
-      );
+      const reason = await readSafeOAuthErrorReason(response);
+      console.error('Token refresh failed with status', response.status, reason);
+      const failed = NextResponse.json({ error: 'Failed to refresh token' }, { status: response.status });
       clearRefreshCookie(failed);
       return failed;
     }
@@ -52,10 +48,7 @@ export async function POST(request) {
     return result;
   } catch {
     console.error('Token refresh error');
-    const failed = NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const failed = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     clearRefreshCookie(failed);
     return failed;
   }
