@@ -512,9 +512,9 @@ class ApiClient {
       const data = await response.json();
       
       // Transform the response to simplify fields for list display
-      const transformedData = Array.isArray(data) ? data : (data.rows || []);
+      const sourceRows = Array.isArray(data) ? data : (data.rows || []);
       
-      return transformedData.map(entry => {
+      const transformedRows = sourceRows.map(entry => {
         // For guardians, combine notes.other and medical.experience
         // For veterans, combine call.notes and flight.status_note
         let prefs = '';
@@ -571,6 +571,16 @@ class ApiClient {
           pairings,
         };
       });
+
+      if (Array.isArray(data)) {
+        return transformedRows;
+      }
+
+      const result = { rows: transformedRows };
+      if (data.total_rows != null) {
+        result.total_rows = data.total_rows;
+      }
+      return result;
     } catch (error) {
       toast.error(`Failed to fetch waitlist: ${error.message}`);
       throw error;

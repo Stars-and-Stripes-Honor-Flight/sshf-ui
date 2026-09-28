@@ -21,6 +21,17 @@ import { WaitlistMobileCard } from '@/components/main/waitlist/waitlist-mobile-c
 
 const DEFAULT_PAGE_SIZE = 100;
 
+function parseWaitlistPage(pageParam) {
+  if (pageParam == null || pageParam === '') {
+    return 0;
+  }
+  const parsed = Number.parseInt(pageParam, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return parsed;
+}
+
 export function WaitlistView() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -34,7 +45,7 @@ export function WaitlistView() {
 
   const waitlistType = searchParams.get('type') || 'veterans';
   const pageParam = searchParams.get('page');
-  const currentPage = pageParam ? parseInt(pageParam, 10) : 0;
+  const currentPage = parseWaitlistPage(pageParam);
   const offset = currentPage * DEFAULT_PAGE_SIZE;
 
   const handleTypeChange = (newType) => {
@@ -79,13 +90,14 @@ export function WaitlistView() {
         const pageEntries = allResults.slice(0, DEFAULT_PAGE_SIZE);
         setEntries(pageEntries);
         
-        // Estimate total
-        if (hasMorePages) {
+        if (!Array.isArray(response) && response.total_rows != null) {
+          setTotalRows(response.total_rows);
+        } else if (hasMorePages) {
           setTotalRows(offset + DEFAULT_PAGE_SIZE + 1);
         } else if (Array.isArray(response)) {
           setTotalRows(offset + pageEntries.length);
         } else {
-          setTotalRows(response.total_rows || offset + pageEntries.length);
+          setTotalRows(offset + pageEntries.length);
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch waitlist');

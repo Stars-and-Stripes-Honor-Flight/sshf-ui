@@ -96,6 +96,36 @@ describe('WaitlistView', () => {
     });
   });
 
+  test('treats non-numeric page query as page 0 with offset 0', async () => {
+    mockSearchParamsGet.mockImplementation((key) => (key === 'page' ? 'abc' : null));
+
+    render(<WaitlistView />);
+
+    await waitFor(() => {
+      expect(api.getWaitlist).toHaveBeenCalledWith({
+        type: 'veterans',
+        offset: 0,
+        limit: 101,
+      });
+    });
+
+    const offsetArg = api.getWaitlist.mock.calls[0][0].offset;
+    expect(Number.isNaN(offsetArg)).toBe(false);
+  });
+
+  test('uses total_rows from getWaitlist when the API includes it', async () => {
+    api.getWaitlist.mockResolvedValue({
+      rows: [makeVeteran()],
+      total_rows: 250,
+    });
+
+    render(<WaitlistView />);
+
+    expect(await screen.findByText('James Weimer')).toBeInTheDocument();
+    expect(screen.getByText('1–100')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Go to next page/i })).toBeEnabled();
+  });
+
   test('renders veteran columns including Conflict, Flight Group and Guardian', async () => {
     render(<WaitlistView />);
 
