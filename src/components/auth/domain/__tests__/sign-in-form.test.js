@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import userEvent from '@testing-library/user-event';
@@ -53,7 +53,9 @@ describe('SignInForm auth progress', () => {
     expect(screen.getByText(/signing you in/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /continue with google/i })).not.toBeInTheDocument();
 
-    resolveOAuth({ data: { token: 'test' }, error: null });
+    await act(async () => {
+      resolveOAuth({ data: { token: 'test' }, error: null });
+    });
   });
 });
 
