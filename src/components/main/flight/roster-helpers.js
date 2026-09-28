@@ -106,6 +106,38 @@ export function getPairSortBus(pair) {
 }
 
 /**
+ * Guardian name sort key (last, then first) for a pair; empty when no guardian.
+ * @param {Object} pair
+ * @returns {string}
+ */
+export function getPairSortGuardianName(pair) {
+  const guardian = pair.people?.find((person) => person.type === 'Guardian');
+  if (!guardian) {
+    return '';
+  }
+
+  const last = (guardian.name_last ?? '').trim();
+  const first = (guardian.name_first ?? '').trim();
+  return `${last} ${first}`.trim().toLowerCase();
+}
+
+/**
+ * Veteran name sort key (last, then first) for tie-breaks; empty when no veteran.
+ * @param {Object} pair
+ * @returns {string}
+ */
+function getPairSortVeteranName(pair) {
+  const veteran = pair.people?.find((person) => person.type === 'Veteran');
+  if (!veteran) {
+    return '';
+  }
+
+  const last = (veteran.name_last ?? '').trim();
+  const first = (veteran.name_first ?? '').trim();
+  return `${last} ${first}`.trim().toLowerCase();
+}
+
+/**
  * Compare two seat labels for roster ordering: row (numeric), then letter.
  * Empty or unparseable seats sort after valid seats.
  * @param {string} seatA
@@ -367,7 +399,7 @@ export function getTrainingTypeOptions(pairs) {
  * Sort pairs based on the sort criteria
  * Most sort keys use the veteran in the pair; seat uses veteran seat or guardian when absent.
  * @param {Array} pairs - Array of pair objects
- * @param {string} sortBy - Sort criteria (name/bus/assignment/group/status/seat)
+ * @param {string} sortBy - Sort criteria (name/guardianName/bus/assignment/group/status/seat)
  * @returns {Array} Sorted pairs (new array)
  */
 export function sortPairs(pairs, sortBy) {
@@ -375,12 +407,28 @@ export function sortPairs(pairs, sortBy) {
   
   switch (sortBy) {
     case 'name':
+      sorted.sort((a, b) =>
+        getPairSortVeteranName(a).localeCompare(getPairSortVeteranName(b))
+      );
+      break;
+
+    case 'guardianName':
       sorted.sort((a, b) => {
-        const vetA = a.people.find(p => p.type === 'Veteran');
-        const vetB = b.people.find(p => p.type === 'Veteran');
-        const nameA = vetA ? `${vetA.name_last} ${vetA.name_first}`.toLowerCase() : '';
-        const nameB = vetB ? `${vetB.name_last} ${vetB.name_first}`.toLowerCase() : '';
-        return nameA.localeCompare(nameB);
+        const hasGuardianA = a.people?.some((person) => person.type === 'Guardian') ?? false;
+        const hasGuardianB = b.people?.some((person) => person.type === 'Guardian') ?? false;
+
+        if (hasGuardianA !== hasGuardianB) {
+          return hasGuardianA ? -1 : 1;
+        }
+
+        if (hasGuardianA) {
+          const byGuardian = getPairSortGuardianName(a).localeCompare(getPairSortGuardianName(b));
+          if (byGuardian !== 0) {
+            return byGuardian;
+          }
+        }
+
+        return getPairSortVeteranName(a).localeCompare(getPairSortVeteranName(b));
       });
       break;
       

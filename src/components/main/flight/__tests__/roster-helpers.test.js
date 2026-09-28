@@ -809,6 +809,90 @@ describe('roster-helpers', () => {
       expect(result[2].pairId).toBe('1');
     });
 
+    test('sorts by guardian last name then first name', () => {
+      const pairs = [
+        {
+          pairId: 'zulu',
+          people: [
+            { type: 'Veteran', name_first: 'V', name_last: 'Vet' },
+            { type: 'Guardian', name_first: 'Zara', name_last: 'Zulu' },
+          ],
+        },
+        {
+          pairId: 'alpha',
+          people: [
+            { type: 'Veteran', name_first: 'V', name_last: 'Vet' },
+            { type: 'Guardian', name_first: 'Amy', name_last: 'Alpha' },
+          ],
+        },
+        {
+          pairId: 'alpha-tie',
+          people: [
+            { type: 'Veteran', name_first: 'X', name_last: 'Extra' },
+            { type: 'Guardian', name_first: 'Bob', name_last: 'Alpha' },
+          ],
+        },
+      ];
+
+      expect(sortPairs(pairs, 'guardianName').map((pair) => pair.pairId)).toEqual([
+        'alpha',
+        'alpha-tie',
+        'zulu',
+      ]);
+    });
+
+    test('sorts unpaired veterans after pairs with a guardian, by veteran name', () => {
+      const pairs = [
+        {
+          pairId: 'unpaired-z',
+          people: [{ type: 'Veteran', name_first: 'U', name_last: 'Zebra' }],
+        },
+        {
+          pairId: 'paired',
+          people: [
+            { type: 'Veteran', name_first: 'V', name_last: 'Vet' },
+            { type: 'Guardian', name_first: 'G', name_last: 'Middle' },
+          ],
+        },
+        {
+          pairId: 'unpaired-a',
+          people: [{ type: 'Veteran', name_first: 'U', name_last: 'Apple' }],
+        },
+      ];
+
+      expect(sortPairs(pairs, 'guardianName').map((pair) => pair.pairId)).toEqual([
+        'paired',
+        'unpaired-a',
+        'unpaired-z',
+      ]);
+    });
+
+    test('sorts guardian-only crew by guardian name', () => {
+      const pairs = [
+        {
+          pairId: 'crew-bravo',
+          people: [{ type: 'Guardian', name_first: 'C', name_last: 'Bravo' }],
+        },
+        {
+          pairId: 'vet-alpha',
+          people: [
+            { type: 'Veteran', name_first: 'V', name_last: 'Vet' },
+            { type: 'Guardian', name_first: 'G', name_last: 'Alpha' },
+          ],
+        },
+        {
+          pairId: 'crew-alpha',
+          people: [{ type: 'Guardian', name_first: 'C', name_last: 'Alpha' }],
+        },
+      ];
+
+      expect(sortPairs(pairs, 'guardianName').map((pair) => pair.pairId)).toEqual([
+        'crew-alpha',
+        'vet-alpha',
+        'crew-bravo',
+      ]);
+    });
+
     test('sorts by bus assignment', () => {
       const result = sortPairs(testPairs, 'bus');
       expect(result[0].pairId).toBe('2');
