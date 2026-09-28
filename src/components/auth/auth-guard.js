@@ -9,6 +9,7 @@ import { paths } from '@/paths';
 import { AuthStrategy } from '@/lib/auth/strategy';
 import { logger } from '@/lib/default-logger';
 import { useUser } from '@/hooks/use-user';
+import { AuthProgress } from '@/components/auth/auth-progress';
 
 export function AuthGuard({ children }) {
   const router = useRouter();
@@ -50,8 +51,8 @@ export function AuthGuard({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
   }, [user, error, isLoading]);
 
-  if (isChecking) {
-    return null;
+  if (isLoading || isChecking) {
+    return <AuthProgress />;
   }
 
   if (error) {

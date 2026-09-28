@@ -18,6 +18,7 @@ import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/domain/client';
 import { getEnvironmentBanner } from '@/lib/environment';
 import { useUser } from '@/hooks/use-user';
+import { AuthProgress } from '@/components/auth/auth-progress';
 import { DynamicLogo } from '@/components/core/logo';
 import { toast } from '@/components/core/toaster';
 
@@ -65,6 +66,10 @@ export function SignInForm() {
       setIsPending(false);
     }
   }, [checkSession, router]);
+
+  if (isPending) {
+    return <AuthProgress message="Signing you in…" />;
+  }
 
   return (
     <Stack spacing={4}>
@@ -141,7 +146,6 @@ export function SignInForm() {
           {oAuthProviders.map((provider) => (
             <Button
               color="primary"
-              disabled={isPending}
               endIcon={
                 <Box 
                   alt="" 

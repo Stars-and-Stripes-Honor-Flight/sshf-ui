@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { useUser } from '@/hooks/use-user';
+import { AuthProgress } from '@/components/auth/auth-progress';
 
 export function GuestGuard({ children }) {
   const router = useRouter();
@@ -39,8 +40,8 @@ export function GuestGuard({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
   }, [user, error, isLoading]);
 
-  if (isChecking) {
-    return null;
+  if (isLoading || isChecking || user) {
+    return <AuthProgress />;
   }
 
   if (error) {
