@@ -35,7 +35,6 @@ const PROTECTED_PATHS = [
   '/search',
   '/search-flights',
   '/settings/account',
-  '/settings/team',
   '/tools/query',
   '/veterans',
   '/veterans/create',
