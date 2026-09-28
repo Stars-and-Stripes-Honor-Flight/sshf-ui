@@ -16,7 +16,15 @@ export const DEFAULT_ROSTER_CONTROLS = {
 };
 
 const STATUS_FILTER_VALUES = new Set(['all', 'ok', 'issues', 'nofly']);
-const SORT_BY_VALUES = new Set(['name', 'bus', 'assignment', 'group', 'status', 'seat']);
+const SORT_BY_VALUES = new Set([
+  'name',
+  'guardianName',
+  'bus',
+  'assignment',
+  'group',
+  'status',
+  'seat',
+]);
 
 /**
  * @param {string} flightId
