@@ -119,8 +119,11 @@ export function ReviewApplicationEditForm({ application: initialApplication, onA
     try {
       if (isDirty) {
         setSaving(true);
-        await saveFormValues(getValues());
-        setSaving(false);
+        try {
+          await saveFormValues(getValues());
+        } finally {
+          setSaving(false);
+        }
       }
       const result = await api.acceptReviewApplication(application._id, {
         app_status_note: getValues('app_status_note'),
