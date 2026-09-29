@@ -199,19 +199,16 @@ function FlightDetailsPage() {
     try {
       setFixingBusMismatches(true);
 
-      const updates = [];
       for (const fix of busMismatchFixes) {
         if (fix.veteranId && fix.currentVeteranBus !== fix.newBus) {
-          updates.push(api.updateVeteranBus(fix.veteranId, fix.newBus));
+          await handleUpdatePerson(fix.veteranId, 'Veteran', { flight: { bus: fix.newBus } });
         }
         if (fix.guardianId && fix.currentGuardianBus !== fix.newBus) {
-          updates.push(api.updateGuardianBus(fix.guardianId, fix.newBus));
+          await handleUpdatePerson(fix.guardianId, 'Guardian', { flight: { bus: fix.newBus } });
         }
       }
 
-      await Promise.all(updates);
-
-      // Refresh flight roster from the API
+      // Refresh flight roster from the API after every bus edit has landed
       const [detailsData, newAssignmentData] = await Promise.all([
         api.getFlightDetails(flightId),
         api.getFlightAssignments(flightId),

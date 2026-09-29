@@ -371,34 +371,6 @@ class ApiClient {
     }
   }
 
-  // Update a veteran's bus assignment (PATCH /veterans/{id}/bus)
-  async updateVeteranBus(id, bus) {
-    try {
-      const response = await this.request(`/veterans/${id}/bus`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: bus }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update veteran bus: ${error.message}`);
-      throw error;
-    }
-  }
-
-  // Update a guardian's bus assignment (PATCH /guardians/{id}/bus)
-  async updateGuardianBus(id, bus) {
-    try {
-      const response = await this.request(`/guardians/${id}/bus`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: bus }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update guardian bus: ${error.message}`);
-      throw error;
-    }
-  }
-
   // Get all flights
   async listFlights() {
     try {

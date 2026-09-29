@@ -481,8 +481,22 @@ describe('Flight details — fix bus mismatches', () => {
         remaining: 10,
       },
     });
-    api.updateVeteranBus = jest.fn().mockResolvedValue({ ok: true, bus: 'Bravo1' });
-    api.updateGuardianBus = jest.fn().mockResolvedValue({ ok: true, bus: 'Alpha1' });
+    api.getVeteran = jest.fn(async (id) => ({
+      _id: id,
+      _rev: '5-rev',
+      type: 'Veteran',
+      name: { first: 'Ned', last: 'None' },
+      flight: { id: 'flight-214', bus: 'None' },
+    }));
+    api.getGuardian = jest.fn(async (id) => ({
+      _id: id,
+      _rev: '3-rev',
+      type: 'Guardian',
+      name: { first: 'Gina', last: 'Bravo' },
+      flight: { id: 'flight-214', bus: id === 'grd-bravo' ? 'Bravo2' : 'Bravo1' },
+    }));
+    api.updateVeteran = jest.fn().mockResolvedValue({ ok: true });
+    api.updateGuardian = jest.fn().mockResolvedValue({ ok: true });
     api.fixBusMismatches = jest.fn();
   });
 
@@ -493,7 +507,7 @@ describe('Flight details — fix bus mismatches', () => {
     expect(await screen.findByRole('heading', { name: 'Fix Bus Mismatches' })).toBeInTheDocument();
   }
 
-  test('updates each changed person through the documented bus endpoints and refreshes the roster', async () => {
+  test('updates each changed person through the roster bus edit and refreshes the roster', async () => {
     const user = userEvent.setup();
     await openFixDialog(user);
 
@@ -507,16 +521,34 @@ describe('Flight details — fix bus mismatches', () => {
     await user.click(screen.getByRole('button', { name: 'Apply Fixes' }));
 
     await waitFor(() => {
-      expect(api.updateGuardianBus).toHaveBeenCalledWith('grd-bravo', 'Alpha1');
+      expect(api.updateGuardian).toHaveBeenCalledWith(
+        'grd-bravo',
+        expect.objectContaining({
+          _rev: '3-rev',
+          type: 'Guardian',
+          flight: expect.objectContaining({ id: 'flight-214', bus: 'Alpha1' }),
+        })
+      );
     });
-    expect(api.updateVeteranBus).toHaveBeenCalledWith('vet-none', 'Bravo1');
-    expect(api.updateVeteranBus).toHaveBeenCalledTimes(1);
-    expect(api.updateGuardianBus).toHaveBeenCalledTimes(1);
+    expect(api.getGuardian).toHaveBeenCalledWith('grd-bravo');
+    expect(api.updateVeteran).toHaveBeenCalledWith(
+      'vet-none',
+      expect.objectContaining({
+        _rev: '5-rev',
+        type: 'Veteran',
+        flight: expect.objectContaining({ id: 'flight-214', bus: 'Bravo1' }),
+      })
+    );
+    expect(api.getVeteran).toHaveBeenCalledWith('vet-none');
+    expect(api.updateVeteran).toHaveBeenCalledTimes(1);
+    expect(api.updateGuardian).toHaveBeenCalledTimes(1);
+    expect(api.getVeteran).not.toHaveBeenCalledWith('vet-alpha');
+    expect(api.getGuardian).not.toHaveBeenCalledWith('grd-bravo1');
     expect(api.fixBusMismatches).not.toHaveBeenCalled();
 
     await waitFor(() => {
-      expect(api.getFlightDetails.mock.calls.length).toBe(detailsCallsBefore + 1);
-      expect(api.getFlightAssignments.mock.calls.length).toBe(assignmentCallsBefore + 1);
+      expect(api.getFlightDetails.mock.calls.length).toBeGreaterThan(detailsCallsBefore);
+      expect(api.getFlightAssignments.mock.calls.length).toBeGreaterThan(assignmentCallsBefore);
     });
     expect(api.getFlightDetails).toHaveBeenLastCalledWith('flight-214');
     expect(api.getFlightAssignments).toHaveBeenLastCalledWith('flight-214');
@@ -526,7 +558,7 @@ describe('Flight details — fix bus mismatches', () => {
 
   test('shows an error toast and leaves the roster unchanged when a bus update fails', async () => {
     const user = userEvent.setup();
-    api.updateGuardianBus.mockRejectedValue(new Error('Invalid bus'));
+    api.updateGuardian.mockRejectedValue(new Error('Invalid bus'));
     await openFixDialog(user);
 
     const detailsCallsBefore = api.getFlightDetails.mock.calls.length;
