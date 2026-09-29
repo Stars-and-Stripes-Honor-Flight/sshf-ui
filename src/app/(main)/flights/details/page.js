@@ -179,6 +179,8 @@ function FlightDetailsPage() {
         
         return {
           pairId: pair.pairId,
+          veteranId: veteran?.id,
+          guardianId: guardian?.id,
           veteranName: veteran ? `${veteran.name_first} ${veteran.name_last}` : 'Unknown',
           guardianName: guardian ? `${guardian.name_first} ${guardian.name_last}` : 'Unknown',
           currentVeteranBus: veteran?.bus || 'N/A',
@@ -196,18 +198,17 @@ function FlightDetailsPage() {
 
     try {
       setFixingBusMismatches(true);
-      
-      // Prepare the fixes data
-      const fixesData = busMismatchFixes.map(fix => ({
-        pairId: fix.pairId,
-        newBus: fix.newBus,
-      }));
 
-      // Call API to apply fixes (you may need to create this endpoint)
-      // For now, we'll use a generic update approach
-      await api.fixBusMismatches(flightId, fixesData);
-      
-      // Refresh flight data
+      for (const fix of busMismatchFixes) {
+        if (fix.veteranId && fix.currentVeteranBus !== fix.newBus) {
+          await handleUpdatePerson(fix.veteranId, 'Veteran', { flight: { bus: fix.newBus } });
+        }
+        if (fix.guardianId && fix.currentGuardianBus !== fix.newBus) {
+          await handleUpdatePerson(fix.guardianId, 'Guardian', { flight: { bus: fix.newBus } });
+        }
+      }
+
+      // Refresh flight roster from the API after every bus edit has landed
       const [detailsData, newAssignmentData] = await Promise.all([
         api.getFlightDetails(flightId),
         api.getFlightAssignments(flightId),

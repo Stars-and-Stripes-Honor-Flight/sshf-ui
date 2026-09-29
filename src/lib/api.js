@@ -371,23 +371,6 @@ class ApiClient {
     }
   }
 
-  // Fix bus mismatches for pairs in a flight
-  async fixBusMismatches(id, fixes) {
-    try {
-      const response = await this.request(`/flights/${id}/fix-bus-mismatches`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fixes }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to fix bus mismatches: ${error.message}`);
-      throw error;
-    }
-  }
-
   // Get all flights
   async listFlights() {
     try {
