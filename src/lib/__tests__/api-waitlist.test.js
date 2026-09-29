@@ -85,6 +85,16 @@ describe('api.getWaitlist', () => {
     expect(url).toContain('limit=101');
   });
 
+  test('preserves total_rows when API returns a paginated object', async () => {
+    mockFetchWith({ rows: [mockVeteran], total_rows: 42 });
+
+    const result = await api.getWaitlist({ type: 'veterans' });
+
+    expect(result.total_rows).toBe(42);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].id).toBe('vet-1');
+  });
+
   test('transforms veteran entries with status, conflict, group and guardian pairing', async () => {
     mockFetchWith([mockVeteran]);
 
