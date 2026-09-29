@@ -9,7 +9,6 @@ export const paths = {
     overview: '/',
     settings: {
       account: '/settings/account',
-      team: '/settings/team',
     },
     search: {
       list: '/search',
