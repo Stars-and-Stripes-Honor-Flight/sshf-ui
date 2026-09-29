@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import '@testing-library/jest-dom';
 
+import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 
 import Page from '../page';
@@ -403,5 +404,141 @@ describe('Flight details roster — training preset (issue #212)', () => {
     expect(payload.flight.history).toBeUndefined();
     expect(payload.metadata).toBeUndefined();
     expect(payload.address.phone_mbl).toBe('414-327-5999');
+  });
+});
+
+function flightDetails(pairs) {
+  return {
+    flight: {
+      name: 'May 2026',
+      completed: false,
+      flight_date: '2026-05-01',
+      capacity: 40,
+    },
+    stats: {
+      flight: { Alpha: 2, Bravo: 2, None: 0 },
+      tours: { Alpha: 2, Bravo: 2, None: 0 },
+      buses: { Alpha1: 1, Bravo1: 1, Bravo2: 1, None: 1 },
+    },
+    pairs,
+  };
+}
+
+const busMismatchPairs = [
+  {
+    pairId: 'pair-alpha',
+    busMismatch: true,
+    missingPairedPerson: false,
+    people: [
+      veteran({ id: 'vet-alpha', name_first: 'Vic', name_last: 'Alpha', bus: 'Alpha1' }),
+      guardian({ id: 'grd-bravo', name_first: 'Gina', name_last: 'Bravo', bus: 'Bravo2' }),
+    ],
+  },
+  {
+    pairId: 'pair-none',
+    busMismatch: true,
+    missingPairedPerson: false,
+    people: [
+      veteran({ id: 'vet-none', name_first: 'Ned', name_last: 'None', bus: 'None' }),
+      guardian({ id: 'grd-bravo1', name_first: 'Bea', name_last: 'Bravo', bus: 'Bravo1' }),
+    ],
+  },
+];
+
+const fixedBusPairs = [
+  {
+    pairId: 'pair-alpha',
+    busMismatch: false,
+    missingPairedPerson: false,
+    people: [
+      veteran({ id: 'vet-alpha', name_first: 'Vic', name_last: 'Alpha', bus: 'Alpha1' }),
+      guardian({ id: 'grd-bravo', name_first: 'Gina', name_last: 'Bravo', bus: 'Alpha1' }),
+    ],
+  },
+  {
+    pairId: 'pair-none',
+    busMismatch: false,
+    missingPairedPerson: false,
+    people: [
+      veteran({ id: 'vet-none', name_first: 'Ned', name_last: 'None', bus: 'Bravo1' }),
+      guardian({ id: 'grd-bravo1', name_first: 'Bea', name_last: 'Bravo', bus: 'Bravo1' }),
+    ],
+  },
+];
+
+describe('Flight details — fix bus mismatches', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    toast.success.mockClear();
+    toast.error.mockClear();
+    api.getFlightDetails.mockResolvedValue(flightDetails(busMismatchPairs));
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 2,
+        guardians: 2,
+        veteransConfirmed: 2,
+        guardiansConfirmed: 2,
+        remaining: 10,
+      },
+    });
+    api.updateVeteranBus = jest.fn().mockResolvedValue({ ok: true, bus: 'Bravo1' });
+    api.updateGuardianBus = jest.fn().mockResolvedValue({ ok: true, bus: 'Alpha1' });
+    api.fixBusMismatches = jest.fn();
+  });
+
+  async function openFixDialog(user) {
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Vic Alpha' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fix Bus Mismatches' }));
+    expect(await screen.findByRole('heading', { name: 'Fix Bus Mismatches' })).toBeInTheDocument();
+  }
+
+  test('updates each changed person through the documented bus endpoints and refreshes the roster', async () => {
+    const user = userEvent.setup();
+    await openFixDialog(user);
+
+    expect(screen.getByText('Bravo2 → Alpha1')).toBeInTheDocument();
+    expect(screen.getByText('None → Bravo1')).toBeInTheDocument();
+
+    const detailsCallsBefore = api.getFlightDetails.mock.calls.length;
+    const assignmentCallsBefore = api.getFlightAssignments.mock.calls.length;
+    api.getFlightDetails.mockResolvedValue(flightDetails(fixedBusPairs));
+
+    await user.click(screen.getByRole('button', { name: 'Apply Fixes' }));
+
+    await waitFor(() => {
+      expect(api.updateGuardianBus).toHaveBeenCalledWith('grd-bravo', 'Alpha1');
+    });
+    expect(api.updateVeteranBus).toHaveBeenCalledWith('vet-none', 'Bravo1');
+    expect(api.updateVeteranBus).toHaveBeenCalledTimes(1);
+    expect(api.updateGuardianBus).toHaveBeenCalledTimes(1);
+    expect(api.fixBusMismatches).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(api.getFlightDetails.mock.calls.length).toBe(detailsCallsBefore + 1);
+      expect(api.getFlightAssignments.mock.calls.length).toBe(assignmentCallsBefore + 1);
+    });
+    expect(api.getFlightDetails).toHaveBeenLastCalledWith('flight-214');
+    expect(api.getFlightAssignments).toHaveBeenLastCalledWith('flight-214');
+    expect(toast.success).toHaveBeenCalledWith('Bus mismatches fixed successfully');
+    expect(screen.queryByRole('button', { name: 'Fix Bus Mismatches', hidden: true })).not.toBeInTheDocument();
+  });
+
+  test('shows an error toast and leaves the roster unchanged when a bus update fails', async () => {
+    const user = userEvent.setup();
+    api.updateGuardianBus.mockRejectedValue(new Error('Invalid bus'));
+    await openFixDialog(user);
+
+    const detailsCallsBefore = api.getFlightDetails.mock.calls.length;
+
+    await user.click(screen.getByRole('button', { name: 'Apply Fixes' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to apply bus mismatch fixes. Please try again later.');
+    });
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(api.getFlightDetails.mock.calls.length).toBe(detailsCallsBefore);
+    expect(screen.getByRole('button', { name: 'Apply Fixes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fix Bus Mismatches', hidden: true })).toBeInTheDocument();
   });
 });
