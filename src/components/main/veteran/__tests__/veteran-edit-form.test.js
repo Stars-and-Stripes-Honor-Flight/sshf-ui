@@ -21,7 +21,21 @@ jest.mock('@/components/core/toaster', () => ({
   }
 }));
 
+const mockCan = jest.fn(() => true);
+
+jest.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({
+    can: (permission) => mockCan(permission),
+    hasAccess: true,
+    permissions: [],
+  }),
+}));
+
 describe('VeteranEditForm - Update Functionality', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+  });
+
   // Full-form render + userEvent save can exceed 5s under parallel Jest workers.
   jest.setTimeout(15000);
 
@@ -204,6 +218,7 @@ describe('VeteranEditForm - Update Functionality', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCan.mockImplementation(() => true);
     
     // Clear sessionStorage
     sessionStorage.clear();
@@ -568,6 +583,7 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCan.mockImplementation(() => true);
     sessionStorage.clear();
     useRouter.mockReturnValue({ push: jest.fn(), back: jest.fn() });
     useNavigationBack.mockReturnValue(mockHandleGoBack);
@@ -651,5 +667,13 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
 
     const caneLabel = screen.getByRole('checkbox', { name: /cane/i }).closest('.MuiFormControlLabel-root');
     expect(caneLabel).toHaveClass('Mui-disabled');
+  });
+
+  test('disables editing when the user lacks records:write', () => {
+    mockCan.mockImplementation((permission) => permission !== 'records:write');
+    render(<VeteranEditForm veteran={baseVeteran} />);
+
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /cane/i })).toBeDisabled();
   });
 });

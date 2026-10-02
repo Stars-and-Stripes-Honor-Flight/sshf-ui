@@ -44,6 +44,8 @@ import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Downloa
 import { config } from '@/config';
 import { paths } from '@/paths';
 import { api } from '@/lib/api';
+import { PERMISSIONS } from '@/lib/auth/permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { dayjs } from '@/lib/dayjs';
 import { formatFlightNameForDisplay } from '@/lib/flights';
 import { toast } from '@/components/core/toaster';
@@ -77,6 +79,10 @@ import {
 } from '@/components/main/flight/roster-controls-persist-coordinator';
 
 function FlightDetailsPage() {
+  const { can } = usePermissions();
+  const canWriteRecords = can(PERMISSIONS.RECORDS_WRITE);
+  const canManageFlights = can(PERMISSIONS.FLIGHTS_MANAGE);
+  const canExport = can(PERMISSIONS.EXPORTS_READ);
   const searchParams = useSearchParams();
   const router = useRouter();
   const flightId = searchParams.get('id');
@@ -439,10 +445,12 @@ function FlightDetailsPage() {
                       />
                     </Stack>
                   </Box>
-                  <FlightExportMenu 
-                    flightName={flight?.name}
-                    stopPropagation={false}
-                  />
+                  {canExport ? (
+                    <FlightExportMenu 
+                      flightName={flight?.name}
+                      stopPropagation={false}
+                    />
+                  ) : null}
                   {/* Menu removed - now handled by FlightExportMenu component */}
                 </Stack>
                 <Typography color="text.secondary" variant="body1">
@@ -509,13 +517,15 @@ function FlightDetailsPage() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           Assignments
                         </Typography>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          onClick={() => setShowAddAssignmentDialog(true)}
-                        >
-                          Add Veterans from Waitlist
-                        </Button>
+                        {canManageFlights ? (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => setShowAddAssignmentDialog(true)}
+                          >
+                            Add Veterans from Waitlist
+                          </Button>
+                        ) : null}
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
                         <Box>
@@ -663,7 +673,7 @@ function FlightDetailsPage() {
                     Participants ({pairs.length})
                   </Typography>
                   <Stack direction="row" spacing={1}>
-                    {pairs.some(p => p.busMismatch) && (
+                    {canWriteRecords && pairs.some(p => p.busMismatch) && (
                       <Button
                         variant="outlined"
                         size="small"
@@ -931,6 +941,7 @@ function FlightDetailsPage() {
                       flightName={flight.name}
                       activityPreset={activityPreset}
                       guardiansFocus={activityPreset === ACTIVITY_PRESETS.TRAINING && trainingGuardiansFocus}
+                      readOnly={!canWriteRecords}
                     />
                   );
                 })()}

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.3
+ * OpenAPI spec version: 1.1.0
  */
 import * as zod from 'zod';
 
@@ -12,8 +12,18 @@ export const AddVeteransResult = zod.object({
   "veterans": zod.number().int().optional().describe('Number of veterans added'),
   "guardians": zod.number().int().optional().describe('Number of guardians added')
 }).optional(),
-  "errors": zod.array(zod.string()).optional().describe('List of errors encountered during processing')
-}).describe('Result of adding veterans to a flight');
+  "saved": zod.object({
+  "veterans": zod.array(zod.string()).optional().describe('Veteran document ids that were saved'),
+  "guardians": zod.array(zod.string()).optional().describe('Guardian document ids that were saved')
+}).optional().describe('Document ids saved during this request'),
+  "failed": zod.array(zod.object({
+  "id": zod.string().optional().describe('Document id that failed to save'),
+  "type": zod.enum(['veteran', 'guardian']).optional().describe('Whether the failed document is a veteran or a guardian'),
+  "status": zod.number().int().optional().describe('Status for this document. 409 is a conflict that remained after one revision retry.'),
+  "error": zod.string().optional().describe('Error message for this document')
+})).optional().describe('Documents that were not saved, including each document id'),
+  "errors": zod.array(zod.string()).optional().describe('Error messages for documents that failed to save, in the same order as failed')
+}).describe('Result of adding veterans to a flight. Returned with 200 when every save\nsucceeded, 409 when a document conflict remains after one retry, and 500\nwhen a veteran or guardian save failed for another reason. Failure\nresponses list the document ids that were saved and the ids that failed.\n');
 
 export type AddVeteransResult = zod.input<typeof AddVeteransResult>;
 export type AddVeteransResultOutput = zod.output<typeof AddVeteransResult>;

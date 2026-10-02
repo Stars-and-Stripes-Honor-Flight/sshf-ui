@@ -3,12 +3,12 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.3
+ * OpenAPI spec version: 1.1.0
  */
 import * as zod from 'zod';
 
 export const Error = zod.object({
-  "message": zod.string().optional()
+  "error": zod.string().optional()
 });
 
 export type Error = zod.input<typeof Error>;

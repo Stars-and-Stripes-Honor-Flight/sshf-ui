@@ -1,22 +1,24 @@
 import { useUser } from './use-user';
+import { hasFullAccess, hasPermission } from '@/lib/auth/permissions';
 
 export function usePermissions() {
   const { user } = useUser();
+  const permissions = user?.permissions ?? [];
 
-  const isInGroup = (groupEmail) => {
-    return user?.roles?.some(role => role.email === groupEmail) ?? false;
-  };
+  const can = (permission) => hasPermission(permissions, permission);
 
   return {
-    isInGroup,
-    roles: user?.roles ?? []
+    can,
+    permissions,
+    roles: user?.roles ?? [],
+    hasAccess: Boolean(user?.hasAccess) || permissions.length > 0,
   };
 }
 
+/** True when the user holds the FULL-only permissions (delete, document admin, flight management). */
 export function useHasFullAccess() {
-  const { isInGroup } = usePermissions();
-  const fullAccessGroup = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-  return isInGroup(fullAccessGroup);
+  const { permissions } = usePermissions();
+  return hasFullAccess(permissions);
 }
 
 export function useMembershipProbeFailed() {

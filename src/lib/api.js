@@ -1,6 +1,8 @@
 // API client for interacting with the backend API
 import { toast } from '@/components/core/toaster';
 import { tokenManager } from '@/lib/auth/domain/tokenManager';
+import { friendlyForbiddenMessage } from '@/lib/auth/permissions';
+import { notifyPermissionsStale } from '@/lib/auth/permissions-refresh';
 import { isValidPhoneSearchTerm } from '@/lib/phone-search';
 import { paths } from '@/paths';
 
@@ -98,11 +100,22 @@ class ApiClient {
           this.handleUnauthorized();
         }
 
-        if (response.status === 403) {
-          toast.error('You are not authorized to perform this action in this environment.');
-        }
-        
         const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 403) {
+          const message = friendlyForbiddenMessage(errorData);
+          toast.error(message);
+          if (errorData.requiredPermission) {
+            notifyPermissionsStale();
+          }
+          const forbidden = new Error(message);
+          forbidden.status = 403;
+          if (errorData.requiredPermission) {
+            forbidden.requiredPermission = errorData.requiredPermission;
+          }
+          throw forbidden;
+        }
+
         const error = new Error(errorData.error || errorData.message || `API request failed with status ${response.status}`);
         error.status = response.status;
         throw error;
@@ -116,15 +129,11 @@ class ApiClient {
   }
 
   /**
-   * Probe Workspace group membership for the current user.
-   * Auth-only on the API (does not require ALLOWED_GROUP_EMAILS).
+   * Permission summary for the signed-in user.
+   * Auth-only on the API so an account with no roles still gets 200.
    */
-  async hasGroup(groupEmail) {
-    const queryParams = new URLSearchParams();
-    if (groupEmail) {
-      queryParams.append('groupEmail', groupEmail);
-    }
-    const response = await this.request(`/user/hasgroup?${queryParams.toString()}`, {
+  async getPermissions() {
+    const response = await this.request('/user/permissions', {
       method: 'GET',
     });
     return await response.json();

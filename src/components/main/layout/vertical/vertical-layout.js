@@ -4,7 +4,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
-import { useHasFullAccess } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useSettings } from '@/hooks/use-settings';
 
 import { layoutConfig } from '../config';
@@ -14,8 +14,8 @@ import { SideNav } from './side-nav';
 
 export function VerticalLayout({ children }) {
   const { settings } = useSettings();
-  const hasFullAccess = useHasFullAccess();
-  const navItems = getVisibleNavItems(layoutConfig.navItems, hasFullAccess);
+  const { can } = usePermissions();
+  const navItems = getVisibleNavItems(layoutConfig.navItems, can);
 
   return (
     <React.Fragment>

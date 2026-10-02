@@ -63,6 +63,7 @@ export function FlightExportMenu({ flightName, onExporting, disabled = false, st
         onClick={handleMenuOpen}
         disabled={disabled || isExporting}
         title="Export flight data"
+        aria-label="Export flight data"
         sx={{ flexShrink: 0 }}
       >
         <DownloadIcon size={20} />

@@ -1,5 +1,7 @@
 'use client';
 
+import { notifyPermissionsStale } from '@/lib/auth/permissions-refresh';
+
 class TokenManager {
   constructor() {
     this.refreshTokenKey = 'google-refresh-token';
@@ -166,6 +168,7 @@ class TokenManager {
       }
 
       this.storeTokenData(accessToken, expiresIn);
+      notifyPermissionsStale();
 
       this.refreshQueue.forEach((resolve) => resolve(accessToken));
       this.refreshQueue = [];

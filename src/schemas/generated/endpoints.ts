@@ -3,15 +3,18 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.3
+ * OpenAPI spec version: 1.1.0
  */
 import * as zod from 'zod';
 
 import {
   AddVeteransResult,
+  DocDiff,
+  DocRevisionList,
   Flight,
   FlightAssignment,
   FlightDetailResult,
+  GenericDocumentWrite,
   Guardian,
   QueryRequest,
   QueryResults,
@@ -22,9 +25,110 @@ import {
   ReviewApplicationList,
   ReviewApplicationStatusUpdate,
   SearchResults,
+  UserPermissions,
   Veteran,
   WaitlistVeteranGroup
 } from './.';
+
+/**
+ * Stores a new CouchDB document whose type is Flight, Guardian, or Veteran.
+ * The body is validated with that type's model. The body `_id` is required
+ * and must not refer to a design or system document. Client-supplied
+ * `_rev`, `_deleted`, design-document fields, and audit metadata are not
+ * stored. Creation and update metadata are set from the authenticated user.
+ * A new flight is stored with completed false.
+ * @summary Create an allowlisted logistics document
+ */
+export const PostDocsBody = GenericDocumentWrite
+
+export const PostDocsResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "id": zod.string().optional(),
+  "rev": zod.string().optional()
+})
+
+
+/**
+ * @summary Retrieve a CouchDB document by ID
+ */
+export const GetDocsIdParams = zod.object({
+  "id": zod.string().describe('CouchDB document ID')
+})
+
+export const GetDocsIdResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * Replaces a Flight, Guardian, or Veteran document using that type's model
+ * validation. The body `_id` is required and must match the URL id.
+ * Design or system document ids are rejected. The stored type cannot be
+ * changed, and a document whose stored type is not allowlisted cannot be
+ * replaced. Creation metadata and history stay as stored. The
+ * authenticated user is recorded as the updater. Client-supplied `_rev`,
+ * `_deleted`, design-document fields, and audit metadata are not stored;
+ * the current CouchDB revision is sent instead.
+ * @summary Update an allowlisted logistics document by ID
+ */
+export const PutDocsIdParams = zod.object({
+  "id": zod.string().describe('CouchDB document ID')
+})
+
+export const PutDocsIdBody = GenericDocumentWrite
+
+export const PutDocsIdResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * Deletes a document only when its stored type is Flight, Guardian, or
+ * Veteran. Design or system document ids are rejected before CouchDB is
+ * called.
+ * @summary Delete an allowlisted logistics document by ID
+ */
+export const DeleteDocsIdParams = zod.object({
+  "id": zod.string().describe('CouchDB document ID')
+})
+
+export const DeleteDocsIdResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * Returns revision metadata for a document using CouchDB `revs_info=true`.
+ * Revisions marked `missing` were removed by database compaction and cannot
+ * be fetched or diffed. This endpoint is intended for testers and debugging.
+ * @summary List a document's CouchDB revision history
+ */
+export const GetDocsIdRevisionsParams = zod.object({
+  "id": zod.string().describe('CouchDB document ID')
+})
+
+export const GetDocsIdRevisionsResponse = DocRevisionList
+
+
+/**
+ * Fetches two revision snapshots and returns a field-level JSON diff.
+ * When `from` and `to` are omitted, the current winning revision is
+ * compared with the next most recent available revision. Aliases
+ * `current` and `previous` are accepted. Compacted revisions cannot be
+ * retrieved and return 404. Intended for testers and debugging.
+ * @summary Diff two revisions of a CouchDB document
+ */
+export const GetDocsIdDiffParams = zod.object({
+  "id": zod.string().describe('CouchDB document ID')
+})
+
+export const GetDocsIdDiffQueryParams = zod.object({
+  "from": zod.string().optional().describe('Older revision token, or `previous` (the default)'),
+  "to": zod.string().optional().describe('Newer revision token, or `current` (the default)')
+})
+
+export const GetDocsIdDiffResponse = DocDiff
+
 
 /**
  * Proxies the CouchDB `flight-csv` list export and returns a CSV file.
@@ -92,6 +196,15 @@ export const GetFlightsIdAssignmentsResponse = FlightAssignment
  * - Veterans with paired guardians have their guardian added automatically
  * - Flight history entries are recorded for each assignment
  *
+ * Each veteran is saved, then each paired guardian. A CouchDB 409 is
+ * retried once after the current revision is re-read. If that retry still
+ * conflicts, the failure is a conflict for that document.
+ *
+ * The response is 200 only when every attempted save succeeds. When a
+ * veteran or guardian save fails, the status is 409 if any remaining
+ * failure is a conflict and 500 otherwise. Both failure responses list
+ * the ids that were saved and the ids that failed.
+ *
  * The veteranCount must be between 1 and 100.
  * @summary Add veterans from waitlist to flight
  */
@@ -120,6 +233,9 @@ export const PostFlightsIdAssignmentsResponse = AddVeteransResult
  * - List of veteran-guardian pairs with seat/bus assignments
  * - Per-person call-center fields such as fm_number and assigned_to when present
  * - Per-person form fields used by gt-checkin, medical, and other flight forms
+ * - Guardian training as the training type only. A trailing medical-level
+ *   suffix (` [A]` through ` [D]`) from the flight_pairings view is removed
+ *   here. medical_level remains a separate field. The Couch view is unchanged.
  *
  * Each pair includes mismatch flags:
  * - busMismatch: true if people in the pair have different bus assignments
@@ -268,6 +384,176 @@ export const PatchGuardiansIdBusResponse = zod.object({
 
 
 /**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update guardian training notes
+ */
+export const PatchGuardiansIdTrainingNotesParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdTrainingNotesBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchGuardiansIdTrainingNotesResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian training-complete indicator
+ */
+export const PatchGuardiansIdTrainingCompleteParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdTrainingCompleteBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdTrainingCompleteResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian waiver-received indicator
+ */
+export const PatchGuardiansIdWaiverParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdWaiverBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdWaiverResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian training-see-doctor indicator
+ */
+export const PatchGuardiansIdTrainingSeeDocParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdTrainingSeeDocBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdTrainingSeeDocResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian vaccinated indicator
+ */
+export const PatchGuardiansIdVaccinatedParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdVaccinatedBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdVaccinatedResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian medical-form-received indicator
+ */
+export const PatchGuardiansIdMedicalFormParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdMedicalFormBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdMedicalFormResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the guardian paid indicator
+ */
+export const PatchGuardiansIdPaidParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdPaidBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchGuardiansIdPaidResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update how many books were ordered for a guardian
+ */
+export const PatchGuardiansIdBooksOrderedParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const patchGuardiansIdBooksOrderedBodyValueMin = 0;
+export const patchGuardiansIdBooksOrderedBodyValueMax = 9;
+
+
+
+export const PatchGuardiansIdBooksOrderedBody = zod.object({
+  "value": zod.number().int().min(patchGuardiansIdBooksOrderedBodyValueMin).max(patchGuardiansIdBooksOrderedBodyValueMax)
+})
+
+export const PatchGuardiansIdBooksOrderedResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update a guardian apparel shirt size
+ */
+export const PatchGuardiansIdApparelShirtSizeParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdApparelShirtSizeBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchGuardiansIdApparelShirtSizeResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update a guardian apparel jacket size
+ */
+export const PatchGuardiansIdApparelJacketSizeParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdApparelJacketSizeBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchGuardiansIdApparelJacketSizeResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update guardian apparel notes
+ */
+export const PatchGuardiansIdApparelNotesParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchGuardiansIdApparelNotesBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchGuardiansIdApparelNotesResponse = zod.unknown()
+
+
+/**
  * Executes a read-only Mango selector query against the database.
  * This endpoint is a secure proxy that only allows _find queries and prevents
  * any mutation operations. Queries are never persisted.
@@ -402,7 +688,7 @@ export const getSearchQueryFlightDefault = `All`;
 
 export const GetSearchQueryParams = zod.object({
   "limit": zod.number().int().default(getSearchQueryLimitDefault).describe('Maximum number of results to return'),
-  "lastname": zod.string().optional().describe('Last name to search for (partial match). Ignored when phone_num is provided.'),
+  "lastname": zod.string().optional().describe('Last name prefix to search for (partial match). Apostrophes, periods, and spaces are removed before querying so the term matches the name index. Case is unchanged. Ignored when phone_num is provided.'),
   "phone_num": zod.string().optional().describe('Phone number search term. Non-digits are ignored; requires at least 3 numeric digits.'),
   "status": zod.enum(['All', 'Active', 'Flown', 'Deceased', 'Removed', 'Future-Spring', 'Future-Fall', 'Future-PostRestriction']).default(getSearchQueryStatusDefault).describe('Status filter for the search'),
   "flight": zod.string().default(getSearchQueryFlightDefault).describe('Flight ID filter for the search (ignored if status is not \'All\')')
@@ -412,7 +698,7 @@ export const GetSearchResponse = SearchResults
 
 
 /**
- * Auth-only probe used by the UI during sign-in. Does not require membership in ALLOWED_GROUP_EMAILS so non-members can still discover that they are unauthorized. Data routes enforce group membership separately via the authorize middleware.
+ * Auth-only probe used by the UI during sign-in. Does not require FULL membership, so non-members can still discover that they are unauthorized. For groups listed in AUTHZ_ROLE_{READ,WRITE,FULL,MEDICAL,REVIEW}_GROUPS (ALLOWED_GROUP_EMAILS is the deprecated alias for FULL), hasgroup is true for a direct or nested Workspace member. Any other group is a direct membership only. Data routes enforce per-route permissions. Prefer GET /user/permissions for show/hide hints. groupEmail is compared to role emails case-insensitively.
  * @summary Check whether the authenticated user belongs to a Workspace group
  */
 export const GetUserHasgroupQueryParams = zod.object({
@@ -422,6 +708,13 @@ export const GetUserHasgroupQueryParams = zod.object({
 export const GetUserHasgroupResponse = zod.object({
   "hasgroup": zod.boolean()
 })
+
+
+/**
+ * Auth-only permission summary for UI hints. Skips requirePermission so a signed-in user with no roles receives 200 and an empty permissions list. roles lists only the roles granted directly by group membership (a FULL user is ["FULL"], not READ and WRITE). permissions is the effective union, including inheritance. Group emails are omitted. The API still enforces permissions on each data route.
+ * @summary Summarize the authenticated user's roles and permissions
+ */
+export const GetUserPermissionsResponse = UserPermissions
 
 
 /**
@@ -537,6 +830,141 @@ export const PatchVeteransIdBusResponse = zod.object({
   "rev": zod.string().optional(),
   "bus": zod.string().optional()
 })
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update whether a veteran mail call was received
+ */
+export const PatchVeteransIdMailCallReceivedParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdMailCallReceivedBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchVeteransIdMailCallReceivedResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update whether a veteran mail call was adopted
+ */
+export const PatchVeteransIdMailCallAdoptParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdMailCallAdoptBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchVeteransIdMailCallAdoptResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the veteran medical-form-received indicator
+ */
+export const PatchVeteransIdMedicalFormParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdMedicalFormBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchVeteransIdMedicalFormResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the veteran medical-review indicator
+ */
+export const PatchVeteransIdMedicalReviewParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdMedicalReviewBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdMedicalReviewResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update the veteran vaccinated indicator
+ */
+export const PatchVeteransIdVaccinatedParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdVaccinatedBody = zod.object({
+  "value": zod.boolean()
+})
+
+export const PatchVeteransIdVaccinatedResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update a veteran homecoming destination
+ */
+export const PatchVeteransIdHomecomingDestinationParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdHomecomingDestinationBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdHomecomingDestinationResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update a veteran apparel shirt size
+ */
+export const PatchVeteransIdApparelShirtSizeParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdApparelShirtSizeBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdApparelShirtSizeResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update a veteran apparel jacket size
+ */
+export const PatchVeteransIdApparelJacketSizeParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdApparelJacketSizeBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdApparelJacketSizeResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update veteran apparel notes
+ */
+export const PatchVeteransIdApparelNotesParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdApparelNotesBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdApparelNotesResponse = zod.unknown()
 
 
 /**

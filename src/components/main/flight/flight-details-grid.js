@@ -295,7 +295,7 @@ const BusSelector = React.memo(function BusSelector({ value, onChange, personId,
 
 // Memoized so a parent render (new callback, filter state that does not change
 // this pair) does not re-render every visible row's Select/TextField.
-const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false }) {
+const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false, readOnly = false }) {
   const [open, setOpen] = React.useState(false);
   const [localAssignedTo, setLocalAssignedTo] = React.useState(null);
   const veteran = pair.people.find(p => p.type === 'Veteran');
@@ -437,9 +437,15 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
   
   // Cell renderer handlers for activity cells
   const handlers = {
-    EditableField,
-    EditableCheckbox,
-    BusSelector,
+    EditableField: readOnly
+      ? (props) => <EditableField {...props} disabled />
+      : EditableField,
+    EditableCheckbox: readOnly
+      ? (props) => <EditableCheckbox {...props} disabled />
+      : EditableCheckbox,
+    BusSelector: readOnly
+      ? (props) => <BusSelector {...props} disabled />
+      : BusSelector,
     handleSeatChange,
     handleBusChange,
     handleAssignedToCallChange,
@@ -526,7 +532,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       )}
 
       {/* Add Guardian button row if no guardian */}
-      {!guardian && (
+      {!guardian && !readOnly && (
         <TableRow sx={{ backgroundColor: pairBg }}>
           <TableCell colSpan={1} sx={{ borderBottom: 'none' }} />
           <TableCell sx={{ borderBottom: 'none' }} />
@@ -642,7 +648,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
 });
 
 // Main FlightDetailsGrid component
-export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false }) {
+export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false, readOnly = false }) {
   const columns = getColumnConfig(activityPreset);
   const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
   const [selectedVeteranForPairing, setSelectedVeteranForPairing] = React.useState(null);
@@ -699,7 +705,8 @@ export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, b
                 busFilter={busFilter}
                 activityPreset={activityPreset}
                 guardiansFocus={guardiansFocus}
-                onOpenPairingDialog={handleOpenPairingDialog}
+                onOpenPairingDialog={readOnly ? undefined : handleOpenPairingDialog}
+                readOnly={readOnly}
               />
             ))}
           </TableBody>

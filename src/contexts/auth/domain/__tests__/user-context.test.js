@@ -36,7 +36,13 @@ jest.mock('@/lib/default-logger', () => ({
   },
 }));
 
-const FULL_ACCESS_ROLE = 'full-access@example.com';
+const READ_USER = {
+  id: 'server-user',
+  email: 'server@example.com',
+  hasAccess: true,
+  roles: ['READ'],
+  permissions: ['records:read', 'exports:read'],
+};
 
 function SessionStatus() {
   const { isLoading, user } = useUser();
@@ -63,20 +69,9 @@ function renderProtectedPage() {
 }
 
 describe('UserProvider checkSession', () => {
-  const originalRole = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS = FULL_ACCESS_ROLE;
-  });
-
-  afterEach(() => {
-    if (originalRole === undefined) {
-      delete process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-    } else {
-      process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS = originalRole;
-    }
   });
 
   test('does not render protected content from cached user-data before getUser settles', async () => {
@@ -85,7 +80,9 @@ describe('UserProvider checkSession', () => {
       JSON.stringify({
         id: 'cached-user',
         email: 'cached@example.com',
-        roles: [{ email: FULL_ACCESS_ROLE, name: 'full' }],
+        roles: ['READ'],
+        permissions: ['records:read', 'exports:read'],
+        hasAccess: true,
       })
     );
 
@@ -128,7 +125,9 @@ describe('UserProvider checkSession', () => {
       JSON.stringify({
         id: 'cached-user',
         email: 'cached@example.com',
-        roles: [{ email: FULL_ACCESS_ROLE, name: 'full' }],
+        roles: ['READ'],
+        permissions: ['records:read', 'exports:read'],
+        hasAccess: true,
       })
     );
     localStorage.setItem('flights-list', JSON.stringify([{ id: 'flight-1' }]));
@@ -146,14 +145,8 @@ describe('UserProvider checkSession', () => {
     expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
   });
 
-  test('renders protected content only after getUser returns a user', async () => {
-    authClient.getUser.mockResolvedValue({
-      data: {
-        id: 'server-user',
-        email: 'server@example.com',
-        roles: [{ email: FULL_ACCESS_ROLE, name: 'full' }],
-      },
-    });
+  test('renders protected content for a READ user without full-access group membership', async () => {
+    authClient.getUser.mockResolvedValue({ data: READ_USER });
 
     renderProtectedPage();
 

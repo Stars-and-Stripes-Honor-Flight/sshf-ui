@@ -6,7 +6,7 @@ import { authClient } from '../client';
 import { tokenManager } from '../tokenManager';
 
 jest.mock('@/lib/api', () => ({
-  api: { hasGroup: jest.fn() },
+  api: { getPermissions: jest.fn() },
 }));
 
 const REFRESH_KEY = 'google-refresh-token';

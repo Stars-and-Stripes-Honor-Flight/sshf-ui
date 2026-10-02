@@ -10,6 +10,20 @@ describe('generated OpenAPI Zod schemas', () => {
     expect(generated.Flight).toBeDefined();
   });
 
+  test('exports the UserPermissions summary from GET /user/permissions', () => {
+    expect(generated.UserPermissions).toBeDefined();
+    expect(typeof generated.UserPermissions.safeParse).toBe('function');
+    const parsed = generated.UserPermissions.safeParse({
+      email: 'jane@example.com',
+      hasAccess: true,
+      roles: ['READ'],
+      permissions: ['records:read', 'exports:read'],
+      evaluatedAt: '2026-10-01T15:04:05.000Z',
+      expiresAt: '2026-10-01T15:19:05.000Z',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   test('Veteran, Guardian, and Flight schemas support safeParse', () => {
     expect(typeof generated.Veteran.safeParse).toBe('function');
     expect(typeof generated.Guardian.safeParse).toBe('function');

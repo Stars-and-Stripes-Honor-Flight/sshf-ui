@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.3
+ * OpenAPI spec version: 1.1.0
  */
 import * as zod from 'zod';
 
@@ -15,7 +15,7 @@ export const searchRequestFlightDefault = `All`;
 
 export const SearchRequest = zod.object({
   "limit": zod.number().int().default(searchRequestLimitDefault).describe('Maximum number of results to return'),
-  "lastname": zod.string().default(searchRequestLastnameDefault).describe('Last name to search for (ignored when phone_num is provided)'),
+  "lastname": zod.string().default(searchRequestLastnameDefault).describe('Last name prefix to search for. Apostrophes, periods, and spaces are removed before querying so the term matches the name index. Case is unchanged. Ignored when phone_num is provided.'),
   "phone_num": zod.string().default(searchRequestPhoneNumDefault).describe('Phone number search term; non-digits are ignored and at least 3 numeric digits are required'),
   "status": zod.enum(['All', 'Active', 'Flown', 'Deceased', 'Removed', 'Future-Spring', 'Future-Fall', 'Future-PostRestriction']).default(searchRequestStatusDefault).describe('Status filter for the search'),
   "flight": zod.string().default(searchRequestFlightDefault).describe('Flight ID filter for the search')

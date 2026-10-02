@@ -49,4 +49,32 @@ describe('ApiClient 403 handling', () => {
       expect.stringMatching(/not authorized|permission|forbidden/i)
     );
   });
+
+  test('maps a permission 403 to friendlier copy that names the required permission', async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 403,
+      json: async () => ({
+        message: 'Forbidden: requires permission records:delete',
+        requiredPermission: 'records:delete',
+      }),
+    }));
+
+    let api;
+    let toast;
+    jest.isolateModules(() => {
+      toast = require('@/components/core/toaster').toast;
+      api = require('@/lib/api').api;
+    });
+
+    await expect(api.request('/veterans/abc')).rejects.toMatchObject({
+      status: 403,
+      requiredPermission: 'records:delete',
+      message: expect.stringMatching(/records:delete/),
+    });
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/records:delete/));
+    expect(toast.error).not.toHaveBeenCalledWith(
+      expect.stringMatching(/Forbidden: requires permission/)
+    );
+  });
 });
