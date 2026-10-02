@@ -78,6 +78,29 @@ function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
   };
 }
 
+describe('FlightDetailsGrid readOnly', () => {
+  test('disables roster edits and hides Add Guardian', () => {
+    const pair = buildPair();
+    pair.people = pair.people.filter((person) => person.type === 'Veteran');
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        readOnly
+      />
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Add Guardian' })).not.toBeInTheDocument();
+  });
+});
+
 describe('FlightDetailsGrid - assigned_to display', () => {
   const callerGridProps = { activityPreset: ACTIVITY_PRESETS.CALLER };
 

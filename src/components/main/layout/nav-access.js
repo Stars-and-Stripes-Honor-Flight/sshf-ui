@@ -1,22 +1,36 @@
 import { isAdhocQueryEnabled } from '@/lib/adhoc-query';
+import { NAV_LEAF_PERMISSION } from '@/lib/auth/permissions';
 
 const ADHOC_QUERY_NAV_KEY = 'tools:query';
 
-/**
- * Filter main nav items based on full-access group membership.
- * Unauthorized users only see Settings (logout remains in the user menu).
- */
-export function getNavItemsForAccess(navItems, hasFullAccess) {
-  if (hasFullAccess) {
-    return navItems;
+function filterNavNode(node, can) {
+  if (Array.isArray(node.items)) {
+    const items = node.items.map((child) => filterNavNode(child, can)).filter(Boolean);
+    if (items.length === 0) {
+      return null;
+    }
+    return { ...node, items };
   }
 
-  return (navItems ?? [])
-    .map((group) => ({
-      ...group,
-      items: (group.items ?? []).filter((item) => item.key === 'settings'),
-    }))
-    .filter((group) => (group.items ?? []).length > 0);
+  if (node.key === 'settings') {
+    return node;
+  }
+
+  const permission = NAV_LEAF_PERMISSION[node.key];
+  if (!permission || !can(permission)) {
+    return null;
+  }
+
+  return node;
+}
+
+/**
+ * Filter main nav items by API permissions.
+ * Settings stays visible so a signed-in user can still log out.
+ */
+export function getNavItemsForAccess(navItems, can) {
+  const allow = typeof can === 'function' ? can : () => false;
+  return (navItems ?? []).map((node) => filterNavNode(node, allow)).filter(Boolean);
 }
 
 function filterAdhocQueryNode(node, adhocQueryEnabled) {
@@ -45,9 +59,9 @@ export function getNavItemsForAdhocQuery(navItems, adhocQueryEnabled) {
     .filter(Boolean);
 }
 
-export function getVisibleNavItems(navItems, hasFullAccess) {
+export function getVisibleNavItems(navItems, can) {
   return getNavItemsForAdhocQuery(
-    getNavItemsForAccess(navItems, hasFullAccess),
+    getNavItemsForAccess(navItems, can),
     isAdhocQueryEnabled()
   );
 }

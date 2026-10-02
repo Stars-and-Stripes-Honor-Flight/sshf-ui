@@ -4,6 +4,8 @@ import * as React from 'react';
 
 import { api } from '@/lib/api';
 import { authClient } from '@/lib/auth/domain/client';
+import { PERMISSIONS, hasPermission } from '@/lib/auth/permissions';
+import { onPermissionsStale } from '@/lib/auth/permissions-refresh';
 import { logger } from '@/lib/default-logger';
 
 export const UserContext = React.createContext(undefined);
@@ -55,7 +57,7 @@ export function UserProvider({ children }) {
       // Load flights into local storage only after authentication is confirmed and user data exists
       try {
         const existingFlights = localStorage.getItem('flights-list');
-        if (!existingFlights && data.id) {
+        if (!existingFlights && data.id && hasPermission(data.permissions, PERMISSIONS.RECORDS_READ)) {
           const flights = await api.listFlights();
           localStorage.setItem('flights-list', JSON.stringify(flights));
         }
@@ -74,6 +76,50 @@ export function UserProvider({ children }) {
       }));
     }
   }, []);
+
+  const refreshPermissions = React.useCallback(async () => {
+    try {
+      const { data, error } = await authClient.getUser();
+      if (error || !data) {
+        clearCachedSession();
+        setState((prev) => ({
+          ...prev,
+          user: null,
+          error: null,
+          isLoading: false,
+        }));
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        user: data,
+        error: null,
+      }));
+    } catch (err) {
+      logger.error(err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    return onPermissionsStale(() => {
+      refreshPermissions();
+    });
+  }, [refreshPermissions]);
+
+  React.useEffect(() => {
+    const expiresAt = state.user?.expiresAt;
+    if (!expiresAt) {
+      return undefined;
+    }
+
+    const ms = new Date(expiresAt).getTime() - Date.now();
+    const delay = Number.isFinite(ms) ? Math.max(ms, 5000) : 5000;
+    const id = setTimeout(() => {
+      refreshPermissions();
+    }, delay);
+    return () => clearTimeout(id);
+  }, [state.user?.expiresAt, refreshPermissions]);
 
   // Check session on mount
   React.useEffect(() => {

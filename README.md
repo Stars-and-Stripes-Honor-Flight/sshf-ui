@@ -9,10 +9,12 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 cp .env.example .env.local
 ```
 
-`.env.local` is gitignored. The four `NEXT_PUBLIC_*` values in `.env.example`
-are the development defaults (API URL, Google client ID, full-access group,
-and `NEXT_PUBLIC_ENVIRONMENT=Development`). Without them the client will not
-point at a backend — there is no hardcoded API fallback.
+`.env.local` is gitignored. The `NEXT_PUBLIC_*` values in `.env.example`
+are the development defaults (API URL, Google client ID, and
+`NEXT_PUBLIC_ENVIRONMENT=Development`). Without them the client will not
+point at a backend — there is no hardcoded API fallback. Authorization
+comes from `GET /user/permissions` after sign-in, not from a group email
+baked into the bundle.
 
 2. Install dependencies and start the development server:
 
@@ -29,12 +31,12 @@ Page protection is client-side. This app does not use Next.js middleware.
 
 `src/app/(main)/layout.js` wraps every application page in `AuthGuard`. `AuthGuard` stays on the loading state until `UserProvider` finishes `authClient.getUser()`, then redirects a visitor with no session to `/auth/domain/sign-in`. Sign-in and error pages live outside that layout. The `(main)` directory is a route group, so those pages are served at `/search`, `/flights`, `/veterans`, and the other paths in `src/app` — there is no `/main` URL prefix.
 
-An edge middleware check cannot see a session on those requests. The access token is stored in `localStorage`, and the refresh token is an httpOnly cookie scoped to `/api/auth`, so the browser does not send it with document requests. Treating cookie presence as a login, or matching a `/main` prefix, would not match this design. API authorization stays on the backend.
+An edge middleware check cannot see a session on those requests. The access token is stored in `localStorage`, and the refresh token is an httpOnly cookie scoped to `/api/auth`, so the browser does not send it with document requests. Treating cookie presence as a login, or matching a `/main` prefix, would not match this design. API authorization stays on the backend. After sign-in, `authClient.getUser()` loads `GET /user/permissions`. `FullAccessGuard` and the main nav call `can(permission)` on that summary. A signed-in user with no permissions can still open Settings.
 
 `src/lib/auth/__tests__/route-protection.test.js` lists the protected and public page paths discovered from `src/app` and asserts that no middleware file is present.
 
-Before a Cloud Run deploy, CI runs `npm run check-build-env` to ensure the four
-`NEXT_PUBLIC_*` build variables are set.
+Before a Cloud Run deploy, CI runs `npm run check-build-env` to ensure the
+required `NEXT_PUBLIC_*` build variables are set.
 
 ## Schema sync (OpenAPI → Zod)
 
@@ -118,7 +120,6 @@ for the full pipeline, secrets, and release process.
 |----------|---------|
 | `NEXT_PUBLIC_API_URL` | `https://sshf-api-330507742215.us-central1.run.app` |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `....apps.googleusercontent.com` |
-| `NEXT_PUBLIC_ROLE_FULL_ACCESS` | `sshf_app_dev_full_access@starsandstripeshonorflight.org` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `Development` |
 | `NEXT_PUBLIC_FEATURE_ADHOC_QUERY` | `true` (optional; unset hides Ad-hoc Query) |
 

@@ -20,9 +20,9 @@ written for both developers and administrators.
 
 Both services are publicly invokable; authentication happens inside the
 application (Google OAuth popup → Next.js `/api/auth/*` token exchange → API
-bearer token). Workspace group membership is enforced by the API
-(`ALLOWED_GROUP_EMAILS` on data routes). The UI also gates the app shell with
-`NEXT_PUBLIC_ROLE_FULL_ACCESS` after sign-in (defense in depth).
+bearer token). The API enforces permissions on each route. After sign-in the
+UI calls `GET /user/permissions` and shows or hides navigation and actions
+from that summary. It does not read Workspace group membership itself.
 
 ## Critical difference from sshf-api
 
@@ -62,14 +62,15 @@ These four values are **public** (they ship in the browser bundle). They are
 **not** stored in Secret Manager. CI reads them from GitHub Actions variables
 and writes them to `.env.production` / `--update-build-env-vars` before the
 Cloud Run source build. `scripts/check-build-env.mjs` fails the workflow if
-any of the four required variables are missing. `NEXT_PUBLIC_FEATURE_ADHOC_QUERY`
-is optional; unset means Ad-hoc Query stays hidden.
+any of the required variables are missing. `NEXT_PUBLIC_FEATURE_ADHOC_QUERY`
+is optional; unset means Ad-hoc Query stays hidden. Authorization group
+emails live only on the API (`AUTHZ_ROLE_*_GROUPS`); the UI does not take
+`NEXT_PUBLIC_ROLE_FULL_ACCESS`.
 
 | Variable | Development | Production |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | `https://sshf-api-330507742215.us-central1.run.app` | `https://sshf-api-928260206537.us-central1.run.app` |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Dev OAuth client ID | Prod OAuth client ID (same client as prod API) |
-| `NEXT_PUBLIC_ROLE_FULL_ACCESS` | `sshf_app_dev_full_access@starsandstripeshonorflight.org` | `sshf_app_prd_full_access@starsandstripeshonorflight.org` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `Development` | `Production` |
 | `NEXT_PUBLIC_FEATURE_ADHOC_QUERY` | `true` | unset or `false` until CouchDB supports Mango `_find` |
 
@@ -112,7 +113,7 @@ onto the Cloud Run service at runtime for the OAuth token exchange routes.
 3. After approval the workflow, running as the prod deploy service account via
    Workload Identity Federation:
    1. Checks out the release tag.
-   2. Validates the four `NEXT_PUBLIC_*` production variables.
+   2. Validates the required `NEXT_PUBLIC_*` production variables.
    3. Source-deploys into `sshf-ui-prd`:
       - **First release** (service does not exist yet): creates the Cloud Run
         service and sends it traffic immediately. Cloud Run rejects

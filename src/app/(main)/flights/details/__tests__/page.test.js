@@ -30,6 +30,16 @@ jest.mock('@/components/core/toaster', () => ({
   },
 }));
 
+const mockCan = jest.fn(() => true);
+
+jest.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({
+    can: (permission) => mockCan(permission),
+    hasAccess: true,
+    permissions: [],
+  }),
+}));
+
 function veteran(overrides) {
   return {
     type: 'Veteran',
@@ -103,6 +113,7 @@ function countInCard(label) {
 
 describe('Flight details roster — unpaired veterans (issue #214)', () => {
   beforeEach(() => {
+    mockCan.mockImplementation(() => true);
     localStorage.clear();
     api.getFlightDetails.mockResolvedValue({
       flight: {
@@ -302,6 +313,7 @@ describe('Flight details roster — training preset (issue #212)', () => {
   };
 
   beforeEach(() => {
+    mockCan.mockImplementation(() => true);
     localStorage.clear();
     api.getFlightDetails.mockResolvedValue(trainingDetails);
     api.getFlightAssignments.mockResolvedValue({
@@ -468,6 +480,7 @@ const fixedBusPairs = [
 
 describe('Flight details — fix bus mismatches', () => {
   beforeEach(() => {
+    mockCan.mockImplementation(() => true);
     localStorage.clear();
     toast.success.mockClear();
     toast.error.mockClear();
@@ -572,5 +585,49 @@ describe('Flight details — fix bus mismatches', () => {
     expect(api.getFlightDetails.mock.calls.length).toBe(detailsCallsBefore);
     expect(screen.getByRole('button', { name: 'Apply Fixes' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Fix Bus Mismatches', hidden: true })).toBeInTheDocument();
+  });
+});
+
+describe('Flight details permission gating', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        completed: false,
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [paired],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 1,
+        guardians: 1,
+        veteransConfirmed: 1,
+        guardiansConfirmed: 1,
+        remaining: 10,
+      },
+    });
+  });
+
+  test('shows write and flight-management actions when those permissions are granted', async () => {
+    mockCan.mockImplementation(() => true);
+    render(<Page />);
+
+    expect(await screen.findByRole('button', { name: 'Add Veterans from Waitlist' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export flight data' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeEnabled();
+  });
+
+  test('hides FULL-only actions and disables roster edits for a READ user', async () => {
+    mockCan.mockImplementation((permission) => permission === 'records:read' || permission === 'exports:read');
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Pat Paired' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export flight data' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
   });
 });

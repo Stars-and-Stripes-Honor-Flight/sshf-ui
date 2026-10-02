@@ -39,8 +39,10 @@ Completed sshf-api prod resources (naming patterns to mirror):
 sshf-ui is **Next.js 15** (Devias template). Verified facts:
 
 - `NEXT_PUBLIC_*` variables (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`,
-  `NEXT_PUBLIC_ROLE_FULL_ACCESS`, `NEXT_PUBLIC_SHOW_TEST_BANNER`) are **inlined
-  into the client JS bundle at `next build` time**. Evidence:
+  `NEXT_PUBLIC_ENVIRONMENT`, `NEXT_PUBLIC_FEATURE_ADHOC_QUERY`) are **inlined
+  into the client JS bundle at `next build` time**. The UI no longer reads
+  `NEXT_PUBLIC_ROLE_FULL_ACCESS`; permissions come from `GET /user/permissions`.
+  Evidence:
   `src/lib/api.js:9`, `src/lib/auth/domain/client.js:6`, `src/config.js:13-18`,
   and the dev workflow's own comment (`cloudrun-source.yml:67-68`).
 - `GOOGLE_CLIENT_SECRET` is server-side **runtime** config
@@ -86,7 +88,7 @@ are what the client bundle uses.
   the sshf-api split (separate runtime + deploy SAs, least privilege).
 - Secrets: `sshf-ui-google-client-secret-dev`,
   `sshf-ui-next-public-api-url-dev`, `sshf-ui-next-public-google-client-id-dev`,
-  `sshf-ui-next-public-role-full-access-dev`,
+  `sshf-ui-next-public-role-full-access-dev` (leftover; the client no longer reads it),
   `sshf-ui-next-public-show-test-banner` (note: last one has no `-dev` suffix).
 - **No WIF pool in sshf-ui-dev** — the dev workflow authenticates against the
   pool in `sshf-api-dev` (org-wide `repository_owner` condition). The new
@@ -130,9 +132,9 @@ Deterministic prod URL will be: `https://sshf-ui-824787296892.us-central1.run.ap
   goes into a new `sshf-ui-google-client-secret-prd`. The client's authorized
   JavaScript origins and redirect URIs must include the prod UI URL — user
   action in the `sshf-api-prd` console.
-- `NEXT_PUBLIC_ROLE_FULL_ACCESS`: the Workspace group
-  `sshf_app_prd_full_access@starsandstripeshonorflight.org` exists (verified);
-  confirm with the user that this is the prod value.
+- `NEXT_PUBLIC_ROLE_FULL_ACCESS` is no longer a client build variable. The
+  Workspace full-access group still exists for the API, but the UI authorizes
+  from `GET /user/permissions` and does not embed the group email.
 - `NEXT_PUBLIC_SHOW_TEST_BANNER` should be `false`/absent for prod (confirm).
 - No Admin SDK / Workspace access needed for the UI's runtime SA — group
   checks happen in the API, not the UI (verified: UI server routes only do
@@ -151,8 +153,9 @@ Deterministic prod URL will be: `https://sshf-ui-824787296892.us-central1.run.ap
 4. Create secrets (containers only; user loads values):
    `sshf-ui-google-client-secret-prd`, `sshf-ui-next-public-api-url-prd`,
    `sshf-ui-next-public-google-client-id-prd`,
-   `sshf-ui-next-public-role-full-access-prd`,
    `sshf-ui-next-public-show-test-banner-prd`.
+   Do not create a full-access group secret for the UI; authorization is
+   `GET /user/permissions`.
 5. WIF: pool `github-pool` + OIDC provider `sshf-ui` in `sshf-ui-prd`, with
    condition `assertion.repository_owner_id == '189932599' &&
    assertion.repository_id == '895307061'`; bind `workloadIdentityUser` for

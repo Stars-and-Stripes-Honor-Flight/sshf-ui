@@ -9,7 +9,6 @@ import { pathToFileURL } from 'node:url';
 export const REQUIRED_BUILD_ENV_VARS = [
   'NEXT_PUBLIC_API_URL',
   'NEXT_PUBLIC_GOOGLE_CLIENT_ID',
-  'NEXT_PUBLIC_ROLE_FULL_ACCESS',
   'NEXT_PUBLIC_ENVIRONMENT',
 ];
 

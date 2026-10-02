@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.0.3
+ * OpenAPI spec version: 1.1.0
  */
 import * as zod from 'zod';
 
@@ -37,7 +37,7 @@ export const FlightDetailPerson = zod.object({
   "med_limits": zod.string().optional().describe('Medical limitations (Veterans only)'),
   "group": zod.string().optional().describe('Group name (Veterans only)'),
   "med_exprnc": zod.string().optional().describe('Medical experience (Guardians only)'),
-  "training": zod.string().optional().describe('Training status (Guardians only)'),
+  "training": zod.string().optional().describe('Training type (Guardians only), such as Main, Web, Previous, Phone,\nMake-up, or None. A trailing medical-level suffix appended by the\nCouch flight_pairings view (` [A]` through ` [D]`) is removed in this\nresponse. Medical level stays on medical_level.\n'),
   "training_complete": zod.boolean().optional().describe('Whether training is complete (Guardians only)'),
   "mail_call_received": zod.boolean().optional().describe('Mail call received (Veterans only)'),
   "mail_call_adopt": zod.boolean().optional().describe('Mail call adopt flag (Veterans only)'),

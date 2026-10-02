@@ -24,6 +24,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
 import { toast } from '@/components/core/toaster';
+import { PERMISSIONS } from '@/lib/auth/permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Option } from '@/components/core/option';
 import { ReviewStatusChip } from '@/components/main/review/review-status-chip';
 import { api } from '@/lib/api';
@@ -41,6 +43,9 @@ function formatTypeLabel(type) {
 }
 
 export function ReviewApplicationEditForm({ application: initialApplication, onApplicationUpdated }) {
+  const { can } = usePermissions();
+  const canReview = can(PERMISSIONS.APPLICATIONS_REVIEW);
+  const canAccept = can(PERMISSIONS.APPLICATIONS_ACCEPT);
   const [application, setApplication] = React.useState(initialApplication);
   const [saving, setSaving] = React.useState(false);
   const [accepting, setAccepting] = React.useState(false);
@@ -613,31 +618,33 @@ export function ReviewApplicationEditForm({ application: initialApplication, onA
           </CardContent>
           <CardActions sx={{ flexWrap: 'wrap', gap: 1, justifyContent: 'space-between', px: 2, pb: 2 }}>
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button type="submit" variant="contained" disabled={busy}>
+              <Button type="submit" variant="contained" disabled={busy || !canReview}>
                 {saving ? 'Saving…' : 'Save corrections'}
               </Button>
-              <Button
-                variant="outlined"
-                color="success"
-                disabled={busy}
-                onClick={handleAccept}
-              >
-                {accepting ? 'Accepting…' : 'Accept into logistics'}
-              </Button>
+              {canAccept ? (
+                <Button
+                  variant="outlined"
+                  color="success"
+                  disabled={busy}
+                  onClick={handleAccept}
+                >
+                  {accepting ? 'Accepting…' : 'Accept into logistics'}
+                </Button>
+              ) : null}
             </Stack>
             <Stack direction="row" spacing={1} flexWrap="wrap">
               {application.app_status !== 'New' ? (
-                <Button disabled={busy} onClick={() => handleStatusChange('New')}>
+                <Button disabled={busy || !canReview} onClick={() => handleStatusChange('New')}>
                   Mark New
                 </Button>
               ) : null}
-              <Button disabled={busy} onClick={() => handleStatusChange('Hold')}>
+              <Button disabled={busy || !canReview} onClick={() => handleStatusChange('Hold')}>
                 Hold
               </Button>
-              <Button disabled={busy} color="error" onClick={() => handleStatusChange('Rejected')}>
+              <Button disabled={busy || !canReview} color="error" onClick={() => handleStatusChange('Rejected')}>
                 Reject
               </Button>
-              <Button disabled={busy} color="inherit" onClick={() => handleStatusChange('Trash')}>
+              <Button disabled={busy || !canReview} color="inherit" onClick={() => handleStatusChange('Trash')}>
                 Trash
               </Button>
             </Stack>

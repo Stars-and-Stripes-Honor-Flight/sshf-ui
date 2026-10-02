@@ -2,7 +2,10 @@
 
 import { api } from '@/lib/api';
 import { tokenManager } from './tokenManager';
-import { rolesFromGroupProbe } from './group-probe';
+import { accessFromPermissionsProbe } from './permissions-probe';
+
+/** End-user sign-in scopes. Directory group lookup stays on the API. */
+export const GOOGLE_SIGN_IN_SCOPE = 'email profile';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -30,10 +33,9 @@ class AuthClient {
       document.head.appendChild(script);
     });
 
-    // Initialize Google client with additional scopes for groups
     this.tokenClient = window.google.accounts.oauth2.initCodeClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'email profile https://www.googleapis.com/auth/admin.directory.group.readonly',
+      scope: GOOGLE_SIGN_IN_SCOPE,
       callback: (response) => {
         if (response.code) {
           this.exchangeCodeForTokens(response.code);
@@ -77,37 +79,6 @@ class AuthClient {
       if (this.authCallback) {
         this.authCallback(error);
       }
-    }
-  }
-
-  async getGroupMemberships(userData) {
-    try {
-      // Get a valid token using token manager
-      const token = await tokenManager.getValidToken();
-      
-      if (!token) {
-        throw new Error('No valid token available');
-      }
-      
-      // Fetch user's groups from Google Workspace Directory API
-      const response = await fetch(
-        `https://admin.googleapis.com/admin/directory/v1/groups?userKey=${userData.sub}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch group memberships');
-      }
-
-      const data = await response.json();
-      return data.groups || [];
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-      return [];
     }
   }
 
@@ -169,23 +140,21 @@ class AuthClient {
 
         const userData = await userResponse.json();
 
-        const roles = [];
-        let membershipProbeFailed = false;
+        let access = {
+          permissions: [],
+          roles: [],
+          hasAccess: false,
+          evaluatedAt: null,
+          expiresAt: null,
+          probeFailed: false,
+        };
 
-        // Check group memberships (preload roles)
-        const ROLE_FULL_ACCESS = process.env.NEXT_PUBLIC_ROLE_FULL_ACCESS;
-        //const ROLE_READ_ACCESS = "TBD";
-        const possibleRoles = [ROLE_FULL_ACCESS];
-
-        for (const role of possibleRoles) {
-          try {
-            const hasGroupData = await api.hasGroup(role);
-            const probed = rolesFromGroupProbe(role, hasGroupData);
-            roles.push(...probed.roles);
-          } catch (error) {
-            // Probe failures should not block sign-in, but they are not "not a member".
-            membershipProbeFailed = rolesFromGroupProbe(role, { error }).probeFailed;
-          }
+        try {
+          const summary = await api.getPermissions();
+          access = accessFromPermissionsProbe(summary);
+        } catch (error) {
+          // A 503 should not block sign-in, and it is not "no permissions".
+          access = accessFromPermissionsProbe({ error });
         }
 
         const user = {
@@ -194,8 +163,12 @@ class AuthClient {
           firstName: userData.given_name,
           lastName: userData.family_name,
           avatar: userData.picture,
-          roles,
-          membershipProbeFailed
+          roles: access.roles,
+          permissions: access.permissions,
+          hasAccess: access.hasAccess,
+          evaluatedAt: access.evaluatedAt,
+          expiresAt: access.expiresAt,
+          membershipProbeFailed: access.probeFailed,
         };
 
         // Store the complete user data

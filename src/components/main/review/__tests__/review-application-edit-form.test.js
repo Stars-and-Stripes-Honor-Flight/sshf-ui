@@ -21,6 +21,16 @@ jest.mock('@/components/core/toaster', () => ({
   },
 }));
 
+const mockCan = jest.fn(() => true);
+
+jest.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({
+    can: (permission) => mockCan(permission),
+    hasAccess: true,
+    permissions: [],
+  }),
+}));
+
 const baseApplication = {
   _id: 'review-app-1',
   _rev: '1-abc',
@@ -61,6 +71,7 @@ const baseApplication = {
 describe('ReviewApplicationEditForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCan.mockImplementation(() => true);
   });
 
   test('re-enables actions when pre-save fails during Accept on a dirty form', async () => {
@@ -116,5 +127,15 @@ describe('ReviewApplicationEditForm', () => {
     });
 
     expect(toast.success).toHaveBeenCalledWith('Application accepted into logistics');
+  });
+
+  test('hides accept and disables review actions without those permissions', () => {
+    mockCan.mockImplementation(() => false);
+
+    render(<ReviewApplicationEditForm application={baseApplication} />);
+
+    expect(screen.queryByRole('button', { name: /accept into logistics/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save corrections/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^hold$/i })).toBeDisabled();
   });
 });

@@ -22,6 +22,8 @@ import {
 } from '@phosphor-icons/react';
 
 import { logger } from '@/lib/default-logger';
+import { PERMISSIONS } from '@/lib/auth/permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { getFlights, formatFlightNameForDisplay } from '@/lib/flights';
@@ -60,6 +62,8 @@ const getMedicalLevelColor = (level) => {
 
 
 export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
+  const { can } = usePermissions();
+  const canWriteRecords = can(PERMISSIONS.RECORDS_WRITE);
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
@@ -333,8 +337,9 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   const watchMedicalLevel = watch('medical.level');
   
   // Determine if form should be disabled (Flown or Deceased status)
-  const isFormDisabled = watchStatus === 'Flown' || watchStatus === 'Deceased';
-  const isSaveDisabled = saving || (isFormDisabled && !isDirty);
+  const isStatusLocked = watchStatus === 'Flown' || watchStatus === 'Deceased';
+  const isFormDisabled = isStatusLocked || !canWriteRecords;
+  const isSaveDisabled = saving || !canWriteRecords || (isStatusLocked && !isDirty);
 
   // Scroll to section handler
   const handleScrollToSection = React.useCallback((sectionId) => {
@@ -644,7 +649,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
             Cancel
           </Button>
           <Tooltip 
-            title={isFormDisabled && !isDirty ? "No changes to save. Change status to edit other fields." : ""}
+            title={!canWriteRecords ? "You do not have permission to edit this record." : isStatusLocked && !isDirty ? "No changes to save. Change status to edit other fields." : ""}
             placement="top"
           >
             <span>
