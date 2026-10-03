@@ -614,19 +614,53 @@ describe('Flight details permission gating', () => {
 
   test('shows write and flight-management actions when those permissions are granted', async () => {
     mockCan.mockImplementation(() => true);
+    const user = userEvent.setup();
     render(<Page />);
 
-    expect(await screen.findByRole('button', { name: 'Add Veterans from Waitlist' })).toBeInTheDocument();
+    const addFromWaitlist = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(addFromWaitlist).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Export flight data' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeEnabled();
+
+    await user.click(addFromWaitlist);
+    expect(await screen.findByRole('dialog', { name: 'Add Veterans from Waitlist' })).toBeInTheDocument();
+  });
+
+  test('disables Add Veterans from Waitlist for a WRITE user and still allows roster edits', async () => {
+    mockCan.mockImplementation(
+      (permission) =>
+        permission === 'records:read' || permission === 'records:write' || permission === 'exports:read'
+    );
+    render(<Page />);
+
+    const addFromWaitlist = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(addFromWaitlist).toBeVisible();
+    expect(addFromWaitlist).toBeDisabled();
+    expect(screen.queryByRole('dialog', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeEnabled();
   });
 
-  test('hides FULL-only actions and disables roster edits for a READ user', async () => {
+  test('enables Add Veterans from Waitlist for flights:manage without the other FULL permissions', async () => {
+    mockCan.mockImplementation((permission) => permission === 'records:write' || permission === 'flights:manage');
+    const user = userEvent.setup();
+    render(<Page />);
+
+    const addFromWaitlist = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(addFromWaitlist).toBeEnabled();
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeEnabled();
+
+    await user.click(addFromWaitlist);
+    expect(await screen.findByRole('dialog', { name: 'Add Veterans from Waitlist' })).toBeInTheDocument();
+  });
+
+  test('disables the waitlist action and roster edits for a READ user', async () => {
     mockCan.mockImplementation((permission) => permission === 'records:read' || permission === 'exports:read');
     render(<Page />);
 
     expect(await screen.findByRole('link', { name: 'Pat Paired' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
+    const addFromWaitlist = screen.getByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(addFromWaitlist).toBeVisible();
+    expect(addFromWaitlist).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Export flight data' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
   });

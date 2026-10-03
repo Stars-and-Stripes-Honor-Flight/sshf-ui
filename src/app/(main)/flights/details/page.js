@@ -517,15 +517,14 @@ function FlightDetailsPage() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           Assignments
                         </Typography>
-                        {canManageFlights ? (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => setShowAddAssignmentDialog(true)}
-                          >
-                            Add Veterans from Waitlist
-                          </Button>
-                        ) : null}
+                        <Button
+                          variant="contained"
+                          size="small"
+                          disabled={!canManageFlights}
+                          onClick={() => setShowAddAssignmentDialog(true)}
+                        >
+                          Add Veterans from Waitlist
+                        </Button>
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
                         <Box>
