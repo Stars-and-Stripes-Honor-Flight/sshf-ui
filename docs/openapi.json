@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "SSHF API",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "API for managing veterans documents with Google authentication"
   },
   "servers": [
@@ -7527,7 +7527,7 @@
     "/veterans/search": {
       "get": {
         "summary": "Search for unpaired veterans",
-        "description": "Searches for unpaired veterans based on provided criteria.\nCurrently only supports searching for unpaired veterans (paired=false).\nThe search uses the unpaired_veterans_by_last_name view which filters\nveterans where guardian.id is empty.\n",
+        "description": "Searches for unpaired veterans based on provided criteria.\nCurrently only supports searching for unpaired veterans (paired=false).\nThe search uses the unpaired_veterans_by_last_name view which filters\nveterans where guardian.id is empty. That view emits\n[flight.status, name.last.toUpperCase()] and keeps spaces and punctuation.\nThe lastname query is uppercased to match that key. It is not passed\nthrough the /search name-index helper, which strips spaces, apostrophes,\nand periods and leaves case unchanged.\n",
         "tags": [
           "Veterans"
         ],
@@ -7571,7 +7571,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Last name to search for (partial match, case-insensitive)"
+            "description": "Last name prefix. Uppercased to match unpaired_veterans_by_last_name.\nSpaces and punctuation are kept, so \"Le Roy\" and \"le roy\" share a key\nand \"LeRoy\" does not.\n"
           },
           {
             "in": "query",

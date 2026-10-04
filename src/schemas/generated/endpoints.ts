@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.0
+ * OpenAPI spec version: 1.1.1
  */
 import * as zod from 'zod';
 
@@ -783,7 +783,11 @@ export const DeleteVeteransIdResponse = zod.object({
  * Searches for unpaired veterans based on provided criteria.
  * Currently only supports searching for unpaired veterans (paired=false).
  * The search uses the unpaired_veterans_by_last_name view which filters
- * veterans where guardian.id is empty.
+ * veterans where guardian.id is empty. That view emits
+ * [flight.status, name.last.toUpperCase()] and keeps spaces and punctuation.
+ * The lastname query is uppercased to match that key. It is not passed
+ * through the /search name-index helper, which strips spaces, apostrophes,
+ * and periods and leaves case unchanged.
  * @summary Search for unpaired veterans
  */
 export const getVeteransSearchQueryPairedDefault = false;
@@ -793,7 +797,7 @@ export const getVeteransSearchQueryLimitDefault = 25;
 export const GetVeteransSearchQueryParams = zod.object({
   "paired": zod.boolean().default(getVeteransSearchQueryPairedDefault).describe('Whether to search for paired veterans (currently not implemented)'),
   "status": zod.enum(['Active', 'Flown', 'Deceased', 'Removed', 'Future-Spring', 'Future-Fall', 'Future-PostRestriction']).default(getVeteransSearchQueryStatusDefault).describe('Flight status filter for the search'),
-  "lastname": zod.string().optional().describe('Last name to search for (partial match, case-insensitive)'),
+  "lastname": zod.string().optional().describe('Last name prefix. Uppercased to match unpaired_veterans_by_last_name.\nSpaces and punctuation are kept, so "Le Roy" and "le roy" share a key\nand "LeRoy" does not.\n'),
   "limit": zod.number().int().default(getVeteransSearchQueryLimitDefault).describe('Maximum number of results to return')
 })
 
