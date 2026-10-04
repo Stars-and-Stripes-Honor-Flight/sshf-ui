@@ -18,6 +18,15 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/lib/api', () => ({
   api: {
+    getFlight: jest.fn().mockResolvedValue({
+      _id: 'flight-214',
+      _rev: '1-rev',
+      type: 'Flight',
+      name: 'May 2026',
+      flight_date: '2026-05-01',
+      capacity: 40,
+      completed: false,
+    }),
     getFlightDetails: jest.fn(),
     getFlightAssignments: jest.fn(),
   },
@@ -629,5 +638,69 @@ describe('Flight details permission gating', () => {
     expect(screen.queryByRole('button', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export flight data' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
+  });
+});
+
+function flightDocument({ completed }) {
+  return {
+    _id: 'flight-214',
+    _rev: '1-rev',
+    type: 'Flight',
+    name: 'May 2026',
+    flight_date: '2026-05-01',
+    capacity: 40,
+    completed,
+  };
+}
+
+// Detail metadata matches FlightDetailResult: name, date, and capacity only.
+// The completed flag lives on the flight document, the same boolean the list uses.
+const detailWithoutCompletedFlag = {
+  flight: {
+    id: 'flight-214',
+    name: 'May 2026',
+    flight_date: '2026-05-01',
+    capacity: 40,
+  },
+  stats: { flight: {}, tours: {}, buses: {} },
+  pairs: [],
+};
+
+describe('Flight details header status (issue #242)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlight.mockClear();
+    api.getFlightDetails.mockResolvedValue(detailWithoutCompletedFlag);
+    api.getFlightAssignments.mockResolvedValue({
+      counts: { veterans: 0, guardians: 0, remaining: 40 },
+    });
+  });
+
+  function headerStatus(name) {
+    const title = screen.getByRole('heading', { level: 4, name });
+    return title.parentElement;
+  }
+
+  test('shows Completed next to the flight name when the flight document is completed', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('heading', { level: 4, name: 'May 2026' })).toBeInTheDocument();
+    expect(within(headerStatus('May 2026')).getByText('Completed')).toBeInTheDocument();
+    expect(within(headerStatus('May 2026')).queryByText('Active')).not.toBeInTheDocument();
+    expect(api.getFlight).toHaveBeenCalledWith('flight-214');
+  });
+
+  test('shows Active next to the flight name when the flight document is not completed', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('heading', { level: 4, name: 'May 2026' })).toBeInTheDocument();
+    expect(within(headerStatus('May 2026')).getByText('Active')).toBeInTheDocument();
+    expect(within(headerStatus('May 2026')).queryByText('Completed')).not.toBeInTheDocument();
+    expect(api.getFlight).toHaveBeenCalledWith('flight-214');
   });
 });
