@@ -139,6 +139,41 @@ class ApiClient {
     return await response.json();
   }
 
+  /**
+   * Version from the public OpenAPI document this UI is calling.
+   * Unauthenticated on purpose: do not use request(), which attaches a bearer
+   * token and treats 401 as a signed-out session.
+   * Returns null when the document cannot be read.
+   */
+  async getPublicApiVersion() {
+    const baseUrl = (this.baseUrl || '').replace(/\/$/, '');
+    if (!baseUrl) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${baseUrl}/openapi.json`, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const spec = await response.json();
+      const version = spec?.info?.version;
+      if (typeof version !== 'string') {
+        return null;
+      }
+
+      const trimmed = version.trim();
+      return trimmed || null;
+    } catch {
+      return null;
+    }
+  }
+
   // Search for veterans and guardians
   async search({ limit = 25, lastname = '', phone_num = '', status = 'Active', flight = 'All' }) {
     try {

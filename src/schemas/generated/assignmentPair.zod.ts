@@ -13,7 +13,7 @@ export const AssignmentPair = zod.object({
   "group": zod.string().optional().describe('Veteran group name (if any)'),
   "appDate": zod.string().date().optional().describe('Application date'),
   "missingPerson": zod.boolean().optional().describe('True if the pair is missing a person (veteran has paired_with but only 1 person)'),
-  "people": zod.array(AssignmentPerson).optional().describe('List of people in the pair (veteran and\/or guardian)')
+  "people": zod.array(AssignmentPerson).optional().describe('List of people in the pair (veteran and/or guardian)')
 }).describe('A veteran-guardian pairing');
 
 export type AssignmentPair = zod.input<typeof AssignmentPair>;

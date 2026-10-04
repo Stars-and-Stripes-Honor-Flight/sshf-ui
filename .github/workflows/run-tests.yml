@@ -26,4 +26,19 @@ jobs:
     - name: Run tests
       run: npm test
       env:
-        NODE_ENV: test 
+        NODE_ENV: test
+
+  # info.version can stay the same while paths change, so this hashes the document.
+  openapi-drift:
+    name: OpenAPI drift
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Compare docs/openapi.json to the dev API
+      run: node scripts/openapi-drift.mjs

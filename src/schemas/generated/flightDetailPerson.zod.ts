@@ -22,7 +22,7 @@ export const FlightDetailPerson = zod.object({
   "city": zod.string().optional().describe('City and state'),
   "phone_mbl": zod.string().optional().describe('Mobile phone number'),
   "bus": zod.enum(['None', 'Alpha1', 'Alpha2', 'Alpha3', 'Alpha4', 'Alpha5', 'Bravo1', 'Bravo2', 'Bravo3', 'Bravo4', 'Bravo5']).optional().describe('Bus assignment'),
-  "seat": zod.string().optional().describe('Seat assignment (e.g., \"14A\")'),
+  "seat": zod.string().optional().describe('Seat assignment (e.g., "14A")'),
   "shirt": zod.string().optional().describe('Shirt size'),
   "fm_number": zod.string().max(flightDetailPersonFmNumberMax).optional().describe('Optional family member hold for application identifier, often blank'),
   "assigned_to": zod.string().optional().describe('Assigned caller or coordinator name'),

@@ -16,6 +16,7 @@ import { useNavItemsState } from '@/hooks/use-nav-items-state';
 import { Logo } from '@/components/core/logo';
 
 import { icons } from './nav-icons';
+import { NavVersionLine } from './nav-version';
 
 export function MobileNav({ items = [], open, onClose }) {
   const pathname = usePathname();
@@ -64,9 +65,10 @@ export function MobileNav({ items = [], open, onClose }) {
           </Box>
         </div>
       </Stack>
-      <Box component="nav" sx={{ flex: '1 1 auto', p: 2 }}>
+      <Box component="nav" sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', p: 2 }}>
         {renderNavGroups({ items, onClose, pathname })}
       </Box>
+      <NavVersionLine />
     </Drawer>
   );
 }

@@ -18,6 +18,7 @@
     "knip": "knip",
     "check-build-env": "node scripts/check-build-env.mjs",
     "sync-schemas": "node scripts/sync-schemas.mjs",
+    "check-openapi-drift": "node scripts/openapi-drift.mjs",
     "sync-schemas:local": "node scripts/sync-schemas.mjs --local",
     "generate-schemas": "orval --config orval.config.mjs"
   },

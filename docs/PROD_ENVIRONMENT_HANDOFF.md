@@ -47,7 +47,7 @@ sshf-ui is **Next.js 15** (Devias template). Verified facts:
   and the dev workflow's own comment (`cloudrun-source.yml:67-68`).
 - `GOOGLE_CLIENT_SECRET` is server-side **runtime** config
   (`src/app/api/auth/token/route.js:4-5`) — a genuine secret, never in the bundle.
-- There is **no runtime config endpoint** and no `next.config.*` in the repo.
+- There is **no runtime config endpoint**. `next.config.mjs` only bakes `NEXT_PUBLIC_SITE_VERSION` from `package.json` at build time. Do not set that variable in the deploy environment.
 
 **Consequence:** a container image built with dev's `NEXT_PUBLIC_API_URL`
 serves dev's API URL forever. The sshf-api "build once, promote digest"

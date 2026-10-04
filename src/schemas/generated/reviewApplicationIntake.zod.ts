@@ -20,13 +20,13 @@ export const ReviewApplicationIntake = zod.object({
   "County": zod.string().optional().describe('County'),
   "State": zod.string().optional().describe('State (two-letter code; upper-cased on storage)'),
   "Zip": zod.string().optional().describe('ZIP code'),
-  "Primary-Phone": zod.string().optional().describe('Primary\/day phone'),
+  "Primary-Phone": zod.string().optional().describe('Primary/day phone'),
   "Mobile-Phone": zod.string().optional().describe('Mobile phone'),
   "from_email": zod.string().optional().describe('Email address'),
-  "Date-Of-Birth": zod.string().optional().describe('Birth date (MM\/DD\/YYYY)'),
+  "Date-Of-Birth": zod.string().optional().describe('Birth date (MM/DD/YYYY)'),
   "Gender": zod.enum(['Male', 'Female']).optional().describe('Gender'),
   "Shirt-Size": zod.string().optional().describe('Shirt size'),
-  "Conflict": zod.string().optional().describe('War\/conflict served (VeteranApp only; maps to vet_type)'),
+  "Conflict": zod.string().optional().describe('War/conflict served (VeteranApp only; maps to vet_type)'),
   "Branch-of-Service": zod.string().optional().describe('Military branch (VeteranApp only)'),
   "Service-Dates": zod.string().optional().describe('Service dates (VeteranApp only)'),
   "Rank": zod.string().optional().describe('Rank at discharge (VeteranApp only)'),
@@ -39,7 +39,7 @@ export const ReviewApplicationIntake = zod.object({
   "Preferred-Guardian-Phone-Number": zod.string().optional().describe('Preferred guardian phone (VeteranApp only)'),
   "Preferred-Guardian-Email": zod.string().optional().describe('Preferred guardian email (VeteranApp only)'),
   "Veteran-Preference": zod.string().optional().describe('Veteran preference notes (GuardianApp only)')
-}).describe('Raw legacy form payload accepted by POST \/review\/applications. Field names match the online application form. Additional unknown keys are preserved in the stored CouchDB document. The keys `cburi`, `cbusr`, `cbpwd`, and `full_message` are stripped on intake and never stored.\n');
+}).describe('Raw legacy form payload accepted by POST /review/applications. Field names match the online application form. Additional unknown keys are preserved in the stored CouchDB document. The keys `cburi`, `cbusr`, `cbpwd`, and `full_message` are stripped on intake and never stored.\n');
 
 export type ReviewApplicationIntake = zod.input<typeof ReviewApplicationIntake>;
 export type ReviewApplicationIntakeOutput = zod.output<typeof ReviewApplicationIntake>;

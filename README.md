@@ -67,6 +67,8 @@ git commit -m "chore: sync schemas from API"
 
 Override the fetch URL with `SYNC_SCHEMAS_URL` if needed.
 
+`npm run check-openapi-drift` (also a pull-request CI job) fetches that same dev OpenAPI URL and fails when the committed `docs/openapi.json` differs. A matching `info.version` is not enough: the check hashes the document. Refresh with `npm run sync-schemas`.
+
 ### Conflict handling
 
 - Prefer **re-running sync** over hand-merging files under `src/schemas/generated/`.
@@ -122,6 +124,8 @@ for the full pipeline, secrets, and release process.
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `....apps.googleusercontent.com` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `Development` |
 | `NEXT_PUBLIC_FEATURE_ADHOC_QUERY` | `true` (optional; unset hides Ad-hoc Query) |
+
+The signed-in navigation shows this UI's `package.json` version. `next.config.mjs` bakes it into `NEXT_PUBLIC_SITE_VERSION` at build time, so that variable is not a GitHub Actions setting. The API half of the line is read once from `${NEXT_PUBLIC_API_URL}/openapi.json`.
 
 Production uses the GitHub `production` environment with the same secret/variable
 names scoped to `sshf-ui-prd` and production values. Only `GOOGLE_CLIENT_SECRET`

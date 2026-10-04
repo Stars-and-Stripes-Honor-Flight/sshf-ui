@@ -14,6 +14,8 @@ import {
   Flight,
   FlightAssignment,
   FlightDetailResult,
+  FlightStatusBulkResult,
+  FutureStatusActivateRequest,
   GenericDocumentWrite,
   Guardian,
   QueryRequest,
@@ -252,6 +254,35 @@ export const GetFlightsIdDetailResponse = FlightDetailResult
 
 
 /**
+ * Matches people by flight name (flight.id) using
+ * _design/basic/_view/all_by_flight_and_name. Each changed person gets a
+ * flight.history status line and updated metadata.updated_at and
+ * metadata.updated_by, the same as an individual status edit. The flight
+ * is marked completed only after every person save succeeds.
+ * @summary Mark a flight completed and its active people as Flown
+ */
+export const PostFlightsIdCompleteParams = zod.object({
+  "id": zod.string().describe('Flight document ID')
+})
+
+export const PostFlightsIdCompleteResponse = FlightStatusBulkResult
+
+
+/**
+ * Accepts any status beginning with "Future-". Reads
+ * _design/basic/_view/all_by_status_and_name. Each changed person gets a
+ * flight.history status line and updated metadata.updated_at and
+ * metadata.updated_by, the same as an individual status edit. Matched
+ * people who are on a flight are still changed and listed in
+ * assignedToFlight.
+ * @summary Change every person with a Future-* status to Active
+ */
+export const PostFlightsFutureStatusActivateBody = FutureStatusActivateRequest
+
+export const PostFlightsFutureStatusActivateResponse = FlightStatusBulkResult
+
+
+/**
  * Retrieves all flights from the database using the CouchDB "Flights" view.
  * Returns an array of flight objects containing name, flight_date, capacity, and completed fields.
  * @summary Retrieve a list of all flights
@@ -350,7 +381,7 @@ export const PatchGuardiansIdSeatParams = zod.object({
 })
 
 export const PatchGuardiansIdSeatBody = zod.object({
-  "value": zod.string().describe('New seat assignment (e.g., \"14A\")')
+  "value": zod.string().describe('New seat assignment (e.g., "14A")')
 })
 
 export const PatchGuardiansIdSeatResponse = zod.object({
@@ -698,19 +729,6 @@ export const GetSearchResponse = SearchResults
 
 
 /**
- * Auth-only probe used by the UI during sign-in. Does not require FULL membership, so non-members can still discover that they are unauthorized. For groups listed in AUTHZ_ROLE_{READ,WRITE,FULL,MEDICAL,REVIEW}_GROUPS (ALLOWED_GROUP_EMAILS is the deprecated alias for FULL), hasgroup is true for a direct or nested Workspace member. Any other group is a direct membership only. Data routes enforce per-route permissions. Prefer GET /user/permissions for show/hide hints. groupEmail is compared to role emails case-insensitively.
- * @summary Check whether the authenticated user belongs to a Workspace group
- */
-export const GetUserHasgroupQueryParams = zod.object({
-  "groupEmail": zod.string().email().describe('Workspace group email to check')
-})
-
-export const GetUserHasgroupResponse = zod.object({
-  "hasgroup": zod.boolean()
-})
-
-
-/**
  * Auth-only permission summary for UI hints. Skips requirePermission so a signed-in user with no roles receives 200 and an empty permissions list. roles lists only the roles granted directly by group membership (a FULL user is ["FULL"], not READ and WRITE). permissions is the effective union, including inheritance. Group emails are omitted. The API still enforces permissions on each data route.
  * @summary Summarize the authenticated user's roles and permissions
  */
@@ -799,7 +817,7 @@ export const PatchVeteransIdSeatParams = zod.object({
 })
 
 export const PatchVeteransIdSeatBody = zod.object({
-  "value": zod.string().describe('New seat assignment (e.g., \"14A\")')
+  "value": zod.string().describe('New seat assignment (e.g., "14A")')
 })
 
 export const PatchVeteransIdSeatResponse = zod.object({

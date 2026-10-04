@@ -15,15 +15,14 @@
     "securitySchemes": {
       "GoogleAuth": {
         "type": "oauth2",
-        "description": "Google OAuth2. The access token must be issued for this API's configured OAuth client; tokens from other clients are rejected with 401. Protected data endpoints return 401 for a missing, invalid, or wrong-audience token and 403 when the account email domain is not permitted or the user lacks the route permission (ALLOWED_EMAIL_DOMAINS is optional; AUTHZ_ROLE_FULL_GROUPS, or the deprecated ALLOWED_GROUP_EMAILS alias, is required on Cloud Run and fails closed when empty). A 403 for a missing route permission includes requiredPermission. On Cloud Run an Admin SDK group-lookup failure returns 503 instead of an empty role list. Off Cloud Run that failure continues with no roles. GET /user/hasgroup and GET /user/permissions are auth-only. Groups in AUTHZ_ROLE_*_GROUPS and ALLOWED_GROUP_EMAILS match direct or nested Workspace membership. Other groups are direct memberships only. Each protected route declares x-required-permission.",
+        "description": "Google OAuth2. The access token must be issued for this API's configured OAuth client; tokens from other clients are rejected with 401. Protected data endpoints return 401 for a missing, invalid, or wrong-audience token and 403 when the account email domain is not permitted or the user lacks the route permission (ALLOWED_EMAIL_DOMAINS is optional; AUTHZ_ROLE_FULL_GROUPS is required on Cloud Run and fails closed when empty). A 403 for a missing route permission includes requiredPermission. On Cloud Run an Admin SDK group-lookup failure returns 503 instead of an empty role list. Off Cloud Run that failure continues with no roles. GET /user/permissions is auth-only. Groups in AUTHZ_ROLE_*_GROUPS match direct or nested Workspace membership via members.hasMember. Each protected route declares x-required-permission.",
         "flows": {
           "implicit": {
             "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
             "scopes": {
               "openid": "OpenID Connect scope",
               "email": "Email scope",
-              "profile": "Profile scope",
-              "https://www.googleapis.com/auth/admin.directory.group.readonly": "Group Read Only Scope"
+              "profile": "Profile scope"
             }
           }
         },
@@ -3511,6 +3510,108 @@
             "description": "When the server-side cache entry expires"
           }
         }
+      },
+      "FlightStatusBulkResult": {
+        "type": "object",
+        "description": "Result of a flight status bulk update. Returned with 200 when every attempted\nsave succeeded and 207 when one or more did not. counts.failed counts people\nonly. A failed flight save is listed in failed with type flight and does not\nincrement counts.failed. assignedToFlight is present only for\nPOST /flights/future-status/activate.\n",
+        "properties": {
+          "fromStatus": {
+            "type": "string",
+            "description": "Status people were changed from"
+          },
+          "toStatus": {
+            "type": "string",
+            "description": "Status people were changed to"
+          },
+          "flight": {
+            "type": "object",
+            "description": "Present for POST /flights/{id}/complete. completed is the stored value after the request.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Flight document id"
+              },
+              "name": {
+                "type": "string",
+                "description": "Flight name stored on person flight.id"
+              },
+              "completed": {
+                "description": "Stored completed value after the request"
+              }
+            }
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "matched": {
+                "type": "integer",
+                "description": "People returned by the view who matched the endpoint filter"
+              },
+              "changed": {
+                "type": "integer",
+                "description": "People saved with toStatus in this request"
+              },
+              "skipped": {
+                "type": "integer",
+                "description": "Matched people who were not changed because they did not qualify"
+              },
+              "failed": {
+                "type": "integer",
+                "description": "People who qualified but could not be saved"
+              }
+            }
+          },
+          "failed": {
+            "type": "array",
+            "description": "Documents that were not saved, including each document id",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Document id that failed to save"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "veteran",
+                    "guardian",
+                    "flight"
+                  ],
+                  "description": "Whether the failed document is a veteran, a guardian, or the flight"
+                },
+                "status": {
+                  "type": "integer",
+                  "description": "Status for this document. 409 is a conflict that remained after one revision retry."
+                },
+                "error": {
+                  "type": "string",
+                  "description": "Stable error message for this document"
+                }
+              }
+            }
+          },
+          "assignedToFlight": {
+            "type": "array",
+            "description": "POST /flights/future-status/activate only. Ids of matched people whose\nflight.id was present and not \"None\" when they were read. The list is\ninformational and does not change 200 versus 207.\n",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FutureStatusActivateRequest": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^Future-.+",
+            "description": "Any flight status that begins with Future-"
+          }
+        }
       }
     }
   },
@@ -4485,6 +4586,137 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/flights/{id}/complete": {
+      "post": {
+        "summary": "Mark a flight completed and its active people as Flown",
+        "description": "Matches people by flight name (flight.id) using\n_design/basic/_view/all_by_flight_and_name. Each changed person gets a\nflight.history status line and updated metadata.updated_at and\nmetadata.updated_by, the same as an individual status edit. The flight\nis marked completed only after every person save succeeds.\n",
+        "tags": [
+          "Flights"
+        ],
+        "security": [
+          {
+            "GoogleAuth": []
+          }
+        ],
+        "x-required-permission": "flights:manage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Flight document ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every qualifying person and the flight were saved, including when nobody needed changing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightStatusBulkResult"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Some documents were attempted and one or more were not saved. failed lists their ids. The flight stays not completed when any person failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightStatusBulkResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid document id, document is not a flight record, or flight name cannot be used to match people"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - missing required permission"
+          },
+          "404": {
+            "description": "Flight not found"
+          },
+          "409": {
+            "description": "Flight is already completed. Nothing was changed"
+          },
+          "500": {
+            "description": "Server error before any document was saved"
+          },
+          "503": {
+            "description": "Database unreachable before any document was saved"
+          }
+        }
+      }
+    },
+    "/flights/future-status/activate": {
+      "post": {
+        "summary": "Change every person with a Future-* status to Active",
+        "description": "Accepts any status beginning with \"Future-\". Reads\n_design/basic/_view/all_by_status_and_name. Each changed person gets a\nflight.history status line and updated metadata.updated_at and\nmetadata.updated_by, the same as an individual status edit. Matched\npeople who are on a flight are still changed and listed in\nassignedToFlight.\n",
+        "tags": [
+          "Flights"
+        ],
+        "security": [
+          {
+            "GoogleAuth": []
+          }
+        ],
+        "x-required-permission": "flights:manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FutureStatusActivateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Every matching person was saved, including when nobody had the status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightStatusBulkResult"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Some documents were attempted and one or more were not saved. failed lists their ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightStatusBulkResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "status is missing or does not begin with \"Future-\""
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - missing required permission"
+          },
+          "500": {
+            "description": "Server error before any document was saved"
+          },
+          "503": {
+            "description": "Database unreachable before any document was saved"
           }
         }
       }
@@ -6951,58 +7183,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/user/hasgroup": {
-      "get": {
-        "summary": "Check whether the authenticated user belongs to a Workspace group",
-        "description": "Auth-only probe used by the UI during sign-in. Does not require FULL membership, so non-members can still discover that they are unauthorized. For groups listed in AUTHZ_ROLE_{READ,WRITE,FULL,MEDICAL,REVIEW}_GROUPS (ALLOWED_GROUP_EMAILS is the deprecated alias for FULL), hasgroup is true for a direct or nested Workspace member. Any other group is a direct membership only. Data routes enforce per-route permissions. Prefer GET /user/permissions for show/hide hints. groupEmail is compared to role emails case-insensitively.\n",
-        "tags": [
-          "User"
-        ],
-        "security": [
-          {
-            "GoogleAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "groupEmail",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "email"
-            },
-            "description": "Workspace group email to check"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Membership result for the requested group",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "hasgroup"
-                  ],
-                  "properties": {
-                    "hasgroup": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing, invalid, or wrong-audience token"
-          },
-          "503": {
-            "description": "Token introspection or Workspace Directory group lookup temporarily unavailable"
           }
         }
       }

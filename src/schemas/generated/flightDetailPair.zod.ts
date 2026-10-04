@@ -12,7 +12,7 @@ export const FlightDetailPair = zod.object({
   "pairId": zod.string().optional().describe('Unique identifier for the pair (veteran\'s ID or guardian\'s ID if unpaired)'),
   "busMismatch": zod.boolean().optional().describe('True if people in the pair have different bus assignments'),
   "missingPairedPerson": zod.boolean().optional().describe('True if a paired person is not on this flight'),
-  "people": zod.array(FlightDetailPerson).optional().describe('List of people in the pair (veteran and\/or guardian)')
+  "people": zod.array(FlightDetailPerson).optional().describe('List of people in the pair (veteran and/or guardian)')
 }).describe('A veteran-guardian pairing with mismatch detection');
 
 export type FlightDetailPair = zod.input<typeof FlightDetailPair>;

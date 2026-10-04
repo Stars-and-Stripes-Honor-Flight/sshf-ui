@@ -59,7 +59,7 @@ export const guardianApparelShirtSizeDefault = `None`;
 export const Guardian = zod.object({
   "_id": zod.string().optional().describe('Document ID'),
   "_rev": zod.string().optional().describe('Document revision'),
-  "type": zod.enum(['Guardian']).describe('Document type, must be \"Guardian\"'),
+  "type": zod.enum(['Guardian']).describe('Document type, must be "Guardian"'),
   "name": zod.object({
   "first": zod.string().regex(guardianNameFirstRegExp).describe('First name (letters, periods, apostrophes and spaces only, min 2 chars)'),
   "middle": zod.string().regex(guardianNameMiddleRegExp).optional().describe('Middle name (letters, apostrophes and spaces only)'),
@@ -74,7 +74,7 @@ export const Guardian = zod.object({
   "state": zod.string().regex(guardianAddressStateRegExp).describe('State code (exactly 2 letters)'),
   "zip": zod.string().regex(guardianAddressZipRegExp).describe('ZIP code (at least 5 digits)'),
   "county": zod.string().regex(guardianAddressCountyRegExp).describe('County name (letters, periods and spaces only, min 2 chars)'),
-  "phone_day": zod.string().regex(guardianAddressPhoneDayRegExp).describe('Day phone (at least 12 digits\/characters)'),
+  "phone_day": zod.string().regex(guardianAddressPhoneDayRegExp).describe('Day phone (at least 12 digits/characters)'),
   "phone_eve": zod.string().regex(guardianAddressPhoneEveRegExp).optional().describe('Evening phone (numbers, spaces and hyphens only)'),
   "phone_mbl": zod.string().regex(guardianAddressPhoneMblRegExp).optional().describe('Mobile phone (numbers, spaces and hyphens only)'),
   "email": zod.string().email().optional().describe('Email address')
@@ -120,7 +120,7 @@ export const Guardian = zod.object({
   "history": zod.array(zod.object({
   "id": zod.string().datetime({"offset":true}).optional().describe('Timestamp of the change'),
   "change": zod.string().optional().describe('Description of what changed')
-})).optional().describe('History of veteran pairing changes. Records pairing events: \"paired to: {veteranName} by: {userName}\" and \"unpaired from: {veteranName} by: {userName}\".\n'),
+})).optional().describe('History of veteran pairing changes. Records pairing events: "paired to: {veteranName} by: {userName}" and "unpaired from: {veteranName} by: {userName}".\n'),
   "pairings": zod.array(zod.object({
   "id": zod.string().optional().describe('Veteran ID'),
   "name": zod.string().optional().describe('Veteran name')

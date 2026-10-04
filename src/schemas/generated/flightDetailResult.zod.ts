@@ -40,8 +40,8 @@ export const FlightDetailResult = zod.object({
   "None": zod.number().int().optional()
 }).optional().describe('Count of people per tour excluding nofly entries')
 }).optional().describe('Statistics for the flight'),
-  "pairs": zod.array(FlightDetailPair).optional().describe('List of veteran-guardian pairs with seat\/bus assignments')
-}).describe('Flight detail data including flight info, statistics, and seat\/bus assignments');
+  "pairs": zod.array(FlightDetailPair).optional().describe('List of veteran-guardian pairs with seat/bus assignments')
+}).describe('Flight detail data including flight info, statistics, and seat/bus assignments');
 
 export type FlightDetailResult = zod.input<typeof FlightDetailResult>;
 export type FlightDetailResultOutput = zod.output<typeof FlightDetailResult>;
