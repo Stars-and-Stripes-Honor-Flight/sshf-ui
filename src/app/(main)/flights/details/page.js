@@ -88,6 +88,7 @@ function FlightDetailsPage() {
   const flightId = searchParams.get('id');
   
   const [flightData, setFlightData] = React.useState(null);
+  const [flightDocument, setFlightDocument] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const [backLinkText, setBackLinkText] = React.useState('Back to Flights');
@@ -124,12 +125,14 @@ function FlightDetailsPage() {
     const fetchFlightData = async () => {
       try {
         setLoading(true);
-        const [detailsData, assignmentData] = await Promise.all([
+        const [detailsData, assignmentData, flightRecord] = await Promise.all([
           api.getFlightDetails(flightId),
           api.getFlightAssignments(flightId),
+          api.getFlight(flightId),
         ]);
         setFlightData(detailsData);
         setAssignmentData(assignmentData);
+        setFlightDocument(flightRecord);
       } catch (err) {
         console.error('Failed to fetch flight data:', err);
         setError('Failed to load flight data. Please try again later.');
@@ -394,6 +397,8 @@ function FlightDetailsPage() {
   const flight = flightData?.flight;
   const stats = flightData?.stats;
   const pairs = flightData?.pairs || [];
+  // Same boolean the flight list reads from the flight document.
+  const isCompleted = flightDocument?.completed;
 
   return (
     <Box
@@ -438,8 +443,8 @@ function FlightDetailsPage() {
                         {formatFlightNameForDisplay(flight.name)}
                       </Typography>
                       <Chip
-                        label={flight.completed ? 'Completed' : 'Active'}
-                        color={flight.completed ? 'info' : 'success'}
+                        label={isCompleted ? 'Completed' : 'Active'}
+                        color={isCompleted ? 'info' : 'success'}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
