@@ -74,7 +74,7 @@ export const veteranCallMailSentDefault = false;
 export const Veteran = zod.object({
   "_id": zod.string().optional().describe('Document ID'),
   "_rev": zod.string().optional().describe('Document revision'),
-  "type": zod.enum(['Veteran']).describe('Document type, must be \"Veteran\"'),
+  "type": zod.enum(['Veteran']).describe('Document type, must be "Veteran"'),
   "name": zod.object({
   "first": zod.string().regex(veteranNameFirstRegExp).describe('First name (letters, periods, apostrophes and spaces only, min 2 chars)'),
   "middle": zod.string().regex(veteranNameMiddleRegExp).optional().describe('Middle name (letters, apostrophes and spaces only)'),
@@ -89,7 +89,7 @@ export const Veteran = zod.object({
   "state": zod.string().regex(veteranAddressStateRegExp).describe('State code (exactly 2 letters)'),
   "zip": zod.string().regex(veteranAddressZipRegExp).describe('ZIP code (at least 5 digits)'),
   "county": zod.string().regex(veteranAddressCountyRegExp).describe('County name (letters, periods and spaces only, min 2 chars)'),
-  "phone_day": zod.string().regex(veteranAddressPhoneDayRegExp).describe('Day phone (at least 12 digits\/characters)'),
+  "phone_day": zod.string().regex(veteranAddressPhoneDayRegExp).describe('Day phone (at least 12 digits/characters)'),
   "phone_eve": zod.string().regex(veteranAddressPhoneEveRegExp).optional().describe('Evening phone (numbers, spaces and hyphens only)'),
   "phone_mbl": zod.string().regex(veteranAddressPhoneMblRegExp).optional().describe('Mobile phone (numbers, spaces and hyphens only)'),
   "email": zod.string().email().optional().describe('Email address')
@@ -142,10 +142,10 @@ export const Veteran = zod.object({
   "history": zod.array(zod.object({
   "id": zod.string().datetime({"offset":true}).optional().describe('Timestamp of the change'),
   "change": zod.string().optional().describe('Description of what changed')
-})).optional().describe('History of guardian pairing changes. Records pairing events: \"paired to: {guardianName} by: {userName}\" and \"unpaired from: {guardianName} by: {userName}\".\n')
+})).optional().describe('History of guardian pairing changes. Records pairing events: "paired to: {guardianName} by: {userName}" and "unpaired from: {guardianName} by: {userName}".\n')
 }).optional(),
   "app_date": zod.string().optional(),
-  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']).default(veteranVetTypeDefault).describe('Type of veteran\/war conflict served'),
+  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']).default(veteranVetTypeDefault).describe('Type of veteran/war conflict served'),
   "shirt": zod.object({
   "size": zod.enum(['None', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL']).default(veteranShirtSizeDefault)
 }).optional(),
@@ -165,7 +165,7 @@ export const Veteran = zod.object({
   "state": zod.string().regex(veteranAltContactAddressStateRegExp).optional().describe('State code (exactly 2 letters)'),
   "zip": zod.string().regex(veteranAltContactAddressZipRegExp).optional().describe('ZIP code (at least 5 digits)'),
   "county": zod.string().regex(veteranAltContactAddressCountyRegExp).optional().describe('County name (letters, periods and spaces only, min 2 chars)'),
-  "phone_day": zod.string().regex(veteranAltContactAddressPhoneDayRegExp).optional().describe('Day phone (at least 12 digits\/characters)'),
+  "phone_day": zod.string().regex(veteranAltContactAddressPhoneDayRegExp).optional().describe('Day phone (at least 12 digits/characters)'),
   "phone_eve": zod.string().regex(veteranAltContactAddressPhoneEveRegExp).optional().describe('Evening phone (numbers, spaces and hyphens only)'),
   "phone_mbl": zod.string().regex(veteranAltContactAddressPhoneMblRegExp).optional().describe('Mobile phone (numbers, spaces and hyphens only)'),
   "email": zod.string().email().optional().describe('Email address')
@@ -180,7 +180,7 @@ export const Veteran = zod.object({
   "state": zod.string().regex(veteranEmergContactAddressStateRegExp).optional().describe('State code (exactly 2 letters)'),
   "zip": zod.string().regex(veteranEmergContactAddressZipRegExp).optional().describe('ZIP code (at least 5 digits)'),
   "county": zod.string().regex(veteranEmergContactAddressCountyRegExp).optional().describe('County name (letters, periods and spaces only, min 2 chars)'),
-  "phone_day": zod.string().regex(veteranEmergContactAddressPhoneDayRegExp).optional().describe('Day phone (at least 12 digits\/characters)'),
+  "phone_day": zod.string().regex(veteranEmergContactAddressPhoneDayRegExp).optional().describe('Day phone (at least 12 digits/characters)'),
   "phone_eve": zod.string().regex(veteranEmergContactAddressPhoneEveRegExp).optional().describe('Evening phone (numbers, spaces and hyphens only)'),
   "phone_mbl": zod.string().regex(veteranEmergContactAddressPhoneMblRegExp).optional().describe('Mobile phone (numbers, spaces and hyphens only)'),
   "email": zod.string().email().optional().describe('Email address')

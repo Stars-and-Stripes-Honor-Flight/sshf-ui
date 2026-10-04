@@ -12,7 +12,7 @@ export const QueryResults = zod.object({
 
 }).passthrough()).describe('Array of documents matching the query'),
   "bookmark": zod.string().optional().describe('Pagination bookmark for retrieving the next page of results'),
-  "warning": zod.string().optional().describe('Warning message from CouchDB (e.g., \"no matching index found\")'),
+  "warning": zod.string().optional().describe('Warning message from CouchDB (e.g., "no matching index found")'),
   "execution_stats": zod.object({
   "total_keys_examined": zod.number().int().optional(),
   "total_docs_examined": zod.number().int().optional(),

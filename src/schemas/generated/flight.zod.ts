@@ -15,7 +15,7 @@ export const flightCompletedDefault = false;
 export const Flight = zod.object({
   "_id": zod.string().optional().describe('Document ID'),
   "_rev": zod.string().optional().describe('Document revision'),
-  "type": zod.enum(['Flight']).describe('Document type, must be \"Flight\"'),
+  "type": zod.enum(['Flight']).describe('Document type, must be "Flight"'),
   "name": zod.string().min(1).describe('Flight name (required, non-empty)'),
   "flight_date": zod.string().regex(flightFlightDateRegExp).describe('Flight date in YYYY-MM-DD format'),
   "capacity": zod.number().int().min(1).describe('Flight capacity (required, positive integer)'),

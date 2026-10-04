@@ -8,7 +8,7 @@
 import * as zod from 'zod';
 
 export const ReviewApplicationStatusUpdate = zod.object({
-  "app_status": zod.enum(['New', 'Hold', 'Rejected', 'Trash']).describe('New review status. Accepted is not allowed here; use POST \/review\/applications\/:id\/accept instead (returns 400 if Accepted is sent).\n'),
+  "app_status": zod.enum(['New', 'Hold', 'Rejected', 'Trash']).describe('New review status. Accepted is not allowed here; use POST /review/applications/:id/accept instead (returns 400 if Accepted is sent).\n'),
   "app_status_note": zod.string().optional().describe('Optional note about the status change')
 });
 

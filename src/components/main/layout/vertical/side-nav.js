@@ -16,6 +16,7 @@ import { useNavItemsState } from '@/hooks/use-nav-items-state';
 import { Logo } from '@/components/core/logo';
 
 import { icons } from '../nav-icons';
+import { NavVersionLine } from '../nav-version';
 import { navColorStyles } from './styles';
 
 const logoColors = {
@@ -63,13 +64,13 @@ export function SideNav({ color = 'evident', items = [] }) {
           flex: '1 1 auto',
           overflowY: 'auto',
           p: 2,
-          pb: 10,
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
         }}
       >
         {renderNavGroups({ items, pathname })}
       </Box>
+      <NavVersionLine />
     </Box>
   );
 }

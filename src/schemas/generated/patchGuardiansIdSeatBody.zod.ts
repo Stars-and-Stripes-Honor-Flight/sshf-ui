@@ -8,7 +8,7 @@
 import * as zod from 'zod';
 
 export const PatchGuardiansIdSeatBody = zod.object({
-  "value": zod.string().describe('New seat assignment (e.g., \"14A\")')
+  "value": zod.string().describe('New seat assignment (e.g., "14A")')
 })
 
 export type PatchGuardiansIdSeatBody = zod.input<typeof PatchGuardiansIdSeatBody>;
