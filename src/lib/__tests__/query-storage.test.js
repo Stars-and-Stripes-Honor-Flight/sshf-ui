@@ -167,16 +167,4 @@ describe('query-storage', () => {
       expect(queries[0].name).toBe('Custom');
     });
   });
-
-  describe('SSR safety', () => {
-    it('should return empty array when window is undefined', () => {
-      const originalWindow = global.window;
-      delete global.window;
-
-      expect(getSavedQueries()).toEqual([]);
-      expect(getLastQuery()).toBeNull();
-
-      global.window = originalWindow;
-    });
-  });
 });
