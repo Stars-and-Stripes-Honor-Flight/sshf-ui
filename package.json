@@ -1,7 +1,7 @@
 {
   "name": "sshf-ui",
   "author": "Devias IO",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "scripts": {
