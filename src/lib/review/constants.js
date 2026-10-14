@@ -9,7 +9,7 @@ export const REVIEW_APPLICATION_TYPES = {
   GUARDIAN: 'GuardianApp',
 };
 
-export const VET_TYPES = ['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other'];
+export const VET_TYPES = ['WWII', 'Korea', 'Vietnam', 'Cold War', 'Gulf War', 'Afghanistan', 'Iraq', 'Other'];
 
 export const SERVICE_BRANCHES = [
   '',

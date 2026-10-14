@@ -46,7 +46,7 @@ export const veteranSchema = z.object({
     dates: z.string(),
     activity: z.string(),
   }),
-  vet_type: z.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']),
+  vet_type: z.enum(['WWII', 'Korea', 'Vietnam', 'Cold War', 'Gulf War', 'Afghanistan', 'Iraq', 'Other']),
 
   // Emergency Contact
   emerg_contact: z.object({
