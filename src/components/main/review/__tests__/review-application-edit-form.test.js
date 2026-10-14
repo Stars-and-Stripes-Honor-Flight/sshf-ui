@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
@@ -72,6 +72,26 @@ describe('ReviewApplicationEditForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCan.mockImplementation(() => true);
+  });
+
+  test('offers Cold War and Gulf War after Vietnam in the war era dropdown', async () => {
+    const { container } = render(<ReviewApplicationEditForm application={baseApplication} />);
+    const hiddenInput = container.querySelector('[name="vet_type"]');
+    const selectDisplay = hiddenInput.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option').map((option) => option.textContent);
+    expect(options).toEqual([
+      'WWII',
+      'Korea',
+      'Vietnam',
+      'Cold War',
+      'Gulf War',
+      'Afghanistan',
+      'Iraq',
+      'Other',
+    ]);
   });
 
   test('re-enables actions when pre-save fails during Accept on a dirty form', async () => {

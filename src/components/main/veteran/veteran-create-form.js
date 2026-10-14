@@ -154,6 +154,8 @@ export function VeteranCreateForm() {
                           <Option value="WWII">WWII</Option>
                           <Option value="Korea">Korea</Option>
                           <Option value="Vietnam">Vietnam</Option>
+                          <Option value="Cold War">Cold War</Option>
+                          <Option value="Gulf War">Gulf War</Option>
                           <Option value="Afghanistan">Afghanistan</Option>
                           <Option value="Iraq">Iraq</Option>
                           <Option value="Other">Other</Option>

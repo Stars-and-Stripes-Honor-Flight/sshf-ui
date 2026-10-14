@@ -50,7 +50,7 @@ export const reviewApplicationFormSchema = z.object({
         .optional(),
     })
     .optional(),
-  vet_type: z.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']).optional(),
+  vet_type: z.enum(['WWII', 'Korea', 'Vietnam', 'Cold War', 'Gulf War', 'Afghanistan', 'Iraq', 'Other']).optional(),
   service: z
     .object({
       branch: z.string().optional(),

@@ -58,7 +58,7 @@ export const ReviewApplication = zod.object({
   "updated_at": zod.string().datetime({"offset":true}).optional(),
   "updated_by": zod.string().optional()
 }).optional(),
-  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']).default(reviewApplicationVetTypeDefault).describe('War/conflict served (VeteranApp only)'),
+  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Cold War', 'Gulf War', 'Afghanistan', 'Iraq', 'Other']).default(reviewApplicationVetTypeDefault).describe('War/conflict served (VeteranApp only)'),
   "service": zod.object({
   "branch": zod.enum(['', 'Unknown', 'Army', 'Air Force', 'Navy', 'Marines', 'Coast Guard']).optional().describe('Branch of service'),
   "dates": zod.string().optional().describe('Service dates'),

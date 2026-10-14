@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { VeteranCreateForm } from '../veteran-create-form';
@@ -52,6 +52,27 @@ describe('VeteranCreateForm', () => {
     await user.type(container.querySelector('input[name="address.zip"]'), '53703');
     await user.type(container.querySelector('input[name="address.phone_day"]'), '608-555-1234');
   }
+
+  test('offers Cold War and Gulf War after Vietnam in the war era dropdown', async () => {
+    const { container } = render(<VeteranCreateForm />);
+    const hiddenInput = container.querySelector('[name="vet_type"]');
+    const selectDisplay = hiddenInput.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option').map((option) => option.textContent);
+    expect(options).toEqual([
+      'Select war era',
+      'WWII',
+      'Korea',
+      'Vietnam',
+      'Cold War',
+      'Gulf War',
+      'Afghanistan',
+      'Iraq',
+      'Other',
+    ]);
+  });
 
   test('renders basic info, address fields, and the Create button', () => {
     const { container } = render(<VeteranCreateForm />);

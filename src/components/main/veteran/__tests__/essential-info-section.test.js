@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import '@testing-library/jest-dom';
@@ -64,6 +64,41 @@ describe('EssentialInfoSection', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('offers Cold War and Gulf War after Vietnam in the war era dropdown', async () => {
+    const mockFlightOptions = [
+      { value: 'FL123', label: 'Flight 123', disabled: false },
+    ];
+
+    const { container } = render(
+      <TestWrapper defaultValues={{ vet_type: '' }}>
+        <EssentialInfoSection
+          errors={{}}
+          veteran={mockVeteran}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    const hiddenInput = container.querySelector('[name="vet_type"]');
+    const selectDisplay = hiddenInput.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option').map((option) => option.textContent);
+    expect(options).toEqual([
+      'Select war era',
+      'WWII',
+      'Korea',
+      'Vietnam',
+      'Cold War',
+      'Gulf War',
+      'Afghanistan',
+      'Iraq',
+      'Other',
+    ]);
   });
 
   test('renders essential information section with all cards', () => {

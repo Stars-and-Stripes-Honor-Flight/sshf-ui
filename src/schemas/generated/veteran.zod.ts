@@ -145,7 +145,7 @@ export const Veteran = zod.object({
 })).optional().describe('History of guardian pairing changes. Records pairing events: "paired to: {guardianName} by: {userName}" and "unpaired from: {guardianName} by: {userName}".\n')
 }).optional(),
   "app_date": zod.string().optional(),
-  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Afghanistan', 'Iraq', 'Other']).default(veteranVetTypeDefault).describe('Type of veteran/war conflict served'),
+  "vet_type": zod.enum(['WWII', 'Korea', 'Vietnam', 'Cold War', 'Gulf War', 'Afghanistan', 'Iraq', 'Other']).default(veteranVetTypeDefault).describe('Type of veteran/war conflict served'),
   "shirt": zod.object({
   "size": zod.enum(['None', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL']).default(veteranShirtSizeDefault)
 }).optional(),
