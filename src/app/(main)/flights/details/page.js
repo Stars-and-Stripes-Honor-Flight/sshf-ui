@@ -398,7 +398,8 @@ function FlightDetailsPage() {
   const stats = flightData?.stats;
   const pairs = flightData?.pairs || [];
   // Same boolean the flight list reads from the flight document.
-  const isCompleted = flightDocument?.completed;
+  const isCompleted =
+    flightDocument?.completed === true || flightDocument?.completed === 'true';
 
   return (
     <Box
@@ -523,13 +524,25 @@ function FlightDetailsPage() {
                           Assignments
                         </Typography>
                         {canManageFlights ? (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => setShowAddAssignmentDialog(true)}
+                          <Tooltip
+                            title={isCompleted ? 'Flight is completed' : ''}
+                            placement="top"
                           >
-                            Add Veterans from Waitlist
-                          </Button>
+                            <span>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                disabled={isCompleted}
+                                onClick={() => {
+                                  if (!isCompleted) {
+                                    setShowAddAssignmentDialog(true);
+                                  }
+                                }}
+                              >
+                                Add Veterans from Waitlist
+                              </Button>
+                            </span>
+                          </Tooltip>
                         ) : null}
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>

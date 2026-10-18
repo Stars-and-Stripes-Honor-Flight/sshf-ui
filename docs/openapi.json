@@ -4482,11 +4482,18 @@
             "description": "Flight not found"
           },
           "409": {
-            "description": "One or more veteran or guardian documents conflicted. The handler\nre-reads the current revision and retries that write once. This\nstatus is returned when a conflict remains after that retry. The\nbody lists the ids that were saved and the ids that failed.\n",
+            "description": "The flight is completed, so people cannot be added. The body is\n{ error: 'Flight is completed; people cannot be added' }. The\nwaitlist is not read and no documents are written.\n\nOtherwise, one or more veteran or guardian documents conflicted.\nThe handler re-reads the current revision and retries that write\nonce. This status is returned when a conflict remains after that\nretry. The body lists the ids that were saved and the ids that failed.\n",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddVeteransResult"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AddVeteransResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
                 }
               }
             }

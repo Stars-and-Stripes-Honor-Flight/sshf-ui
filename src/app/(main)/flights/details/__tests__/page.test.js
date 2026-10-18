@@ -704,3 +704,70 @@ describe('Flight details header status (issue #242)', () => {
     expect(api.getFlight).toHaveBeenCalledWith('flight-214');
   });
 });
+
+describe('Add Veterans from Waitlist on completed flights (issue #257)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockCan.mockImplementation(() => true);
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [paired],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 1,
+        guardians: 1,
+        veteransConfirmed: 1,
+        guardiansConfirmed: 1,
+        remaining: 10,
+      },
+    });
+  });
+
+  test('disables the waitlist button when the flight document completed is true', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+
+    render(<Page />);
+
+    const button = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(button).toBeDisabled();
+    expect(screen.queryByRole('dialog', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
+  });
+
+  test('disables the waitlist button when the flight document completed is legacy string true', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: 'true' }));
+
+    render(<Page />);
+
+    const button = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(button).toBeDisabled();
+    expect(screen.queryByRole('dialog', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
+  });
+
+  test('enables the waitlist button on an open flight and opens the add dialog on click', async () => {
+    const user = userEvent.setup();
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+
+    render(<Page />);
+
+    const button = await screen.findByRole('button', { name: 'Add Veterans from Waitlist' });
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(await screen.findByRole('dialog', { name: 'Add Veterans from Waitlist' })).toBeInTheDocument();
+  });
+
+  test('hides the waitlist button for users without flight management permission on a completed flight', async () => {
+    mockCan.mockImplementation((permission) => permission === 'records:read' || permission === 'exports:read');
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Pat Paired' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
+  });
+});
