@@ -10,6 +10,10 @@ import {
   sortPairs,
   getPairSortSeat,
   getPairSortBus,
+  getPlaneFromBus,
+  getPairSortPlane,
+  flightHasBothPlanes,
+  comparePairsForSeatSort,
   compareSeatNumbers,
 } from '../roster-helpers';
 
@@ -592,6 +596,31 @@ describe('roster-helpers', () => {
       expect(result[0].pairId).toBe('1');
     });
 
+    test('filters by plane (Alpha, Bravo, None)', () => {
+      const pairs = [
+        testPairs[0],
+        {
+          pairId: 'bravo',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'B',
+              name_last: 'Bravo',
+              bus: 'Bravo1',
+            },
+          ],
+        },
+        testPairs[2],
+      ];
+
+      expect(filterPairs(pairs, { planeFilter: 'Alpha' }).map((p) => p.pairId)).toEqual(['1']);
+      expect(filterPairs(pairs, { planeFilter: 'Bravo' }).map((p) => p.pairId)).toEqual(['bravo']);
+      expect(filterPairs(pairs, { planeFilter: 'None' }).map((p) => p.pairId)).toEqual(['3']);
+      expect(filterPairs(pairs, { planeFilter: 'all' }).map((p) => p.pairId)).toEqual(['1', 'bravo', '3']);
+    });
+
     test('filters by assigned caller', () => {
       const result = filterPairs(testPairs, { assignedCallerFilter: 'Karyn' });
       expect(result).toHaveLength(1);
@@ -1058,6 +1087,53 @@ describe('roster-helpers', () => {
       expect(result.map((p) => p.pairId)).toEqual(['early', 'same-row-b', 'late', 'empty']);
     });
 
+    test('sorts by seat across planes before row and letter (issue #259)', () => {
+      const seatPairs = [
+        {
+          pairId: 'bravo-same',
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'B',
+              name_last: 'Bravo',
+              bus: 'Bravo1',
+              seat: '4A',
+            },
+          ],
+        },
+        {
+          pairId: 'alpha-same',
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'A',
+              name_last: 'Alpha',
+              bus: 'Alpha1',
+              seat: '4A',
+            },
+          ],
+        },
+        {
+          pairId: 'none-bus',
+          people: [
+            {
+              type: 'Veteran',
+              name_first: 'N',
+              name_last: 'None',
+              bus: 'None',
+              seat: '1A',
+            },
+          ],
+        },
+      ];
+
+      expect(sortPairs(seatPairs, 'seat').map((p) => p.pairId)).toEqual([
+        'alpha-same',
+        'bravo-same',
+        'none-bus',
+      ]);
+    });
+
     test('sorts by guardian seat when pair has no veteran', () => {
       const guardianOnly = [
         {
@@ -1157,6 +1233,67 @@ describe('roster-helpers', () => {
 
     test('sorts unparseable seats after valid seats', () => {
       expect(compareSeatNumbers('TBD', '2A')).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getPlaneFromBus', () => {
+    test('maps Alpha buses to Alpha', () => {
+      expect(getPlaneFromBus('Alpha1')).toBe('Alpha');
+      expect(getPlaneFromBus('Alpha5')).toBe('Alpha');
+    });
+
+    test('maps Bravo buses to Bravo', () => {
+      expect(getPlaneFromBus('Bravo2')).toBe('Bravo');
+    });
+
+    test('maps None, blank, and unknown buses to None', () => {
+      expect(getPlaneFromBus('None')).toBe('None');
+      expect(getPlaneFromBus('')).toBe('None');
+      expect(getPlaneFromBus(undefined)).toBe('None');
+      expect(getPlaneFromBus('Charlie1')).toBe('None');
+    });
+  });
+
+  describe('getPairSortPlane', () => {
+    test('derives plane from pair bus via veteran then guardian', () => {
+      expect(
+        getPairSortPlane({
+          people: [
+            { type: 'Veteran', bus: 'Bravo1' },
+            { type: 'Guardian', bus: 'Alpha1' },
+          ],
+        })
+      ).toBe('Bravo');
+
+      expect(
+        getPairSortPlane({
+          people: [{ type: 'Guardian', bus: 'Alpha3' }],
+        })
+      ).toBe('Alpha');
+    });
+  });
+
+  describe('flightHasBothPlanes', () => {
+    test('is true only when both Alpha and Bravo pairs exist', () => {
+      const alphaOnly = [{ people: [{ type: 'Veteran', bus: 'Alpha1' }] }];
+      const both = [
+        { people: [{ type: 'Veteran', bus: 'Alpha1' }] },
+        { people: [{ type: 'Veteran', bus: 'Bravo1' }] },
+      ];
+      expect(flightHasBothPlanes(alphaOnly)).toBe(false);
+      expect(flightHasBothPlanes(both)).toBe(true);
+    });
+  });
+
+  describe('comparePairsForSeatSort', () => {
+    test('tie-breaks by veteran name when plane and seat match', () => {
+      const pairA = {
+        people: [{ type: 'Veteran', name_first: 'Amy', name_last: 'Alpha', bus: 'Alpha1', seat: '2A' }],
+      };
+      const pairB = {
+        people: [{ type: 'Veteran', name_first: 'Bob', name_last: 'Zulu', bus: 'Alpha2', seat: '2A' }],
+      };
+      expect(comparePairsForSeatSort(pairA, pairB)).toBeLessThan(0);
     });
   });
 

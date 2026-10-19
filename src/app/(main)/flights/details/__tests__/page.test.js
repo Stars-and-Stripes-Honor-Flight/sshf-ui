@@ -597,6 +597,152 @@ describe('Flight details — fix bus mismatches', () => {
   });
 });
 
+describe('Flight details roster — plane filter and seat sort (issue #259)', () => {
+  const multiPlanePairs = [
+    {
+      pairId: 'alpha-seat',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({
+          id: 'vet-alpha',
+          name_first: 'Al',
+          name_last: 'Alpha',
+          bus: 'Alpha1',
+          seat: '4A',
+        }),
+        guardian({ id: 'grd-alpha', name_first: 'G', name_last: 'Alpha' }),
+      ],
+    },
+    {
+      pairId: 'bravo-seat',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({
+          id: 'vet-bravo',
+          name_first: 'Bea',
+          name_last: 'Bravo',
+          bus: 'Bravo1',
+          seat: '4A',
+        }),
+        guardian({ id: 'grd-bravo', name_first: 'G', name_last: 'Bravo', bus: 'Bravo1' }),
+      ],
+    },
+    {
+      pairId: 'alpha-only-bus',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({
+          id: 'vet-alpha2',
+          name_first: 'Cy',
+          name_last: 'Alpha',
+          bus: 'Alpha2',
+          seat: '1A',
+        }),
+      ],
+    },
+  ];
+
+  const alphaOnlyPairs = [
+    {
+      pairId: 'solo-alpha',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({
+          id: 'vet-solo',
+          name_first: 'Solo',
+          name_last: 'Alpha',
+          bus: 'Alpha1',
+          seat: '2A',
+        }),
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightAssignments.mockResolvedValue({
+      counts: { veterans: 3, guardians: 2, remaining: 10 },
+    });
+  });
+
+  test('shows Plane filter on multi-plane flights, filters roster, and persists setting', async () => {
+    const user = userEvent.setup();
+    api.getFlightDetails.mockResolvedValue(flightDetails(multiPlanePairs));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Al Alpha' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Plane' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Plane' }));
+    await user.click(await screen.findByRole('option', { name: 'Bravo' }));
+
+    expect(screen.queryByRole('link', { name: 'Al Alpha' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Bea Bravo' })).toBeInTheDocument();
+    expect(countInCard('In current view')).toBe('1');
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.planeFilter).toBe('Bravo');
+    });
+  });
+
+  test('hides Plane filter when the flight has only one plane', async () => {
+    api.getFlightDetails.mockResolvedValue({
+      ...flightDetails(alphaOnlyPairs),
+      pairs: alphaOnlyPairs,
+    });
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Solo Alpha' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Plane' })).not.toBeInTheDocument();
+  });
+
+  test('sort by seat groups Alpha before Bravo when seat numbers match', async () => {
+    const user = userEvent.setup();
+    api.getFlightDetails.mockResolvedValue(flightDetails(multiPlanePairs));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Al Alpha' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Sort by' }));
+    await user.click(await screen.findByRole('option', { name: 'Seat' }));
+
+    const links = screen.getAllByRole('link').map((node) => node.textContent);
+    const rosterNames = links.filter((name) =>
+      ['Al Alpha', 'Bea Bravo', 'Cy Alpha'].includes(name)
+    );
+    expect(rosterNames).toEqual(['Cy Alpha', 'Al Alpha', 'Bea Bravo']);
+  });
+
+  test('Reset filters clears the plane filter', async () => {
+    const user = userEvent.setup();
+    api.getFlightDetails.mockResolvedValue(flightDetails(multiPlanePairs));
+
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Al Alpha' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Plane' }));
+    await user.click(await screen.findByRole('option', { name: 'Alpha' }));
+    expect(screen.queryByRole('link', { name: 'Bea Bravo' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }));
+
+    expect(await screen.findByRole('link', { name: 'Bea Bravo' })).toBeInTheDocument();
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.planeFilter).toBe('all');
+    });
+  });
+});
+
 describe('Flight details permission gating', () => {
   beforeEach(() => {
     localStorage.clear();

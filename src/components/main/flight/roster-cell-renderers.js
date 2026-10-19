@@ -27,7 +27,7 @@ export function renderSeatCell(person, personType, handlers) {
     <EditableField
       value={person.seat || ''}
       onBlur={(newValue) => handleSeatChange(newValue, person.id, personType)}
-      placeholder="e.g., A1"
+      placeholder="e.g., 04A"
       maxWidth={112}
       minWidth={72}
       inputProps={{
