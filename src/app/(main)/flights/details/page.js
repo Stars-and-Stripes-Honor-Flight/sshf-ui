@@ -929,12 +929,14 @@ function FlightDetailsPage() {
                           <TextField
                             select
                             size="small"
-                            label="Plane"
                             value={planeFilter}
                             onChange={(e) => setPlaneFilter(e.target.value)}
                             sx={{ minWidth: 140 }}
+                            inputProps={{
+                              'aria-label': 'Plane',
+                            }}
                           >
-                            <MenuItem value="all">All</MenuItem>
+                            <MenuItem value="all">All Planes</MenuItem>
                             <MenuItem value="Alpha">Alpha</MenuItem>
                             <MenuItem value="Bravo">Bravo</MenuItem>
                             <MenuItem value="None">None</MenuItem>
