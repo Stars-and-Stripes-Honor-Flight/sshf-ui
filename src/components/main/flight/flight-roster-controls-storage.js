@@ -8,6 +8,7 @@ export const DEFAULT_ROSTER_CONTROLS = {
   nameFilter: '',
   statusFilter: 'all',
   busFilter: 'all',
+  planeFilter: 'all',
   assignedCallerFilter: 'all',
   sortBy: 'name',
   noGuardianOnly: false,
@@ -16,6 +17,7 @@ export const DEFAULT_ROSTER_CONTROLS = {
 };
 
 const STATUS_FILTER_VALUES = new Set(['all', 'ok', 'issues', 'nofly']);
+const PLANE_FILTER_VALUES = new Set(['all', 'Alpha', 'Bravo', 'None']);
 const SORT_BY_VALUES = new Set([
   'name',
   'guardianName',
@@ -103,6 +105,11 @@ export function loadFlightRosterControls(flightId) {
         DEFAULT_ROSTER_CONTROLS.statusFilter
       ),
       busFilter: normalizeString(parsed.busFilter, DEFAULT_ROSTER_CONTROLS.busFilter),
+      planeFilter: normalizeEnum(
+        parsed.planeFilter,
+        PLANE_FILTER_VALUES,
+        DEFAULT_ROSTER_CONTROLS.planeFilter
+      ),
       assignedCallerFilter: normalizeString(
         parsed.assignedCallerFilter,
         DEFAULT_ROSTER_CONTROLS.assignedCallerFilter
@@ -140,6 +147,11 @@ export function saveFlightRosterControls(flightId, controls) {
       DEFAULT_ROSTER_CONTROLS.statusFilter
     ),
     busFilter: normalizeString(controls.busFilter, DEFAULT_ROSTER_CONTROLS.busFilter),
+    planeFilter: normalizeEnum(
+      controls.planeFilter,
+      PLANE_FILTER_VALUES,
+      DEFAULT_ROSTER_CONTROLS.planeFilter
+    ),
     assignedCallerFilter: normalizeString(
       controls.assignedCallerFilter,
       DEFAULT_ROSTER_CONTROLS.assignedCallerFilter

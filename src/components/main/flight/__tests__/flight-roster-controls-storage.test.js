@@ -54,12 +54,47 @@ describe('flight-roster-controls-storage', () => {
         nameFilter: 'smith',
         statusFilter: 'issues',
         busFilter: 'Bus 2',
+        planeFilter: 'all',
         assignedCallerFilter: 'Jane Doe',
         sortBy: 'seat',
         noGuardianOnly: false,
         trainingTypeFilter: [],
         trainingGuardiansFocus: true,
       });
+    });
+
+    test('round-trips the plane filter and coerces invalid values to all', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        planeFilter: 'Bravo',
+      });
+      expect(loadFlightRosterControls('flight-1').planeFilter).toBe('Bravo');
+
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('flight-bad-plane'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          planeFilter: 'Delta',
+        })
+      );
+      expect(loadFlightRosterControls('flight-bad-plane').planeFilter).toBe('all');
+    });
+
+    test('defaults plane filter for legacy saved controls', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('legacy-plane'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          nameFilter: '',
+          statusFilter: 'all',
+          busFilter: 'all',
+          assignedCallerFilter: 'all',
+          sortBy: 'name',
+          noGuardianOnly: false,
+        })
+      );
+
+      expect(loadFlightRosterControls('legacy-plane').planeFilter).toBe('all');
     });
 
     test('round-trips the training type filter and guardians focus', () => {
@@ -238,6 +273,7 @@ describe('flight-roster-controls-storage', () => {
         nameFilter: 'smith',
         sortBy: 'seat',
         statusFilter: 'issues',
+        planeFilter: 'Alpha',
       });
 
       expect(resetFlightRosterControls('flight-1')).toEqual(DEFAULT_ROSTER_CONTROLS);

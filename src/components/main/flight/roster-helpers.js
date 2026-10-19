@@ -44,7 +44,7 @@ function normalizeSeatString(seat) {
 
 /**
  * Parse a seat label into row number and row letter, or null when not parseable.
- * Accepts one- or two-digit row with optional leading zero, e.g. 3A, 03A, 11B.
+ * Accepts one- or two-digit row with optional leading zero, e.g. 04A, 3A, 11B.
  * @param {string|undefined|null} seat
  * @returns {{ row: number, letter: string } | null}
  */
@@ -80,6 +80,84 @@ export function getPairSortSeat(pair) {
   }
 
   return normalizeSeatString(guardian?.seat);
+}
+
+/**
+ * Plane label derived from a bus assignment (Alpha1–5 → Alpha, Bravo1–5 → Bravo, else None).
+ * @param {string|undefined|null} bus
+ * @returns {'Alpha' | 'Bravo' | 'None'}
+ */
+export function getPlaneFromBus(bus) {
+  const normalized = (bus ?? '').trim();
+  if (!normalized || normalized === 'None') {
+    return 'None';
+  }
+  if (normalized.startsWith('Alpha')) {
+    return 'Alpha';
+  }
+  if (normalized.startsWith('Bravo')) {
+    return 'Bravo';
+  }
+  return 'None';
+}
+
+/**
+ * Plane used for roster sort and filtering (from pair bus via getPairSortBus).
+ * @param {Object} pair
+ * @returns {'Alpha' | 'Bravo' | 'None'}
+ */
+export function getPairSortPlane(pair) {
+  return getPlaneFromBus(getPairSortBus(pair));
+}
+
+/**
+ * True when the roster includes at least one Alpha and one Bravo pair (shows Plane filter).
+ * @param {Array} pairs
+ * @returns {boolean}
+ */
+export function flightHasBothPlanes(pairs) {
+  let hasAlpha = false;
+  let hasBravo = false;
+
+  for (const pair of pairs || []) {
+    const plane = getPairSortPlane(pair);
+    if (plane === 'Alpha') {
+      hasAlpha = true;
+    } else if (plane === 'Bravo') {
+      hasBravo = true;
+    }
+    if (hasAlpha && hasBravo) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+const PLANE_SORT_RANK = { Alpha: 0, Bravo: 1, None: 2 };
+
+/**
+ * Compare two pairs for seat sort: plane (Alpha, Bravo, None), seat, then veteran name.
+ * @param {Object} pairA
+ * @param {Object} pairB
+ * @returns {number}
+ */
+export function comparePairsForSeatSort(pairA, pairB) {
+  const planeA = getPairSortPlane(pairA);
+  const planeB = getPairSortPlane(pairB);
+  const planeRankA = PLANE_SORT_RANK[planeA] ?? PLANE_SORT_RANK.None;
+  const planeRankB = PLANE_SORT_RANK[planeB] ?? PLANE_SORT_RANK.None;
+
+  if (planeRankA !== planeRankB) {
+    return planeRankA - planeRankB;
+  }
+
+  const bySeat = compareSeatNumbers(getPairSortSeat(pairA), getPairSortSeat(pairB));
+  if (bySeat !== 0) {
+    return bySeat;
+  }
+
+  return getPairSortVeteranName(pairA).localeCompare(getPairSortVeteranName(pairB));
 }
 
 /**
@@ -280,6 +358,7 @@ export function pairHasIssues(pair) {
  * @param {string} filters.nameFilter - Name search string
  * @param {string} filters.statusFilter - Status filter (all/ok/issues/nofly)
  * @param {string} filters.busFilter - Bus filter
+ * @param {string} filters.planeFilter - Plane filter (all/Alpha/Bravo/None)
  * @param {string} filters.assignedCallerFilter - Assigned caller filter
  * @param {boolean} filters.noGuardianOnly - When true, keep only veterans with no guardian
  * @param {string[]} filters.trainingTypeFilter - Guardian training types to keep; empty means all
@@ -290,6 +369,7 @@ export function filterPairs(pairs, filters) {
     nameFilter = '',
     statusFilter = 'all',
     busFilter = 'all',
+    planeFilter = 'all',
     assignedCallerFilter = 'all',
     noGuardianOnly = false,
     trainingTypeFilter = [],
@@ -339,6 +419,13 @@ export function filterPairs(pairs, filters) {
     if (busFilter !== 'all') {
       const pairBus = getPairSortBus(pair);
       if (pairBus !== busFilter) {
+        return false;
+      }
+    }
+
+    if (planeFilter !== 'all') {
+      const pairPlane = getPairSortPlane(pair);
+      if (pairPlane !== planeFilter) {
         return false;
       }
     }
@@ -477,9 +564,7 @@ export function sortPairs(pairs, sortBy) {
       break;
 
     case 'seat':
-      sorted.sort((a, b) =>
-        compareSeatNumbers(getPairSortSeat(a), getPairSortSeat(b))
-      );
+      sorted.sort((a, b) => comparePairsForSeatSort(a, b));
       break;
       
     default:

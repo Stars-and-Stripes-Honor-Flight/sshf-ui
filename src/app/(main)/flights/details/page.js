@@ -63,7 +63,8 @@ import {
   sortPairs, 
   getUniqueAssignedCallers, 
   getTrainingTypeOptions,
-  pairHasIssues 
+  pairHasIssues,
+  flightHasBothPlanes,
 } from '@/components/main/flight/roster-helpers';
 import { buildPersonUpdatePayload } from '@/components/main/flight/person-update';
 import {
@@ -97,6 +98,7 @@ function FlightDetailsPage() {
   const [nameFilter, setNameFilter] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues, nofly
   const [busFilter, setBusFilter] = React.useState('all');
+  const [planeFilter, setPlaneFilter] = React.useState('all');
   const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
   const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
   const [trainingTypeFilter, setTrainingTypeFilter] = React.useState([]);
@@ -260,6 +262,7 @@ function FlightDetailsPage() {
     setNameFilter(savedControls.nameFilter);
     setStatusFilter(savedControls.statusFilter);
     setBusFilter(savedControls.busFilter);
+    setPlaneFilter(savedControls.planeFilter);
     setAssignedCallerFilter(savedControls.assignedCallerFilter);
     setNoGuardianOnly(savedControls.noGuardianOnly);
     setTrainingTypeFilter(savedControls.trainingTypeFilter);
@@ -287,6 +290,7 @@ function FlightDetailsPage() {
         nameFilter: nameValue,
         statusFilter,
         busFilter,
+        planeFilter,
         assignedCallerFilter,
         sortBy,
         noGuardianOnly,
@@ -294,14 +298,14 @@ function FlightDetailsPage() {
         trainingGuardiansFocus,
       });
     },
-    [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus]
+    [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus]
   );
 
   // Persist roster controls when values change. The coordinator skips the first persist
   // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
-  }, [flightId, statusFilter, busFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, persistRosterControls]);
+  }, [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, persistRosterControls]);
 
   // Debounce name filter persistence while typing
   React.useEffect(() => {
@@ -325,6 +329,7 @@ function FlightDetailsPage() {
     setNameFilter(defaults.nameFilter);
     setStatusFilter(defaults.statusFilter);
     setBusFilter(defaults.busFilter);
+    setPlaneFilter(defaults.planeFilter);
     setAssignedCallerFilter(defaults.assignedCallerFilter);
     setNoGuardianOnly(defaults.noGuardianOnly);
     setTrainingTypeFilter(defaults.trainingTypeFilter);
@@ -397,6 +402,8 @@ function FlightDetailsPage() {
   const flight = flightData?.flight;
   const stats = flightData?.stats;
   const pairs = flightData?.pairs || [];
+  const showPlaneFilter = flightHasBothPlanes(pairs);
+  const effectivePlaneFilter = showPlaneFilter ? planeFilter : 'all';
   // Same boolean the flight list reads from the flight document.
   const isCompleted =
     flightDocument?.completed === true || flightDocument?.completed === 'true';
@@ -710,6 +717,7 @@ function FlightDetailsPage() {
                     nameFilter,
                     statusFilter,
                     busFilter,
+                    planeFilter: effectivePlaneFilter,
                     assignedCallerFilter,
                     noGuardianOnly,
                     trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
@@ -917,6 +925,21 @@ function FlightDetailsPage() {
                             <MenuItem key={bus} value={bus}>{bus}</MenuItem>
                           ))}
                         </TextField>
+                        {showPlaneFilter && (
+                          <TextField
+                            select
+                            size="small"
+                            label="Plane"
+                            value={planeFilter}
+                            onChange={(e) => setPlaneFilter(e.target.value)}
+                            sx={{ minWidth: 140 }}
+                          >
+                            <MenuItem value="all">All</MenuItem>
+                            <MenuItem value="Alpha">Alpha</MenuItem>
+                            <MenuItem value="Bravo">Bravo</MenuItem>
+                            <MenuItem value="None">None</MenuItem>
+                          </TextField>
+                        )}
                         <TextField
                           select
                           size="small"
@@ -941,6 +964,7 @@ function FlightDetailsPage() {
                     nameFilter,
                     statusFilter,
                     busFilter,
+                    planeFilter: effectivePlaneFilter,
                     assignedCallerFilter,
                     noGuardianOnly,
                     trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
