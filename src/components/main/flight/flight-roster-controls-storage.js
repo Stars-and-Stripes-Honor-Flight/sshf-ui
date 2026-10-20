@@ -24,6 +24,7 @@ const SORT_BY_VALUES = new Set([
   'bus',
   'assignment',
   'group',
+  'medExprnc',
   'status',
   'seat',
 ]);

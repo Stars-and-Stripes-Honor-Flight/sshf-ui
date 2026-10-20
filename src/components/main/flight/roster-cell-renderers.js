@@ -14,7 +14,7 @@ import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 
-import { getAssignedTo, getPairStatusIssues, getVeteranGroup } from './roster-helpers';
+import { getAssignedTo, getPairStatusIssues, getVeteranGroup, normalizeMedExprnc } from './roster-helpers';
 
 /**
  * Render seat cell (editable for veteran and guardian)
@@ -125,6 +125,33 @@ export function renderGroupCell(person, personType) {
 
   const group = getVeteranGroup(person);
   return <Typography variant="body2">{group || '—'}</Typography>;
+}
+
+/**
+ * Render guardian medical experience (Ops column); veterans show em dash.
+ */
+export function renderMedExprncCell(person, personType) {
+  if (!person) return null;
+
+  if (personType !== 'Guardian') {
+    return <Typography variant="body2">—</Typography>;
+  }
+
+  const medExprnc = normalizeMedExprnc(person.med_exprnc);
+  return <Typography variant="body2">{medExprnc || '—'}</Typography>;
+}
+
+/**
+ * Combined Ops column: veteran flight group or guardian med experience (#260).
+ */
+export function renderFltGrpMedExpCell(person, personType) {
+  if (!person) return null;
+
+  if (personType === 'Veteran') {
+    return renderGroupCell(person, personType);
+  }
+
+  return renderMedExprncCell(person, personType);
 }
 
 /**
@@ -439,6 +466,10 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return personType === 'Veteran' ? renderStatusCell(pair) : null;
     case 'group':
       return renderGroupCell(person, personType);
+    case 'flt_grp_med_exp':
+      return renderFltGrpMedExpCell(person, personType);
+    case 'med_exprnc':
+      return renderMedExprncCell(person, personType);
     case 'assigned_to':
       return renderAssignedToCell(person, pair, personType, handlers, localAssignedTo, hasCallMismatch);
     case 'confirmed':

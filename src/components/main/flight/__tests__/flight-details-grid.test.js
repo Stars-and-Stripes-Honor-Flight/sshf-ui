@@ -254,7 +254,7 @@ describe('FlightDetailsGrid - ops flight group column (issue #165)', () => {
     );
 
     expect(screen.getByText('Alpha Flight')).toBeInTheDocument();
-    expect(screen.getByText('Flt Grp')).toBeInTheDocument();
+    expect(screen.getByText('Flt Grp / Med Exp')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Karyn')).not.toBeInTheDocument();
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThanOrEqual(1);

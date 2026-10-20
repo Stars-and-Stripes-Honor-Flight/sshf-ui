@@ -15,6 +15,7 @@ import {
   flightHasBothPlanes,
   comparePairsForSeatSort,
   compareSeatNumbers,
+  normalizeMedExprnc,
 } from '../roster-helpers';
 
 describe('roster-helpers', () => {
@@ -51,6 +52,19 @@ describe('roster-helpers', () => {
 
     test('returns empty string for guardians', () => {
       expect(getVeteranGroup({ type: 'Guardian', group: 'Alpha' })).toBe('');
+    });
+  });
+
+  describe('normalizeMedExprnc', () => {
+    test('returns trimmed value when present', () => {
+      expect(normalizeMedExprnc('  RN  ')).toBe('RN');
+    });
+
+    test('returns empty string for blank or literal false', () => {
+      expect(normalizeMedExprnc('')).toBe('');
+      expect(normalizeMedExprnc('   ')).toBe('');
+      expect(normalizeMedExprnc('false')).toBe('');
+      expect(normalizeMedExprnc(' FALSE ')).toBe('');
     });
   });
 
@@ -934,6 +948,62 @@ describe('roster-helpers', () => {
       expect(result[0].pairId).toBe('3');
       expect(result[1].pairId).toBe('2');
       expect(result[2].pairId).toBe('1');
+    });
+
+    test('sorts by med experience (case-insensitive; blanks and false last; name tiebreaker)', () => {
+      const pairs = [
+        {
+          pairId: 'blank',
+          people: [
+            { type: 'Veteran', name_last: 'Zebra', name_first: 'Z' },
+            { type: 'Guardian', med_exprnc: '' },
+          ],
+        },
+        {
+          pairId: 'false-literal',
+          people: [
+            { type: 'Veteran', name_last: 'Young', name_first: 'Y' },
+            { type: 'Guardian', med_exprnc: 'false' },
+          ],
+        },
+        {
+          pairId: 'nurse',
+          people: [
+            { type: 'Veteran', name_last: 'Nelson', name_first: 'N' },
+            { type: 'Guardian', med_exprnc: 'nurse' },
+          ],
+        },
+        {
+          pairId: 'paramedic',
+          people: [
+            { type: 'Veteran', name_last: 'Parker', name_first: 'P' },
+            { type: 'Guardian', med_exprnc: 'Paramedic' },
+          ],
+        },
+        {
+          pairId: 'nurse-tie-a',
+          people: [
+            { type: 'Veteran', name_last: 'Adams', name_first: 'A' },
+            { type: 'Guardian', med_exprnc: 'Nurse' },
+          ],
+        },
+        {
+          pairId: 'nurse-tie-z',
+          people: [
+            { type: 'Veteran', name_last: 'Zimmer', name_first: 'Z' },
+            { type: 'Guardian', med_exprnc: 'nurse' },
+          ],
+        },
+      ];
+
+      expect(sortPairs(pairs, 'medExprnc').map((pair) => pair.pairId)).toEqual([
+        'nurse-tie-a',
+        'nurse',
+        'nurse-tie-z',
+        'paramedic',
+        'false-literal',
+        'blank',
+      ]);
     });
 
     test('sorts by flight group (veteran group, trimmed)', () => {
