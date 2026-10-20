@@ -103,7 +103,7 @@ function FlightDetailsPage() {
   const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
   const [trainingTypeFilter, setTrainingTypeFilter] = React.useState([]);
   const [trainingGuardiansFocus, setTrainingGuardiansFocus] = React.useState(true);
-  const [sortBy, setSortBy] = React.useState('name'); // name, guardianName, bus, assignment, group, status, seat
+  const [sortBy, setSortBy] = React.useState('name'); // name, guardianName, bus, assignment, group, medExprnc, status, seat
   const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
   const [showAddAssignmentDialog, setShowAddAssignmentDialog] = React.useState(false);
@@ -818,6 +818,7 @@ function FlightDetailsPage() {
                           <MenuItem value="bus">Bus</MenuItem>
                           <MenuItem value="assignment">Assignment</MenuItem>
                           <MenuItem value="group">Flight group</MenuItem>
+                          <MenuItem value="medExprnc">Med Exp.</MenuItem>
                           <MenuItem value="status">Status</MenuItem>
                           <MenuItem value="seat">Seat</MenuItem>
                         </TextField>

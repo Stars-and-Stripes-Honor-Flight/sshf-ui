@@ -27,6 +27,7 @@ export const COLUMN_CONFIGS = {
     { id: 'seat', label: 'Seat', width: 112, minWidth: 112 },
     { id: 'bus', label: 'Bus', width: 140 },
     { id: 'group', label: 'Flt Grp', width: 120 },
+    { id: 'med_exprnc', label: 'Med Exp.', width: 140 },
     { id: 'status', label: 'Status', width: 200 },
   ],
   [ACTIVITY_PRESETS.CALLER]: [

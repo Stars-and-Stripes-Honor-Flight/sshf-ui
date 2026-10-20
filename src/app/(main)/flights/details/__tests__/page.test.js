@@ -743,6 +743,92 @@ describe('Flight details roster — plane filter and seat sort (issue #259)', ()
   });
 });
 
+describe('Flight details roster — Med Exp. Ops column (issue #260)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        completed: false,
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [
+        {
+          pairId: 'pair-a',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            veteran({ id: 'vet-a', name_first: 'Ann', name_last: 'Alpha' }),
+            guardian({ id: 'grd-a', name_first: 'Gina', name_last: 'Alpha', med_exprnc: 'Nurse' }),
+          ],
+        },
+        {
+          pairId: 'pair-b',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            veteran({ id: 'vet-b', name_first: 'Bob', name_last: 'Beta' }),
+            guardian({ id: 'grd-b', name_first: 'Glen', name_last: 'Beta', med_exprnc: 'false' }),
+          ],
+        },
+      ],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: { veterans: 2, guardians: 2, remaining: 10 },
+    });
+  });
+
+  test('shows Med Exp. column in Ops layout with guardian values', async () => {
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+    expect(screen.getByText('Med Exp.')).toBeInTheDocument();
+
+    const ginaRow = screen.getByRole('link', { name: 'Gina Alpha' }).closest('tr');
+    expect(within(ginaRow).getByText('Nurse')).toBeInTheDocument();
+
+    const glenRow = screen.getByRole('link', { name: 'Glen Beta' }).closest('tr');
+    expect(within(glenRow).getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('offers Med Exp. sort and persists the selection', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Sort by'));
+    await user.click(await screen.findByRole('option', { name: 'Med Exp.' }));
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.sortBy).toBe('medExprnc');
+    });
+  });
+
+  test('loads persisted Med Exp. sort from storage', async () => {
+    localStorage.setItem(
+      'sshf.flightRosterControls.v1.flight-214',
+      JSON.stringify({
+        version: 1,
+        sortBy: 'medExprnc',
+        nameFilter: '',
+        statusFilter: 'all',
+        busFilter: 'all',
+        assignedCallerFilter: 'all',
+      })
+    );
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Sort by')).toHaveTextContent('Med Exp.');
+  });
+});
+
 describe('Flight details permission gating', () => {
   beforeEach(() => {
     localStorage.clear();

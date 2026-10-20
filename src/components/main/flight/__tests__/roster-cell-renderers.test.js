@@ -7,6 +7,7 @@ import {
   renderSeatCell,
   renderBusCell,
   renderGroupCell,
+  renderMedExprncCell,
   renderMedicalLevelCell,
   renderBirthDateCell,
   renderMiddleNameCell,
@@ -122,6 +123,31 @@ describe('renderMedicalLevelCell', () => {
     render(renderMedicalLevelCell({ med_exprnc: 'RN, ICU experience' }, 'Guardian'));
 
     expect(screen.getByText('RN, ICU experience')).toBeInTheDocument();
+  });
+});
+
+describe('renderMedExprncCell', () => {
+  test('shows guardian med experience', () => {
+    render(renderMedExprncCell({ med_exprnc: 'RN, ICU' }, 'Guardian'));
+
+    expect(screen.getByText('RN, ICU')).toBeInTheDocument();
+  });
+
+  test('shows em dash for veteran row', () => {
+    render(renderMedExprncCell({ med_exprnc: 'RN' }, 'Veteran'));
+
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('treats empty and false as em dash for guardian', () => {
+    const { rerender } = render(renderMedExprncCell({ med_exprnc: '' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedExprncCell({ med_exprnc: 'false' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedExprncCell({ med_exprnc: ' FALSE ' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 });
 

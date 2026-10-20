@@ -34,6 +34,29 @@ export function getPairSortGroup(pair) {
 }
 
 /**
+ * Guardian medical experience for display and sort (trimmed; empty when missing, blank, or "false").
+ * @param {string|undefined|null} medExprnc
+ * @returns {string}
+ */
+export function normalizeMedExprnc(medExprnc) {
+  const trimmed = (medExprnc ?? '').trim();
+  if (!trimmed || trimmed.toLowerCase() === 'false') {
+    return '';
+  }
+  return trimmed;
+}
+
+/**
+ * Guardian med experience used when sorting pairs.
+ * @param {Object} pair
+ * @returns {string}
+ */
+export function getPairSortMedExprnc(pair) {
+  const guardian = pair.people?.find((person) => person.type === 'Guardian');
+  return normalizeMedExprnc(guardian?.med_exprnc);
+}
+
+/**
  * Normalize a seat string for display-independent comparison (trim, uppercase letter).
  * @param {string|undefined|null} seat
  * @returns {string}
@@ -486,7 +509,7 @@ export function getTrainingTypeOptions(pairs) {
  * Sort pairs based on the sort criteria
  * Most sort keys use the veteran in the pair; seat uses veteran seat or guardian when absent.
  * @param {Array} pairs - Array of pair objects
- * @param {string} sortBy - Sort criteria (name/guardianName/bus/assignment/group/status/seat)
+ * @param {string} sortBy - Sort criteria (name/guardianName/bus/assignment/group/medExprnc/status/seat)
  * @returns {Array} Sorted pairs (new array)
  */
 export function sortPairs(pairs, sortBy) {
@@ -542,6 +565,28 @@ export function sortPairs(pairs, sortBy) {
         const groupA = getPairSortGroup(a).toLowerCase();
         const groupB = getPairSortGroup(b).toLowerCase();
         return groupA.localeCompare(groupB);
+      });
+      break;
+
+    case 'medExprnc':
+      sorted.sort((a, b) => {
+        const medA = getPairSortMedExprnc(a);
+        const medB = getPairSortMedExprnc(b);
+        const blankA = !medA;
+        const blankB = !medB;
+
+        if (blankA !== blankB) {
+          return blankA ? 1 : -1;
+        }
+
+        if (!blankA) {
+          const byMed = medA.toLowerCase().localeCompare(medB.toLowerCase());
+          if (byMed !== 0) {
+            return byMed;
+          }
+        }
+
+        return getPairSortVeteranName(a).localeCompare(getPairSortVeteranName(b));
       });
       break;
       
