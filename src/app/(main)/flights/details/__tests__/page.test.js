@@ -829,6 +829,85 @@ describe('Flight details roster — Med Exp. Ops column (issue #260)', () => {
   });
 });
 
+describe('Flight details roster — Med Lvl column (issue #264)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        completed: false,
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [
+        {
+          pairId: 'pair-a',
+          busMismatch: false,
+          missingPairedPerson: false,
+          people: [
+            veteran({
+              id: 'vet-a',
+              name_first: 'Ann',
+              name_last: 'Alpha',
+              med_limits: '[2/3] Uses walker',
+              medical_level: 'Level 1',
+            }),
+            guardian({
+              id: 'grd-a',
+              name_first: 'Gina',
+              name_last: 'Alpha',
+              medical_level: 'C',
+            }),
+          ],
+        },
+      ],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: { veterans: 1, guardians: 1, remaining: 10 },
+    });
+  });
+
+  test('shows Med Lvl on veteran and guardian rows in the Ops layout', async () => {
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+    expect(screen.getByText('Med Lvl')).toBeInTheDocument();
+
+    const annRow = screen.getByRole('link', { name: 'Ann Alpha' }).closest('tr');
+    expect(within(annRow).getByText('[2/3]')).toBeInTheDocument();
+    expect(within(annRow).queryByText('Level 1')).not.toBeInTheDocument();
+    expect(within(annRow).queryByText(/Uses walker/)).not.toBeInTheDocument();
+
+    const ginaRow = screen.getByRole('link', { name: 'Gina Alpha' }).closest('tr');
+    expect(within(ginaRow).getByText('C')).toBeInTheDocument();
+  });
+
+  test('does not add a Med Lvl sort option', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Sort by'));
+
+    expect(screen.queryByRole('option', { name: 'Med Lvl' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Med Exp.' })).toBeInTheDocument();
+  });
+
+  test('Medical layout still uses Med Notes / Med Experience', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Columns'));
+    await user.click(await screen.findByRole('option', { name: 'Medical' }));
+
+    expect(screen.getByText('Med Notes / Med Experience')).toBeInTheDocument();
+    expect(screen.queryByText('Med Lvl')).not.toBeInTheDocument();
+  });
+});
+
 describe('Flight details permission gating', () => {
   beforeEach(() => {
     localStorage.clear();
