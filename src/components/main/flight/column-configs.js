@@ -26,8 +26,7 @@ export const COLUMN_CONFIGS = {
   [ACTIVITY_PRESETS.OPS]: [
     { id: 'seat', label: 'Seat', width: 112, minWidth: 112 },
     { id: 'bus', label: 'Bus', width: 140 },
-    { id: 'group', label: 'Flt Grp', width: 120 },
-    { id: 'med_exprnc', label: 'Med Exp.', width: 140 },
+    { id: 'flt_grp_med_exp', label: 'Flt Grp / Med Exp', width: 160 },
     { id: 'status', label: 'Status', width: 200 },
   ],
   [ACTIVITY_PRESETS.CALLER]: [

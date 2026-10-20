@@ -8,6 +8,7 @@ import {
   renderBusCell,
   renderGroupCell,
   renderMedExprncCell,
+  renderFltGrpMedExpCell,
   renderMedicalLevelCell,
   renderBirthDateCell,
   renderMiddleNameCell,
@@ -123,6 +124,26 @@ describe('renderMedicalLevelCell', () => {
     render(renderMedicalLevelCell({ med_exprnc: 'RN, ICU experience' }, 'Guardian'));
 
     expect(screen.getByText('RN, ICU experience')).toBeInTheDocument();
+  });
+});
+
+describe('renderFltGrpMedExpCell', () => {
+  test('shows veteran flight group', () => {
+    render(renderFltGrpMedExpCell({ type: 'Veteran', group: 'Alpha' }, 'Veteran'));
+
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+  });
+
+  test('shows guardian med experience', () => {
+    render(renderFltGrpMedExpCell({ med_exprnc: 'RN' }, 'Guardian'));
+
+    expect(screen.getByText('RN')).toBeInTheDocument();
+  });
+
+  test('shows em dash for empty guardian med experience', () => {
+    render(renderFltGrpMedExpCell({ med_exprnc: 'false' }, 'Guardian'));
+
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 });
 

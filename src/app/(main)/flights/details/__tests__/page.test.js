@@ -781,11 +781,11 @@ describe('Flight details roster — Med Exp. Ops column (issue #260)', () => {
     });
   });
 
-  test('shows Med Exp. column in Ops layout with guardian values', async () => {
+  test('shows combined Flt Grp / Med Exp column in Ops layout', async () => {
     render(<Page />);
 
     expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
-    expect(screen.getByText('Med Exp.')).toBeInTheDocument();
+    expect(screen.getByText('Flt Grp / Med Exp')).toBeInTheDocument();
 
     const ginaRow = screen.getByRole('link', { name: 'Gina Alpha' }).closest('tr');
     expect(within(ginaRow).getByText('Nurse')).toBeInTheDocument();

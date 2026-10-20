@@ -142,6 +142,19 @@ export function renderMedExprncCell(person, personType) {
 }
 
 /**
+ * Combined Ops column: veteran flight group or guardian med experience (#260).
+ */
+export function renderFltGrpMedExpCell(person, personType) {
+  if (!person) return null;
+
+  if (personType === 'Veteran') {
+    return renderGroupCell(person, personType);
+  }
+
+  return renderMedExprncCell(person, personType);
+}
+
+/**
  * Render assigned-to cell (editable for veteran, display with sync for guardian)
  */
 export function renderAssignedToCell(person, pair, personType, handlers, localAssignedTo, hasCallMismatch) {
@@ -453,6 +466,8 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return personType === 'Veteran' ? renderStatusCell(pair) : null;
     case 'group':
       return renderGroupCell(person, personType);
+    case 'flt_grp_med_exp':
+      return renderFltGrpMedExpCell(person, personType);
     case 'med_exprnc':
       return renderMedExprncCell(person, personType);
     case 'assigned_to':
