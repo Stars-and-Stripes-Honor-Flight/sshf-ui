@@ -667,8 +667,10 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
     expect(screen.getByRole('columnheader', { name: 'Middle' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Mobile' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'DOB' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Training' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Training notes' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Mail Rcvd / Training' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Mail Adopt / Training Notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Training' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Training notes' })).not.toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Waivers' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'See Doc' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Seat' })).not.toBeInTheDocument();
@@ -676,7 +678,7 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
     expect(screen.queryByRole('columnheader', { name: 'Bus' })).not.toBeInTheDocument();
   });
 
-  test('shows guardian training controls and em dashes on the veteran row', () => {
+  test('shows guardian training controls and read-only mail call checkboxes on the veteran row', () => {
     renderTraining([buildTrainingPair()]);
 
     const veteranRow = screen.getByRole('link', { name: 'Daniel Schneider' }).closest('tr');
@@ -685,7 +687,11 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
     expect(within(veteranRow).getByRole('textbox', { name: 'Middle name' })).toHaveValue('Thomas');
     expect(within(veteranRow).getByRole('textbox', { name: 'Mobile phone' })).toHaveValue('414-111-0000');
     expect(within(veteranRow).getByText('01/02/1945')).toBeInTheDocument();
-    expect(within(veteranRow).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(within(veteranRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(veteranRow).getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
+    expect(within(veteranRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(within(veteranRow).getByRole('checkbox', { name: 'Mail call adoption' })).not.toBeChecked();
+    expect(within(veteranRow).queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
     expect(within(veteranRow).queryByRole('textbox', { name: 'Training notes' })).not.toBeInTheDocument();
 
     expect(within(guardianRow).getByText('Web')).toBeInTheDocument();
@@ -753,6 +759,71 @@ describe('FlightDetailsGrid - training preset (issue #212)', () => {
     expect(screen.getByRole('link', { name: 'Tracy Stouffer' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Guardian' })).toBeInTheDocument();
+  });
+
+  test('keeps Training headers while guardians focus hides paired veterans', () => {
+    renderTraining([buildTrainingPair()], { guardiansFocus: true });
+
+    expect(screen.getByRole('columnheader', { name: 'Training' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Training notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Mail Rcvd / Training' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Mail Adopt / Training Notes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Daniel Schneider' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tracy Stouffer' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
+    expect(screen.getByRole('textbox', { name: 'Training notes' })).toHaveValue('Virtual training');
+  });
+
+  test('renders checked and unchecked read-only mail call checkboxes for veterans', () => {
+    const receivedOn = buildTrainingPair();
+    receivedOn.people[0].mail_call_received = true;
+    receivedOn.people[0].mail_call_adopt = false;
+
+    const adoptOn = buildTrainingPair();
+    adoptOn.pairId = 'train-2';
+    adoptOn.people[0] = {
+      ...adoptOn.people[0],
+      id: 'vet-2',
+      name_first: 'Helen',
+      name_last: 'Holt',
+      mail_call_received: false,
+      mail_call_adopt: true,
+    };
+    adoptOn.people[1] = {
+      ...adoptOn.people[1],
+      id: 'guard-2',
+      name_first: 'Gina',
+      name_last: 'Holt',
+    };
+
+    const { onUpdate } = renderTraining([receivedOn, adoptOn]);
+
+    const danielRow = screen.getByRole('link', { name: 'Daniel Schneider' }).closest('tr');
+    const received = within(danielRow).getByRole('checkbox', { name: 'Mail call received' });
+    const adopt = within(danielRow).getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(received).toBeChecked();
+    expect(received).toBeDisabled();
+    expect(received).toHaveAttribute('readonly');
+    expect(adopt).not.toBeChecked();
+    expect(adopt).toBeDisabled();
+    expect(adopt).toHaveAttribute('readonly');
+    expect(received.closest('td')).toHaveTextContent('');
+    expect(adopt.closest('td')).toHaveTextContent('');
+
+    const helenRow = screen.getByRole('link', { name: 'Helen Holt' }).closest('tr');
+    expect(within(helenRow).getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
+    expect(within(helenRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(helenRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeChecked();
+    expect(within(helenRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+
+    const guardianRow = screen.getByRole('link', { name: 'Tracy Stouffer' }).closest('tr');
+    expect(within(guardianRow).getByText('Web')).toBeInTheDocument();
+    expect(within(guardianRow).getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
+    expect(within(guardianRow).getByRole('checkbox', { name: 'Training complete' })).toBeChecked();
+    expect(within(guardianRow).getByRole('textbox', { name: 'Training notes' })).toHaveValue('Virtual training');
+    expect(within(guardianRow).queryByRole('checkbox', { name: 'Mail call received' })).not.toBeInTheDocument();
+    expect(within(guardianRow).queryByRole('checkbox', { name: 'Mail call adoption' })).not.toBeInTheDocument();
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 });
 

@@ -58,12 +58,30 @@ export const COLUMN_CONFIGS = {
 };
 
 /**
- * Get the column configuration for a given activity preset
+ * Get the column configuration for a given activity preset.
+ * Training headers name the veteran mail-call fields unless guardians focus
+ * is on and those paired veteran rows are hidden.
  * @param {string} preset - The activity preset (ops, caller, medical, apparel, training)
+ * @param {boolean} [guardiansFocus=false] - Keep the guardian-only training labels
  * @returns {Array} Array of column definitions
  */
-export function getColumnConfig(preset) {
-  return COLUMN_CONFIGS[preset] || COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS];
+export function getColumnConfig(preset, guardiansFocus = false) {
+  if (preset !== ACTIVITY_PRESETS.TRAINING) {
+    return COLUMN_CONFIGS[preset] || COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS];
+  }
+
+  const columns = COLUMN_CONFIGS[ACTIVITY_PRESETS.TRAINING];
+  if (guardiansFocus) return columns;
+
+  return columns.map((column) => {
+    if (column.id === 'training') {
+      return { ...column, label: 'Mail Rcvd / Training' };
+    }
+    if (column.id === 'training_notes') {
+      return { ...column, label: 'Mail Adopt / Training Notes' };
+    }
+    return column;
+  });
 }
 
 /**
