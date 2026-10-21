@@ -426,6 +426,63 @@ describe('Flight details roster — training preset (issue #212)', () => {
     expect(payload.metadata).toBeUndefined();
     expect(payload.address.phone_mbl).toBe('414-327-5999');
   });
+
+  test('shows mail call checkboxes and switches training headers with guardians focus', async () => {
+    const user = userEvent.setup();
+    const details = JSON.parse(JSON.stringify(trainingDetails));
+    details.pairs[0].people[0].mail_call_received = true;
+    details.pairs[0].people[0].mail_call_adopt = false;
+    details.pairs[2].people[0].mail_call_received = false;
+    details.pairs[2].people[0].mail_call_adopt = true;
+    api.getFlightDetails.mockResolvedValue(details);
+
+    await openTrainingPreset(user);
+
+    expect(screen.getByRole('button', { name: 'Guardians focus' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('columnheader', { name: 'Training' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Training notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Mail Rcvd / Training' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Mail Adopt / Training Notes' })).not.toBeInTheDocument();
+
+    const umaRow = screen.getByRole('link', { name: 'Uma Unpaired' }).closest('tr');
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeChecked();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).toHaveAttribute('readonly');
+
+    const gailRow = screen.getByRole('link', { name: 'Gail Main' }).closest('tr');
+    expect(within(gailRow).getByText('Main')).toBeInTheDocument();
+    expect(within(gailRow).getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
+    expect(within(gailRow).getByRole('checkbox', { name: 'Training complete' })).not.toBeChecked();
+    expect(within(gailRow).getByRole('textbox', { name: 'Training notes' })).toHaveValue('Passport later');
+    expect(within(gailRow).queryByRole('checkbox', { name: 'Mail call received' })).not.toBeInTheDocument();
+    expect(within(gailRow).queryByRole('checkbox', { name: 'Mail call adoption' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Guardians focus' }));
+
+    expect(screen.getByRole('button', { name: 'Guardians focus' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('columnheader', { name: 'Mail Rcvd / Training' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Mail Adopt / Training Notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Training' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Training notes' })).not.toBeInTheDocument();
+
+    const dawnRow = screen.getByRole('link', { name: 'Dawn Brust' }).closest('tr');
+    const dawnReceived = within(dawnRow).getByRole('checkbox', { name: 'Mail call received' });
+    const dawnAdopt = within(dawnRow).getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(dawnReceived).toBeChecked();
+    expect(dawnReceived).toBeDisabled();
+    expect(dawnReceived).toHaveAttribute('readonly');
+    expect(dawnAdopt).not.toBeChecked();
+    expect(dawnAdopt).toBeDisabled();
+    expect(dawnReceived.closest('td')).toHaveTextContent('');
+    expect(dawnAdopt.closest('td')).toHaveTextContent('');
+    expect(within(dawnRow).queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
+    expect(within(dawnRow).queryByRole('textbox', { name: 'Training notes' })).not.toBeInTheDocument();
+
+    expect(within(gailRow).getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
+    expect(within(gailRow).getByRole('textbox', { name: 'Training notes' })).toHaveValue('Passport later');
+  });
 });
 
 function flightDetails(pairs) {

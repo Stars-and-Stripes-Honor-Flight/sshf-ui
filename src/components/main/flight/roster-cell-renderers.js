@@ -410,10 +410,13 @@ export function renderMobilePhoneCell(person, personType, handlers) {
 
 /**
  * Guardian training type plus an editable training-complete checkbox.
- * Veterans show an em dash.
+ * Veterans show a read-only mail-call-received checkbox.
  */
 export function renderTrainingCell(person, personType, handlers) {
   if (!person) return null;
+  if (personType === 'Veteran') {
+    return <ReadOnlyCheckbox checked={person.mail_call_received} ariaLabel="Mail call received" />;
+  }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
   const { EditableCheckbox, handleTrainingCompleteChange } = handlers;
@@ -432,10 +435,14 @@ export function renderTrainingCell(person, personType, handlers) {
 }
 
 /**
- * Multiline training notes for guardians. Veterans show an em dash.
+ * Multiline training notes for guardians.
+ * Veterans show a read-only mail-call-adoption checkbox.
  */
 export function renderTrainingNotesCell(person, personType, handlers) {
   if (!person) return null;
+  if (personType === 'Veteran') {
+    return <ReadOnlyCheckbox checked={person.mail_call_adopt} ariaLabel="Mail call adoption" />;
+  }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
   const { EditableField, handleTrainingNotesChange } = handlers;

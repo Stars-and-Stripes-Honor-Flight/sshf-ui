@@ -312,7 +312,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
   const hasCallMismatch = guardian && veteranAssignedTo && displayAssignedTo && veteranAssignedTo !== displayAssignedTo;
   
   // Get column configuration for the current activity preset
-  const columns = getColumnConfig(activityPreset);
+  const columns = getColumnConfig(activityPreset, guardiansFocus);
 
   const handleSyncCallAssignment = async () => {
     // Sync guardian to veteran's call assignment
@@ -649,7 +649,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
 
 // Main FlightDetailsGrid component
 export function FlightDetailsGrid({ pairs, onUpdate, nameFilter, statusFilter, busFilter, onPairingComplete, flightId, flightName, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false, readOnly = false }) {
-  const columns = getColumnConfig(activityPreset);
+  const columns = getColumnConfig(activityPreset, guardiansFocus);
   const [pairingDialogOpen, setPairingDialogOpen] = React.useState(false);
   const [selectedVeteranForPairing, setSelectedVeteranForPairing] = React.useState(null);
   const handleOpenPairingDialog = React.useCallback((veteran) => {

@@ -370,7 +370,7 @@ describe('training roster cells (issue #212)', () => {
     );
   });
 
-  test('shows training type and an editable complete checkbox for guardians only', async () => {
+  test('shows training type and an editable complete checkbox for guardians', async () => {
     const user = userEvent.setup();
     const { rerender } = render(
       renderTrainingCell(
@@ -387,16 +387,18 @@ describe('training roster cells (issue #212)', () => {
 
     rerender(
       renderTrainingCell(
-        { id: 'vet-1', training: 'Main', training_complete: true },
+        { id: 'vet-1', training: 'Main', training_complete: true, mail_call_received: false },
         'Veteran',
         trainingHandlers
       )
     );
-    expect(screen.getByText('—')).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Main')).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
   });
 
-  test('uses a multiline training notes field for guardians and an em dash for veterans', async () => {
+  test('uses a multiline training notes field for guardians and a mail call checkbox for veterans', async () => {
     const user = userEvent.setup();
     const { rerender } = render(
       renderTrainingNotesCell(
@@ -413,9 +415,87 @@ describe('training roster cells (issue #212)', () => {
     await user.tab();
     expect(trainingHandlers.handleTrainingNotesChange).toHaveBeenCalledWith('Lives in MN', 'grd-1');
 
-    rerender(renderTrainingNotesCell({ id: 'vet-1', flight_training_notes: 'nope' }, 'Veteran', trainingHandlers));
-    expect(screen.getByText('—')).toBeInTheDocument();
+    rerender(
+      renderTrainingNotesCell(
+        { id: 'vet-1', flight_training_notes: 'nope', mail_call_adopt: true },
+        'Veteran',
+        trainingHandlers
+      )
+    );
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('nope')).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeChecked();
+  });
+
+  test('shows a read-only mail call received checkbox for veterans, checked and unchecked', () => {
+    const { rerender } = render(
+      renderTrainingCell({ id: 'vet-1', mail_call_received: true }, 'Veteran', trainingHandlers)
+    );
+
+    const checked = screen.getByRole('checkbox', { name: 'Mail call received' });
+    expect(checked).toBeChecked();
+    expect(checked).toBeDisabled();
+    expect(checked).toHaveAttribute('readonly');
+    expect(screen.queryByText('Mail call received')).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
+
+    rerender(renderTrainingCell({ id: 'vet-2', mail_call_received: false }, 'Veteran', trainingHandlers));
+    const unchecked = screen.getByRole('checkbox', { name: 'Mail call received' });
+    expect(unchecked).not.toBeChecked();
+    expect(unchecked).toBeDisabled();
+    expect(unchecked).toHaveAttribute('readonly');
+    expect(screen.queryByText('Mail call received')).not.toBeInTheDocument();
+  });
+
+  test('shows a read-only mail call adoption checkbox for veterans, checked and unchecked', () => {
+    const { rerender } = render(
+      renderTrainingNotesCell({ id: 'vet-1', mail_call_adopt: false }, 'Veteran', trainingHandlers)
+    );
+
+    const unchecked = screen.getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(unchecked).not.toBeChecked();
+    expect(unchecked).toBeDisabled();
+    expect(unchecked).toHaveAttribute('readonly');
+    expect(screen.queryByText('Mail call adoption')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Training notes' })).not.toBeInTheDocument();
+
+    rerender(renderTrainingNotesCell({ id: 'vet-2', mail_call_adopt: true }, 'Veteran', trainingHandlers));
+    const checked = screen.getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(checked).toBeChecked();
+    expect(checked).toBeDisabled();
+    expect(checked).toHaveAttribute('readonly');
+  });
+
+  test('keeps guardian training controls when mail call flags are present', () => {
+    const { rerender } = render(
+      renderTrainingCell(
+        {
+          id: 'grd-1',
+          training: 'Phone',
+          training_complete: false,
+          mail_call_received: true,
+          mail_call_adopt: true,
+        },
+        'Guardian',
+        trainingHandlers
+      )
+    );
+
+    expect(screen.getByText('Phone')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
+    expect(screen.getByRole('checkbox', { name: 'Training complete' })).not.toBeChecked();
+    expect(screen.queryByRole('checkbox', { name: 'Mail call received' })).not.toBeInTheDocument();
+
+    rerender(
+      renderTrainingNotesCell(
+        { id: 'grd-1', flight_training_notes: 'Passport later', mail_call_adopt: true },
+        'Guardian',
+        trainingHandlers
+      )
+    );
+    expect(screen.getByRole('textbox', { name: 'Training notes' })).toHaveValue('Passport later');
+    expect(screen.queryByRole('checkbox', { name: 'Mail call adoption' })).not.toBeInTheDocument();
   });
 
   test('shows read-only waiver and see doc checkboxes for guardians only', () => {

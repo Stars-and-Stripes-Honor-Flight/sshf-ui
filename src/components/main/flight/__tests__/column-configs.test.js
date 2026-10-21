@@ -116,9 +116,38 @@ describe('column-configs', () => {
       expect(config).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.CALLER]);
     });
 
-    test('returns training config for training preset', () => {
-      const config = getColumnConfig(ACTIVITY_PRESETS.TRAINING);
+    test('returns the stored training columns when guardians focus is on', () => {
+      const config = getColumnConfig(ACTIVITY_PRESETS.TRAINING, true);
       expect(config).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.TRAINING]);
+      expect(config.find((column) => column.id === 'training').label).toBe('Training');
+      expect(config.find((column) => column.id === 'training_notes').label).toBe('Training notes');
+    });
+
+    test('uses mail call headers on the training preset when guardians focus is off', () => {
+      const config = getColumnConfig(ACTIVITY_PRESETS.TRAINING, false);
+      expect(config.map((column) => column.id)).toEqual(
+        COLUMN_CONFIGS[ACTIVITY_PRESETS.TRAINING].map((column) => column.id)
+      );
+      expect(config.find((column) => column.id === 'training')).toEqual(
+        expect.objectContaining({ label: 'Mail Rcvd / Training', width: 160 })
+      );
+      expect(config.find((column) => column.id === 'training_notes')).toEqual(
+        expect.objectContaining({ label: 'Mail Adopt / Training Notes', width: 260, minWidth: 200 })
+      );
+      expect(config.find((column) => column.id === 'name_middle').label).toBe('Middle');
+      expect(config.find((column) => column.id === 'flight_waiver').label).toBe('Waivers');
+    });
+
+    test('defaults training headers to the veteran-visible mail call labels', () => {
+      const config = getColumnConfig(ACTIVITY_PRESETS.TRAINING);
+      expect(config.find((column) => column.id === 'training').label).toBe('Mail Rcvd / Training');
+      expect(config.find((column) => column.id === 'training_notes').label).toBe('Mail Adopt / Training Notes');
+    });
+
+    test('does not relabel non-training presets when guardians focus is passed', () => {
+      expect(getColumnConfig(ACTIVITY_PRESETS.OPS, false)).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS]);
+      expect(getColumnConfig(ACTIVITY_PRESETS.OPS, true)).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS]);
+      expect(getColumnConfig('invalid', false)).toEqual(COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS]);
     });
 
     test('returns ops config as fallback for invalid preset', () => {
