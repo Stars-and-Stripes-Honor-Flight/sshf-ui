@@ -155,6 +155,49 @@ export function renderFltGrpMedExpCell(person, personType) {
 }
 
 /**
+ * Veteran med_limits is built as "[" + level + "/" + alt_level + "] " + limitations.
+ * Return the bracket when at least one side has a level; otherwise "".
+ * @param {string|undefined|null} medLimits
+ * @returns {string}
+ */
+function veteranMedLevelBracket(medLimits) {
+  if (typeof medLimits !== 'string') return '';
+
+  const match = medLimits.trim().match(/^\[([^\]]*)\]/);
+  if (!match) return '';
+
+  const inner = match[1];
+  const slashIndex = inner.indexOf('/');
+  if (slashIndex === -1) return '';
+
+  const level = inner.slice(0, slashIndex).trim();
+  const alt = inner.slice(slashIndex + 1).trim();
+  if (!level && !alt) return '';
+
+  return `[${level}/${alt}]`;
+}
+
+/**
+ * Ops Med Lvl column (#264). Veterans show the bracketed level from med_limits.
+ * Guardians show medical_level (A–D). Empty values show an em dash.
+ */
+export function renderMedLvlCell(person, personType) {
+  if (!person) return null;
+
+  if (personType === 'Veteran') {
+    const level = veteranMedLevelBracket(person.med_limits);
+    return <Typography variant="body2">{level || '—'}</Typography>;
+  }
+
+  if (personType === 'Guardian') {
+    const letter = typeof person.medical_level === 'string' ? person.medical_level.trim() : '';
+    return <Typography variant="body2">{letter || '—'}</Typography>;
+  }
+
+  return <Typography variant="body2">—</Typography>;
+}
+
+/**
  * Render assigned-to cell (editable for veteran, display with sync for guardian)
  */
 export function renderAssignedToCell(person, pair, personType, handlers, localAssignedTo, hasCallMismatch) {
@@ -468,6 +511,8 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return renderGroupCell(person, personType);
     case 'flt_grp_med_exp':
       return renderFltGrpMedExpCell(person, personType);
+    case 'med_lvl':
+      return renderMedLvlCell(person, personType);
     case 'med_exprnc':
       return renderMedExprncCell(person, personType);
     case 'assigned_to':

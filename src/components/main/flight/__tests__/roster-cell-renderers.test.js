@@ -9,7 +9,9 @@ import {
   renderGroupCell,
   renderMedExprncCell,
   renderFltGrpMedExpCell,
+  renderMedLvlCell,
   renderMedicalLevelCell,
+  renderActivityCell,
   renderBirthDateCell,
   renderMiddleNameCell,
   renderMobilePhoneCell,
@@ -169,6 +171,87 @@ describe('renderMedExprncCell', () => {
 
     rerender(renderMedExprncCell({ med_exprnc: ' FALSE ' }, 'Guardian'));
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+});
+
+describe('renderMedLvlCell', () => {
+  test('shows the veteran bracket and drops the limitations text', () => {
+    render(renderMedLvlCell({ med_limits: '[2/3] Uses walker' }, 'Veteran'));
+
+    expect(screen.getByText('[2/3]')).toBeInTheDocument();
+    expect(screen.queryByText(/Uses walker/)).not.toBeInTheDocument();
+  });
+
+  test('trims whitespace around and inside the veteran bracket', () => {
+    const { rerender } = render(
+      renderMedLvlCell({ med_limits: '  [ 2 / 3 ]   Uses walker  ' }, 'Veteran')
+    );
+    expect(screen.getByText('[2/3]')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '[2/ ] walker' }, 'Veteran'));
+    expect(screen.getByText('[2/]')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '[ /3]' }, 'Veteran'));
+    expect(screen.getByText('[/3]')).toBeInTheDocument();
+  });
+
+  test('shows an em dash when the veteran level is blank or missing', () => {
+    const { rerender } = render(renderMedLvlCell({ med_limits: '[ / ]' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '[/]' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '[   /   ] oxygen' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: '   ' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({}, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ med_limits: 'Uses walker' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ medical_level: '2', med_limits: '' }, 'Veteran'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+  });
+
+  test('shows the guardian medical level letter', () => {
+    render(renderMedLvlCell({ medical_level: 'B' }, 'Guardian'));
+
+    expect(screen.getByText('B')).toBeInTheDocument();
+  });
+
+  test('trims the guardian letter and shows an em dash when it is empty', () => {
+    const { rerender } = render(renderMedLvlCell({ medical_level: '  D  ' }, 'Guardian'));
+    expect(screen.getByText('D')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ medical_level: '' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ medical_level: '   ' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({}, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderMedLvlCell({ medical_level: '', med_limits: '[2/3] walker' }, 'Guardian'));
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText('[2/3]')).not.toBeInTheDocument();
+  });
+
+  test('routes med_lvl through renderActivityCell', () => {
+    render(
+      renderActivityCell('med_lvl', { med_limits: '[1/2] cane' }, null, 'Veteran', {}, null, false)
+    );
+
+    expect(screen.getByText('[1/2]')).toBeInTheDocument();
   });
 });
 

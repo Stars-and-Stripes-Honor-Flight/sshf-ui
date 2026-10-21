@@ -261,6 +261,70 @@ describe('FlightDetailsGrid - ops flight group column (issue #165)', () => {
   });
 });
 
+describe('FlightDetailsGrid - Med Lvl column (issue #264)', () => {
+  test('shows veteran bracket and guardian letter immediately left of Status', () => {
+    const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
+    pair.people[0].med_limits = '[2/3] Uses walker';
+    pair.people[0].group = 'Alpha';
+    pair.people[1].medical_level = 'B';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        activityPreset={ACTIVITY_PRESETS.OPS}
+      />
+    );
+
+    const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent.trim());
+    expect(headers.filter(Boolean)).toEqual([
+      'Veteran/Guardian',
+      'Seat',
+      'Bus',
+      'Flt Grp / Med Exp',
+      'Med Lvl',
+      'Status',
+    ]);
+
+    const medLvlIndex = headers.indexOf('Med Lvl');
+    const veteranRow = screen.getByRole('link', { name: 'Daniel Schneider' }).closest('tr');
+    const veteranCells = within(veteranRow).getAllByRole('cell');
+    expect(veteranCells[medLvlIndex]).toHaveTextContent('[2/3]');
+    expect(veteranCells[medLvlIndex]).not.toHaveTextContent('Uses walker');
+
+    const guardianRow = screen.getByRole('link', { name: 'Tracy Stouffer' }).closest('tr');
+    const guardianCells = within(guardianRow).getAllByRole('cell');
+    expect(guardianCells[medLvlIndex]).toHaveTextContent('B');
+  });
+
+  test('keeps the full med limits text in the row expansion', async () => {
+    const user = userEvent.setup();
+    const pair = buildPair();
+    pair.people[0].med_limits = '[2/3] Uses walker';
+
+    render(
+      <FlightDetailsGrid
+        pairs={[pair]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        activityPreset={ACTIVITY_PRESETS.OPS}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'expand row' }));
+    expect(screen.getByText('[2/3] Uses walker')).toBeInTheDocument();
+  });
+});
+
 describe('FlightDetailsGrid - issue #141: OK status with validation issues', () => {
   test('never shows OK status chip when pair has bus mismatch', () => {
     const pair = buildPair({ veteranAssignedTo: 'Karyn', guardianAssignedTo: 'Karyn' });
