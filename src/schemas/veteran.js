@@ -118,7 +118,7 @@ export const veteranSchema = z.object({
  * regex/email checks, which only skip `undefined`, not `''`.
  */
 export const veteranCreateSchema = veteranSchema
-  .pick({ name: true, address: true, vet_type: true })
+  .pick({ name: true, address: true, birth_date: true, gender: true, vet_type: true })
   .extend({
     service: veteranSchema.shape.service.pick({ branch: true }),
     address: veteranSchema.shape.address.extend({

@@ -18,7 +18,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
@@ -27,6 +27,7 @@ import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { veteranCreateSchema } from '@/schemas/veteran';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
+import { formatBirthDateLabelWithAge } from '@/lib/birth-date-age';
 
 const defaultValues = {
   name: {
@@ -49,6 +50,8 @@ const defaultValues = {
   service: {
     branch: ''
   },
+  birth_date: '',
+  gender: 'M',
   vet_type: ''
 };
 
@@ -60,6 +63,9 @@ export function VeteranCreateForm() {
     handleSubmit,
     formState: { errors },
   } = useForm({ defaultValues, resolver: zodResolver(veteranCreateSchema) });
+
+  const birthDate = useWatch({ control, name: 'birth_date' });
+  const birthDateLabel = formatBirthDateLabelWithAge('Birth Date', birthDate);
 
   const onSubmit = React.useCallback(
     async (data) => {
@@ -118,6 +124,35 @@ export function VeteranCreateForm() {
                         <InputLabel required>Last Name</InputLabel>
                         <OutlinedInput {...field} />
                         {errors.name?.last ? <FormHelperText>{errors.name.last.message}</FormHelperText> : null}
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+                <Grid xs={12} md={6}>
+                  <Controller
+                    control={control}
+                    name="birth_date"
+                    render={({ field }) => (
+                      <FormControl error={Boolean(errors.birth_date)} fullWidth>
+                        <InputLabel required>{birthDateLabel}</InputLabel>
+                        <OutlinedInput {...field} type="date" />
+                        {errors.birth_date ? <FormHelperText>{errors.birth_date.message}</FormHelperText> : null}
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+                <Grid xs={12} md={6}>
+                  <Controller
+                    control={control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormControl error={Boolean(errors.gender)} fullWidth>
+                        <InputLabel required>Gender</InputLabel>
+                        <Select {...field}>
+                          <Option value="M">Male</Option>
+                          <Option value="F">Female</Option>
+                        </Select>
+                        {errors.gender ? <FormHelperText>{errors.gender.message}</FormHelperText> : null}
                       </FormControl>
                     )}
                   />

@@ -41,6 +41,7 @@ describe('VeteranCreateForm', () => {
   async function fillValidForm(user, container) {
     await user.type(container.querySelector('input[name="name.first"]'), 'John');
     await user.type(container.querySelector('input[name="name.last"]'), 'Smith');
+    await user.type(container.querySelector('input[name="birth_date"]'), '1950-01-01');
 
     await selectMuiOption(user, container, 'service.branch', 'Army');
     await selectMuiOption(user, container, 'vet_type', 'Vietnam');
@@ -74,11 +75,39 @@ describe('VeteranCreateForm', () => {
     ]);
   });
 
+  test('shows birth date label without age initially', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+
+    render(<VeteranCreateForm />);
+
+    expect(screen.getByText('Birth Date')).toBeInTheDocument();
+    expect(screen.queryByText(/\(Age:/)).not.toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('shows calculated age in the birth date label when a valid date is entered', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+    const { container } = render(<VeteranCreateForm />);
+    const birthInput = container.querySelector('input[name="birth_date"]');
+    await user.type(birthInput, '1950-01-01');
+
+    expect(screen.getByText('Birth Date (Age: 76)')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
   test('renders basic info, address fields, and the Create button', () => {
     const { container } = render(<VeteranCreateForm />);
 
     expect(container.querySelector('input[name="name.first"]')).toBeInTheDocument();
     expect(container.querySelector('input[name="name.last"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="birth_date"]')).toBeInTheDocument();
+    expect(container.querySelector('[name="gender"]')).toBeInTheDocument();
     expect(container.querySelector('[name="service.branch"]')).toBeInTheDocument();
     expect(container.querySelector('[name="vet_type"]')).toBeInTheDocument();
 
@@ -110,6 +139,8 @@ describe('VeteranCreateForm', () => {
       expect.objectContaining({
         type: 'Veteran',
         name: expect.objectContaining({ first: 'John', last: 'Smith' }),
+        birth_date: '1950-01-01',
+        gender: 'M',
         address: expect.objectContaining({
           street: '123 Main St',
           city: 'Madison',
@@ -127,12 +158,38 @@ describe('VeteranCreateForm', () => {
     });
   });
 
+  test('blocks submit when birth date is empty and shows a validation error', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VeteranCreateForm />);
+
+    await user.type(container.querySelector('input[name="name.first"]'), 'John');
+    await user.type(container.querySelector('input[name="name.last"]'), 'Smith');
+    await selectMuiOption(user, container, 'service.branch', 'Army');
+    await selectMuiOption(user, container, 'vet_type', 'Vietnam');
+    await user.type(container.querySelector('input[name="address.street"]'), '123 Main St');
+    await user.type(container.querySelector('input[name="address.city"]'), 'Madison');
+    await user.type(container.querySelector('input[name="address.county"]'), 'Dane');
+    await user.type(container.querySelector('input[name="address.state"]'), 'WI');
+    await user.type(container.querySelector('input[name="address.zip"]'), '53703');
+    await user.type(container.querySelector('input[name="address.phone_day"]'), '608-555-1234');
+
+    await user.click(screen.getByRole('button', { name: /create veteran/i }));
+
+    await waitFor(() => {
+      const errorMessage = container.querySelector('.MuiFormHelperText-root.Mui-error');
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    expect(mockCreateVeteran).not.toHaveBeenCalled();
+  });
+
   test('blocks submit when first name is empty and shows a validation error', async () => {
     const user = userEvent.setup();
     const { container } = render(<VeteranCreateForm />);
 
     // Fill everything except first name
     await user.type(container.querySelector('input[name="name.last"]'), 'Smith');
+    await user.type(container.querySelector('input[name="birth_date"]'), '1950-01-01');
     await selectMuiOption(user, container, 'service.branch', 'Army');
     await selectMuiOption(user, container, 'vet_type', 'Vietnam');
     await user.type(container.querySelector('input[name="address.street"]'), '123 Main St');
