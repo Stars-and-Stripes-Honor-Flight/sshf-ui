@@ -24,6 +24,8 @@ const validCreate = {
     zip: '53703',
     phone_day: '608-555-1234',
   },
+  birth_date: '1950-01-01',
+  gender: 'M',
   service: { branch: 'Army' },
   vet_type: 'Cold War',
 };
@@ -57,6 +59,12 @@ describe('veteran conflict values', () => {
   test('veteran create schema rejects an unknown conflict', () => {
     const parsed = veteranCreateSchema.safeParse({ ...validCreate, vet_type: 'Desert Storm' });
     expect(parsed.success).toBe(false);
+  });
+
+  test('veteran create schema requires birth_date and gender', () => {
+    const { birth_date: _birthDate, gender: _gender, ...withoutPersonal } = validCreate;
+    expect(veteranCreateSchema.safeParse(withoutPersonal).success).toBe(false);
+    expect(veteranCreateSchema.safeParse({ ...validCreate, birth_date: '' }).success).toBe(false);
   });
 
   test.each(['Cold War', 'Gulf War'])('review form schema accepts %s', (vetType) => {

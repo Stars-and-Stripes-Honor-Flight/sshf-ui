@@ -45,6 +45,32 @@ describe('GuardianCreateForm', () => {
     await user.type(container.querySelector('input[name="address.phone_day"]'), '608-555-1234');
   }
 
+  test('shows birth date label without age initially', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+
+    render(<GuardianCreateForm />);
+
+    expect(screen.getByText('Birth Date')).toBeInTheDocument();
+    expect(screen.queryByText(/\(Age:/)).not.toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('shows calculated age in the birth date label when a valid date is entered', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+    const { container } = render(<GuardianCreateForm />);
+    const birthInput = container.querySelector('input[name="birth_date"]');
+    await user.type(birthInput, '1950-01-01');
+
+    expect(screen.getByText('Birth Date (Age: 76)')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
   test('renders basic info, address fields, and the Create button', () => {
     const { container } = render(<GuardianCreateForm />);
 

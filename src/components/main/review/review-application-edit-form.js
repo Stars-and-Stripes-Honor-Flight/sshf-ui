@@ -21,7 +21,7 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { toast } from '@/components/core/toaster';
 import { PERMISSIONS } from '@/lib/auth/permissions';
@@ -37,6 +37,7 @@ import {
   applicationToFormDefaults,
   reviewApplicationFormSchema,
 } from '@/schemas/review-application';
+import { formatBirthDateLabelWithAge } from '@/lib/birth-date-age';
 
 function formatTypeLabel(type) {
   return type === REVIEW_APPLICATION_TYPES.GUARDIAN ? 'Guardian application' : 'Veteran application';
@@ -63,6 +64,9 @@ export function ReviewApplicationEditForm({ application: initialApplication, onA
     resolver: zodResolver(reviewApplicationFormSchema),
     defaultValues: applicationToFormDefaults(initialApplication),
   });
+
+  const birthDate = useWatch({ control, name: 'birth_date' });
+  const birthDateLabel = formatBirthDateLabelWithAge('Birth date (YYYY-MM-DD)', birthDate);
 
   React.useEffect(() => {
     setApplication(initialApplication);
@@ -260,8 +264,8 @@ export function ReviewApplicationEditForm({ application: initialApplication, onA
                     name="birth_date"
                     render={({ field }) => (
                       <FormControl fullWidth>
-                        <InputLabel>Birth date (YYYY-MM-DD)</InputLabel>
-                        <OutlinedInput {...field} label="Birth date (YYYY-MM-DD)" />
+                        <InputLabel>{birthDateLabel}</InputLabel>
+                        <OutlinedInput {...field} label={birthDateLabel} />
                       </FormControl>
                     )}
                   />

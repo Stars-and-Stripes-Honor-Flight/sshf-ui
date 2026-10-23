@@ -139,6 +139,32 @@ describe('PersonalInformationCard', () => {
     expect(screen.queryByText('Application Shirt Size')).not.toBeInTheDocument();
   });
 
+  test('shows birth date label without age when birth date is empty', () => {
+    render(
+      <TestWrapper defaultValues={{ birth_date: '' }}>
+        <PersonalInformationCard errors={{}} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Birth Date')).toBeInTheDocument();
+    expect(screen.queryByText(/\(Age:/)).not.toBeInTheDocument();
+  });
+
+  test('shows calculated age in the birth date label when a valid date is set', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+
+    render(
+      <TestWrapper defaultValues={{ birth_date: '1940-01-01' }}>
+        <PersonalInformationCard errors={{}} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Birth Date (Age: 86)')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
   test('displays gender options correctly', () => {
     render(
       <TestWrapper>

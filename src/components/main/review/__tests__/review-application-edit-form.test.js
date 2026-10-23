@@ -149,6 +149,40 @@ describe('ReviewApplicationEditForm', () => {
     expect(toast.success).toHaveBeenCalledWith('Application accepted into logistics');
   });
 
+  test('shows calculated age in the birth date label for a valid ISO date', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+
+    const { container } = render(<ReviewApplicationEditForm application={baseApplication} />);
+    const birthLabel = container
+      .querySelector('input[name="birth_date"]')
+      .closest('.MuiFormControl-root')
+      .querySelector('label');
+
+    expect(birthLabel).toHaveTextContent('Birth date (YYYY-MM-DD) (Age: 86)');
+
+    jest.useRealTimers();
+  });
+
+  test('omits age from the birth date label when the value is not a valid YYYY-MM-DD date', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 23));
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+    const { container } = render(
+      <ReviewApplicationEditForm application={{ ...baseApplication, birth_date: '' }} />
+    );
+
+    const birthInput = container.querySelector('input[name="birth_date"]');
+    await user.type(birthInput, '1940-13');
+
+    const birthLabel = birthInput.closest('.MuiFormControl-root').querySelector('label');
+    expect(birthLabel).toHaveTextContent('Birth date (YYYY-MM-DD)');
+    expect(birthLabel.textContent).not.toMatch(/\(Age:/);
+
+    jest.useRealTimers();
+  });
+
   test('hides accept and disables review actions without those permissions', () => {
     mockCan.mockImplementation(() => false);
 
