@@ -53,6 +53,28 @@ function renderDocument(rows) {
 }
 
 describe('GuardianListDocument', () => {
+  test('keeps a body row together so notes cannot split onto the next page', () => {
+    renderDocument([
+      {
+        id: 'g1',
+        name: 'Ng, Nina',
+        middle: '',
+        mobile: '',
+        dob: '—',
+        training: 'Main',
+        trainingComplete: false,
+        trainingNotes: longNotes,
+        waiver: false,
+        seeDoc: false,
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+    ]);
+
+    const rows = [...document.querySelectorAll('[data-pdf="View"]')].filter((node) => propsFor(node).wrap === false);
+    expect(rows).toHaveLength(1);
+  });
+
   test('uses a landscape US Letter page', () => {
     renderDocument([]);
 

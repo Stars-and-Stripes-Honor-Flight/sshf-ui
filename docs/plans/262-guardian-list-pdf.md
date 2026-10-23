@@ -240,7 +240,7 @@ Flight header date: `flight.flight_date` through `formatFlightDateLong`, matchin
   - Line 1: `{displayFlightName} · {flightDateLong}` (for example `May 2026 · May 01, 2026`).
   - Line 2: `Guardians M–T` using an en dash. When From equals To, still print both letters (`Guardians M–M`).
   - Column header row, bold, about 8 pt, labels from `getGuardianListColumns()`, in that order.
-- Body rows follow, about 8 pt, top-aligned so wrapped notes grow the row. Do not set a fixed row height. Default `wrap` lets a row move to the next page. A single note longer than one page is a residual risk; do not truncate it.
+- Body rows follow, about 8 pt, top-aligned so wrapped notes grow the row. Do not set a fixed row height. Each row sets `wrap={false}` so a row that does not fit moves to the next page intact. The two-page sample showed the default (splitting a row) leaving Moss’s notes on the next page without the name. A single note longer than one page is a residual risk; do not truncate it.
 - Column order and starting widths (points). Landscape letter content width is 736 pt after 28 pt side margins. Training notes is the only flex column and must stay the widest text column. Checkbox headers may wrap to two lines (`Mail` / `Rcvd`) so they can stay narrow.
 
   | Column         |               Width |

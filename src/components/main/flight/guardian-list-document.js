@@ -215,7 +215,7 @@ export function GuardianListDocument({ rows, flightName, flightDate, from, to, p
           </View>
         </View>
         {rows.map((row) => (
-          <View key={row.id} style={styles.row}>
+          <View key={row.id} wrap={false} style={styles.row}>
             {columns.map((column) => (
               <Cell key={column.id} column={column} row={row} />
             ))}
