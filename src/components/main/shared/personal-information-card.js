@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useWatch } from 'react-hook-form';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid2';
@@ -9,6 +10,7 @@ import { FormSectionHeader } from './form-section-header';
 import { FormTextField } from './form-text-field';
 import { FormSelectField } from './form-select-field';
 import { NameFields } from './name-fields';
+import { formatBirthDateLabelWithAge } from '@/lib/birth-date-age';
 
 export function PersonalInformationCard({ 
   control, 
@@ -17,6 +19,9 @@ export function PersonalInformationCard({
   shirtSizeOptions, // Optional: renders the application shirt size field when provided
   disabled = false
 }) {
+  const birthDate = useWatch({ control, name: 'birth_date' });
+  const birthDateLabel = formatBirthDateLabelWithAge('Birth Date', birthDate);
+
   return (
     <Card
       elevation={2}
@@ -36,7 +41,7 @@ export function PersonalInformationCard({
           <FormTextField
             control={control}
             name="birth_date"
-            label="Birth Date"
+            label={birthDateLabel}
             error={errors.birth_date}
             required
             type="date"

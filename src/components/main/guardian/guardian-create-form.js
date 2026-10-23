@@ -18,7 +18,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
@@ -27,6 +27,7 @@ import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { guardianCreateSchema } from '@/schemas/guardian';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
+import { formatBirthDateLabelWithAge } from '@/lib/birth-date-age';
 
 const defaultValues = {
   name: {
@@ -58,6 +59,9 @@ export function GuardianCreateForm() {
     handleSubmit,
     formState: { errors },
   } = useForm({ defaultValues, resolver: zodResolver(guardianCreateSchema) });
+
+  const birthDate = useWatch({ control, name: 'birth_date' });
+  const birthDateLabel = formatBirthDateLabelWithAge('Birth Date', birthDate);
 
   const onSubmit = React.useCallback(
     async (data) => {
@@ -126,7 +130,7 @@ export function GuardianCreateForm() {
                     name="birth_date"
                     render={({ field }) => (
                       <FormControl error={Boolean(errors.birth_date)} fullWidth>
-                        <InputLabel required>Birth Date</InputLabel>
+                        <InputLabel required>{birthDateLabel}</InputLabel>
                         <OutlinedInput {...field} type="date" />
                         {errors.birth_date ? <FormHelperText>{errors.birth_date.message}</FormHelperText> : null}
                       </FormControl>
