@@ -66,6 +66,7 @@ import {
   pairHasIssues,
   flightHasBothPlanes,
 } from '@/components/main/flight/roster-helpers';
+import { GuardianListPrintButton } from '@/components/main/flight/guardian-list-print-dialog';
 import { buildPersonUpdatePayload } from '@/components/main/flight/person-update';
 import {
   loadFlightRosterControls,
@@ -698,6 +699,7 @@ function FlightDetailsPage() {
                     Participants ({pairs.length})
                   </Typography>
                   <Stack direction="row" spacing={1}>
+                    <GuardianListPrintButton pairs={pairs} flightName={flight.name} flightDate={flight.flight_date} />
                     {canWriteRecords && pairs.some(p => p.busMismatch) && (
                       <Button
                         variant="outlined"

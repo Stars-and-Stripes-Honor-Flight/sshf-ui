@@ -1139,3 +1139,57 @@ describe('Add Veterans from Waitlist on completed flights (issue #257)', () => {
     expect(screen.queryByRole('button', { name: 'Add Veterans from Waitlist' })).not.toBeInTheDocument();
   });
 });
+
+describe('Print guardian list (issue #262)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [paired],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 1,
+        guardians: 1,
+        veteransConfirmed: 1,
+        guardiansConfirmed: 1,
+        remaining: 10,
+      },
+    });
+  });
+
+  test('shows Print guardian list to a records:read user without exports:read', async () => {
+    mockCan.mockImplementation((permission) => permission === 'records:read');
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('button', { name: 'Print guardian list' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Export flight data' })).not.toBeInTheDocument();
+  });
+
+  test('keeps Print guardian list enabled on a completed flight', async () => {
+    mockCan.mockImplementation(() => true);
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('button', { name: 'Print guardian list' })).toBeEnabled();
+  });
+
+  test('opens the print dialog from the participants actions', async () => {
+    const user = userEvent.setup();
+    mockCan.mockImplementation(() => true);
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+
+    render(<Page />);
+
+    await user.click(await screen.findByRole('button', { name: 'Print guardian list' }));
+    expect(await screen.findByRole('dialog', { name: 'Print guardian list' })).toBeInTheDocument();
+  });
+});
