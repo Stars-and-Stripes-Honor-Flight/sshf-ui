@@ -21,9 +21,11 @@ import {
   ArrowUp
 } from '@phosphor-icons/react';
 
+import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
 import { PERMISSIONS } from '@/lib/auth/permissions';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useUser } from '@/hooks/use-user';
 import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 import { getFlights, formatFlightNameForDisplay } from '@/lib/flights';
@@ -36,6 +38,7 @@ import { EssentialInfoSection } from './essential-info-section';
 import { ContactInfoSection } from './contact-info-section';
 import { AdditionalDetailsSection } from './additional-details-section';
 import { GuardianPairingDialog } from './guardian-pairing-dialog';
+import { buildCopiedGuardianPayload } from './copy-guardian';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
 
 const getStatusColor = (status) => {
@@ -64,9 +67,12 @@ const getMedicalLevelColor = (level) => {
 export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
   const { can } = usePermissions();
   const canWriteRecords = can(PERMISSIONS.RECORDS_WRITE);
+  const { user } = useUser();
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
+  const [copying, setCopying] = React.useState(false);
   const [guardianRev, setGuardianRev] = React.useState(guardian._rev || '');
+  const [savedGuardian, setSavedGuardian] = React.useState(guardian);
   
   // History dialog state
   const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
@@ -141,6 +147,10 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
       setGuardianRev(guardian._rev);
     }
   }, [guardian._rev]);
+
+  React.useEffect(() => {
+    setSavedGuardian(guardian);
+  }, [guardian]);
 
 
   // Default values based on API structure
@@ -317,6 +327,13 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         
         const updatedGuardian = await api.updateGuardian(data._id, payload);
         toast.success('Guardian updated successfully');
+
+        if (updatedGuardian && typeof updatedGuardian === 'object') {
+          setSavedGuardian(updatedGuardian);
+          if (updatedGuardian._rev) {
+            setGuardianRev(updatedGuardian._rev);
+          }
+        }
         
         // Reset form state to mark as clean - this clears the dirty bit
         reset(updatedGuardian);
@@ -331,6 +348,26 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     },
     [router, guardianRev, handleGoBack]
   );
+
+  const handleCopy = React.useCallback(async () => {
+    if (!canWriteRecords || isDirty || saving || copying) {
+      return;
+    }
+
+    try {
+      setCopying(true);
+      const copiedBy = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+      const payload = buildCopiedGuardianPayload(savedGuardian, { copiedBy });
+      const created = await api.createGuardian(payload);
+      toast.success('Guardian copied');
+      router.push(created?._id ? paths.main.guardians.details(created._id) : paths.main.guardians.list);
+    } catch (err) {
+      logger.error(err);
+      toast.error('Failed to copy guardian: ' + (err.message || 'Unknown error'));
+    } finally {
+      setCopying(false);
+    }
+  }, [canWriteRecords, copying, isDirty, router, savedGuardian, saving, user]);
 
   const watchStatus = watch('flight.status');
   const watchTraining = watch('flight.training');
@@ -607,6 +644,28 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
           gap: 2
         }}
       >
+        {canWriteRecords && (
+          <Box sx={{ mr: showBackToTop ? 0 : 'auto' }}>
+            <Tooltip
+              title={isDirty ? 'Save or cancel your changes before copying this guardian.' : ''}
+              placement="top"
+            >
+              <span>
+                <Button
+                  variant="outlined"
+                  onClick={handleCopy}
+                  disabled={isDirty || saving || copying}
+                  sx={{
+                    borderRadius: 2,
+                    fontWeight: 'medium'
+                  }}
+                >
+                  {copying ? 'Copying...' : 'Copy to New Guardian'}
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
+        )}
         {showBackToTop && (
           <Box
             component="button"

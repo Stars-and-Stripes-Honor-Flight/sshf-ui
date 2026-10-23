@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/core/toaster';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
+import { paths } from '@/paths';
 
 // Mock dependencies
 jest.mock('@/lib/api');
@@ -28,6 +29,16 @@ jest.mock('@/hooks/use-permissions', () => ({
     can: (permission) => mockCan(permission),
     hasAccess: true,
     permissions: [],
+  }),
+}));
+
+jest.mock('@/hooks/use-user', () => ({
+  useUser: () => ({
+    user: {
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      email: 'ada@example.com',
+    },
   }),
 }));
 
@@ -594,5 +605,253 @@ describe('GuardianEditForm - Flown/Deceased lock', () => {
 
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /can push wheelchair/i })).toBeDisabled();
+  });
+});
+
+describe('GuardianEditForm - Copy to New Guardian', () => {
+  jest.setTimeout(15000);
+
+  const mockPush = jest.fn();
+  const mockCreateGuardian = jest.fn();
+
+  const copyGuardian = {
+    _id: 'test-guardian-123',
+    _rev: '1-abc123def456',
+    type: 'Guardian',
+    name: { first: 'Jane', middle: 'B', last: 'Smith', nickname: 'Janey' },
+    address: {
+      street: '456 Oak Ave',
+      city: 'Springfield',
+      state: 'IL',
+      zip: '62701',
+      county: 'Sangamon',
+      phone_day: '555-123-4567',
+      phone_eve: '555-987-6543',
+      phone_mbl: '555-456-7890',
+      email: 'jane.smith@example.com',
+    },
+    birth_date: '1985-03-15',
+    gender: 'F',
+    weight: '140',
+    occupation: 'Teacher',
+    app_date: '2024-01-01',
+    notes: { service: 'N', other: 'No military service' },
+    medical: {
+      level: 'A',
+      food_restriction: 'None',
+      can_push: true,
+      can_lift: true,
+      limitations: 'None',
+      experience: 'First aid certified',
+      release: true,
+      form: true,
+    },
+    flight: {
+      status: 'Active',
+      id: 'FL123',
+      group: 'Group A',
+      bus: 'Alpha1',
+      seat: '12A',
+      waiver: true,
+      vaccinated: true,
+      training: 'Main',
+      training_complete: true,
+      training_see_doc: false,
+      training_notes: 'Completed main training',
+      status_note: 'Ready for flight',
+      mediaWaiver: true,
+      infection_test: true,
+      nofly: false,
+      booksOrdered: 2,
+      confirmed_date: '2024-02-01',
+      confirmed_by: 'John Admin',
+      paid: true,
+      exempt: false,
+      history: [{ id: '2024-01-01T00:00:00Z', change: 'Initial application' }],
+    },
+    call: {
+      assigned_to: 'Call Center Rep',
+      notes: 'Initial contact made',
+      fm_number: '12345',
+      email_sent: true,
+      mail_sent: true,
+      how_heard_about: 'family or friend',
+      history: [{ id: '2024-01-15T00:00:00Z', change: 'Welcome email sent' }],
+    },
+    emerg_contact: {
+      name: 'Bob Smith',
+      relation: 'Spouse',
+      address: { phone: '555-999-8888', email: 'bob.smith@example.com' },
+    },
+    veteran: {
+      pref_notes: 'Prefers to work with WWII veterans',
+      pairings: [{ id: 'vet-456', name: 'John Veteran' }],
+      history: [{ id: '2024-01-20T00:00:00Z', change: 'Paired with John Veteran' }],
+    },
+    shirt: { size: 'M' },
+    apparel: {
+      item: 'Both',
+      jacket_size: 'M',
+      shirt_size: 'M',
+      delivery: 'Training',
+      date: '2024-01-25',
+      by: 'Admin User',
+      notes: 'Apparel sent to training',
+    },
+    accommodations: {
+      hotel_name: 'Springfield Hotel',
+      room_type: 'Single',
+      arrival_date: '2024-02-10',
+      departure_date: '2024-02-12',
+      arrival_time: '14:00',
+      arrival_flight: 'AA123',
+      attend_banquette: true,
+      banquette_guest: 'Bob Smith',
+      departure_time: '16:00',
+      departure_flight: 'AA456',
+      notes: 'Special dietary requirements',
+    },
+    metadata: {
+      created_at: '2024-01-01T10:00:00Z',
+      created_by: 'admin@example.com',
+      updated_at: '2024-01-15T14:30:00Z',
+      updated_by: 'admin@example.com',
+    },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCan.mockImplementation(() => true);
+    sessionStorage.clear();
+    useRouter.mockReturnValue({ push: mockPush, back: jest.fn() });
+    useNavigationBack.mockReturnValue(jest.fn());
+    Object.defineProperty(window, 'history', {
+      value: { length: 2 },
+      writable: true,
+    });
+    api.updateGuardian = jest.fn().mockResolvedValue({
+      ...copyGuardian,
+      _rev: '2-xyz789abc123',
+    });
+    api.getVeteran = jest.fn().mockResolvedValue({
+      _id: 'vet-123',
+      name: { first: 'John', last: 'Veteran' },
+    });
+    api.searchVeterans = jest.fn().mockResolvedValue([]);
+    mockCreateGuardian.mockResolvedValue({ _id: 'copied-guardian-9', _rev: '1-new' });
+    api.createGuardian = mockCreateGuardian;
+  });
+
+  test('hides Copy to New Guardian without records:write', () => {
+    mockCan.mockImplementation((permission) => permission !== 'records:write');
+    render(<GuardianEditForm guardian={copyGuardian} />);
+
+    expect(screen.queryByRole('button', { name: /copy to new guardian/i })).not.toBeInTheDocument();
+  });
+
+  test('disables Copy to New Guardian while the form has unsaved changes', async () => {
+    const user = userEvent.setup();
+    render(<GuardianEditForm guardian={copyGuardian} />);
+
+    const copyButton = screen.getByRole('button', { name: /copy to new guardian/i });
+    expect(copyButton).toBeEnabled();
+
+    const firstName = screen.getByDisplayValue('Jane');
+    await user.clear(firstName);
+    await user.type(firstName, 'Janet');
+
+    expect(copyButton).toBeDisabled();
+    await user.hover(copyButton.parentElement);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Save or cancel your changes before copying this guardian.'
+    );
+    expect(mockCreateGuardian).not.toHaveBeenCalled();
+  });
+
+  test('enables Copy to New Guardian for a Flown guardian and does not change the source', async () => {
+    const user = userEvent.setup();
+    const flown = {
+      ...copyGuardian,
+      flight: { ...copyGuardian.flight, status: 'Flown' },
+    };
+
+    render(<GuardianEditForm guardian={flown} />);
+
+    const copyButton = screen.getByRole('button', { name: /copy to new guardian/i });
+    expect(copyButton).toBeEnabled();
+    expect(copyButton).toHaveClass('MuiButton-outlined');
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
+    expect(
+      copyButton.compareDocumentPosition(screen.getByRole('button', { name: /^cancel$/i })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    await user.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockCreateGuardian).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = mockCreateGuardian.mock.calls[0][0];
+    expect(payload.flight.status).toBe('Copied');
+    expect(payload.flight.history).toEqual([
+      expect.objectContaining({
+        id: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/),
+        change: 'copied guardian from doc id: test-guardian-123 rev: 1-abc123def456 by: Ada Lovelace',
+      }),
+    ]);
+    expect(payload.name.first).toBe('Jane');
+    expect(payload).not.toHaveProperty('_id');
+    expect(payload).not.toHaveProperty('_rev');
+    expect(payload).not.toHaveProperty('metadata');
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+    expect(flown.flight.status).toBe('Flown');
+    expect(flown._id).toBe('test-guardian-123');
+
+    expect(toast.success).toHaveBeenCalledWith('Guardian copied');
+    expect(mockPush).toHaveBeenCalledWith(paths.main.guardians.details('copied-guardian-9'));
+  });
+
+  test('copies the revision returned by the last save', async () => {
+    const user = userEvent.setup();
+    render(<GuardianEditForm guardian={copyGuardian} />);
+
+    const firstName = screen.getByDisplayValue('Jane');
+    await user.clear(firstName);
+    await user.type(firstName, 'Janet');
+    expect(screen.getByRole('button', { name: /copy to new guardian/i })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Guardian updated successfully');
+    });
+
+    const copyButton = screen.getByRole('button', { name: /copy to new guardian/i });
+    expect(copyButton).toBeEnabled();
+    await user.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockCreateGuardian).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockCreateGuardian.mock.calls[0][0].flight.history[0].change).toBe(
+      'copied guardian from doc id: test-guardian-123 rev: 2-xyz789abc123 by: Ada Lovelace'
+    );
+    expect(api.updateGuardian).toHaveBeenCalledTimes(1);
+  });
+
+  test('shows an error toast when create fails and stays on the source guardian', async () => {
+    const user = userEvent.setup();
+    mockCreateGuardian.mockRejectedValue(new Error('Network error occurred'));
+    render(<GuardianEditForm guardian={copyGuardian} />);
+
+    await user.click(screen.getByRole('button', { name: /copy to new guardian/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to copy guardian: Network error occurred');
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /copy to new guardian/i })).toBeEnabled();
   });
 });
