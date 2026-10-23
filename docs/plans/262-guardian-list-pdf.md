@@ -8,7 +8,7 @@ Check-in volunteers need a printed guardian list for the letter range their tabl
 
 Add a **Print guardian list** button on the flight details page. It opens a small dialog with **From** and **To** letter pickers (A–Z, inclusive). The PDF includes every guardian on the flight whose last name falls in that range, sorted by last name then first name. It does not show the paired veteran, and it does not apply the current roster filters.
 
-Generate the PDF in the browser with the `@react-pdf/renderer` 4.0.0 dependency already in `package.json`. Reuse `flightData` from `api.getFlightDetails`. No API, OpenAPI, or schema change.
+Generate the PDF in the browser with `@react-pdf/renderer` 4.1.6. Reuse `flightData` from `api.getFlightDetails`. No API, OpenAPI, or schema change.
 
 The page already loads every field the PDF needs on `FlightDetailPerson` (`docs/openapi.json`). Confirmed present and rendered today:
 
@@ -175,6 +175,8 @@ Worked examples for the letter rule:
 
 Do not route roster DOB through `parseIsoBirthDate`. That helper rejects impossible dates the roster currently still displays as a sliced string.
 
+The PDF row is stricter than the roster cell. `buildGuardianListRows` prints `—` when the birth date is missing, is not a `YYYY-MM-DD` date (`not-a-date`), or is not a real calendar day (`1969-02-29`). A real date still prints `MM/DD/YYYY`. The roster formatter is unchanged.
+
 ### Dialog (`guardian-list-print-dialog.js`)
 
 Copy the structure of the inline **Add Veterans from Waitlist** dialog on the flight details page: MUI `Dialog`, `DialogTitle`, `DialogContent`, `DialogActions`, Cancel, and one contained primary button. Copy the letter controls from the roster **Columns** picker: `TextField` `select`, `size="small"`, `MenuItem` per letter. Twenty-six letters do not need `Autocomplete`. Keep the dialog in its own component so it can be tested without rendering the whole page. `page.js` is already about a thousand lines.
@@ -220,7 +222,7 @@ Source is one `FlightDetailPerson` inside `flightData.pairs[].people` from `GET 
 | Name           | `Name`           | `name_last`, `name_first`                                         | `Last, First`. See helper. Not the middle name.                                                                                                                                                                                            |
 | Middle         | `Middle`         | `name_middle`                                                     | Trimmed. Empty prints blank. The roster editor shows a placeholder, not a dash.                                                                                                                                                            |
 | Mobile         | `Mobile`         | `phone_mbl`                                                       | As stored. No reformatting. Empty prints blank. This is the Training column, not a different phone field.                                                                                                                                  |
-| DOB            | `DOB`            | `birth_date`                                                      | `formatRosterBirthDate`. `1969-05-07` → `05/07/1969`. Blank → `—`.                                                                                                                                                                         |
+| DOB            | `DOB`            | `birth_date`                                                      | Real `YYYY-MM-DD` → `MM/DD/YYYY` (`1969-05-07` → `05/07/1969`). Missing, non-date, or impossible calendar day → `—`. The roster cell still uses `formatRosterBirthDate`, which leaves an unrecognized string as stored.                      |
 | Training       | `Training`       | `training`, `training_complete`                                   | Trimmed type, or `—` when empty (the cell already does `typeLabel \|\| '—'`). A check mark when `training_complete` is true, otherwise nothing beside the type.                                                                  |
 | Training notes | `Training notes` | `flight_training_notes`                                           | Full string, wrapped. Empty prints blank. Do not ellipsize.                                                                                                                                                                                |
 | Waivers        | `Waivers`        | `flight_waiver`                                                   | Check mark when true. Blank when false or missing. Not an em dash (veterans get a dash in the grid; this PDF has no veterans).                                                                                                             |
@@ -259,13 +261,13 @@ Flight header date: `flight.flight_date` through `formatFlightDateLong`, matchin
 
   Fixed columns sum to 570 pt, leaving about 166 pt for notes. At 8 pt Helvetica that is roughly 35 characters per line, and the notes still wrap, so a long note stays fully printed. `Mail Rcvd` and `Mail Adopt` fit on one line at 8 pt bold in those widths; `Checked in` may wrap, which only makes the header row taller. Do not drop body type below 8 pt and do not switch to legal paper. Center Waivers, See Doc, Mail Rcvd, Mail Adopt, and Checked in.
 
-- Check mark: two short black strokes inside a 9×8 pt view. `@react-pdf/renderer` 4.0.0's standard families are only Helvetica, Times, and Courier (ZapfDingbats is not registered, and using it throws). Helvetica has no check glyph. The unit tests count that check view: one when the flag is true, none when it is false.
+- Check mark: two short black strokes inside a 9×8 pt view. The renderer's standard families are only Helvetica, Times, and Courier (ZapfDingbats is not registered, and using it throws). Helvetica has no check glyph. The unit tests count that check view: one when the flag is true, none when it is false.
 - Checked in: a `View` about 11 × 11 pt with a 1 pt border and no text. Same box on every row.
 - Fixed footer: `Printed {printedAtLabel}    Page {pageNumber} of {totalPages}`. Page numbers come from the `Text` `render` prop (`{ pageNumber, totalPages }`). `totalPages` is only reliable inside that callback.
 
 ## Library loading
 
-`@react-pdf/renderer` 4.0.0 is a direct dependency and is unused in `src/`. Its peer dependency is `react ^16.8.0 || ^17.0.0 || ^18.0.0`. This app is React 18.3.1 and Next `^15.5.27`, so the peer matches. Do not upgrade the renderer to a build that requires React 19.
+`@react-pdf/renderer` 4.1.6 is the direct dependency. 4.0.0 bundles react-reconciler 0.23, which reads `React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED`. Next 15 aliases client `react` to `next/dist/compiled/react`, a React 19 canary that renamed that object to `__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE`. Calling `pdf()` in the browser then throws `Cannot read properties of undefined (reading 'hasOwnProperty')`. 4.1.6 keeps React 18 support and, when `React.version` starts with `19`, uses a reconciler that reads the React 19 internals. The app's `package.json` React stays 18.3.1; only the Next client bundle is React 19. Do not pin the renderer back to 4.0.0.
 
 `'use client'` does not skip server pre-rendering. A static import of the renderer from `page.js` or the dialog will execute on the server and can throw on `document` or on yoga-layout’s WASM. This repo has no `next/dynamic` usage today. Do not mount `PDFViewer` or `PDFDownloadLink` into the page.
 
@@ -283,7 +285,8 @@ Bundle: the flight details route must not gain this graph in its initial JS. Unp
 
 | Package                     | Unpacked |
 | --------------------------- | -------: |
-| `@react-pdf/renderer@4.0.0` |   1.2 MB |
+| `@react-pdf/renderer@4.1.6` |  304 KB |
+| `@react-pdf/reconciler`     |  340 KB |
 | `@react-pdf/pdfkit@4.0.0`   |   1.0 MB |
 | `@react-pdf/layout@4.2.0`   |   104 KB |
 | `yoga-layout@3.2.1`         |   219 KB |
@@ -427,7 +430,7 @@ Steve approved this plan on 2026-10-23. Questions 1–10 and 12 are the recommen
 6. **Awkward last names.** **Decided:** the letter algorithm in the helper section. `O'Brien` → O, `de la Cruz` → D, `van Dyke` → V, `smith` → S, `Álvarez` → A, `'Brien` → B. Particles stay. Blank names and letters still outside A–Z (`Ø`, `Ł`) are omitted, with a count in the dialog. Sort with base English `localeCompare`.
 7. **Open or download.** **Decided:** open a new tab from the click, before the PDF is built, and fall back to a download if the window is blocked. Leave the dialog open after success.
 8. **Printed time zone.** **Decided:** the browser's local zone, with a short name (`Oct 23, 2026, 1:45 PM CDT`). Tests pin `America/Chicago`.
-9. **Empty cells.** **Decided:** em dash for a missing DOB or empty training type. Blank for empty middle, mobile, and notes. Blank (no box, no dash) for a false waiver, see-doc, training-complete, mail-received, or mail-adopt flag, including an unpaired guardian. Checked in is the only always-empty square.
+9. **Empty cells.** **Decided:** em dash for a missing or invalid DOB, or an empty training type. Blank for empty middle, mobile, and notes. Blank (no box, no dash) for a false waiver, see-doc, training-complete, mail-received, or mail-adopt flag, including an unpaired guardian. Checked in is the only always-empty square. An invalid DOB is a blank value, a non-date, or a calendar-impossible `YYYY-MM-DD`. The roster cell still shows an unrecognized birth-date string as stored.
 10. **Later pages.** **Decided:** repeat the flight name, date, `Guardians M–T`, and column titles on every page, plus the footer `Page X of Y`.
 11. **Two or more veterans.** **Decided (changed from the recommendation):** still one PDF row per guardian. With exactly one paired veteran, use that veteran's flag. With more than one, check Mail Rcvd only when all of those veterans have `mail_call_received`, and check Mail Adopt independently the same way. Otherwise blank. The earlier recommendation was "check if any."
 12. **Paired veteran's name.** **Decided:** leave it hidden. The two check columns are the only veteran data on the sheet.

@@ -320,6 +320,38 @@ describe('guardian list formatting', () => {
     expect(formatRosterBirthDate('not-a-date')).toBe('not-a-date');
   });
 
+  test('prints an em dash for a missing or invalid PDF birth date', () => {
+    const rows = buildGuardianListRows([
+      {
+        person: { id: 'a', name_last: 'Ada', name_first: 'Ann', birth_date: 'not-a-date' },
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+      {
+        person: { id: 'b', name_last: 'Bee', name_first: 'Bea', birth_date: '1969-02-29' },
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+      {
+        person: { id: 'c', name_last: 'Cee', name_first: 'Cy', birth_date: '' },
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+      {
+        person: { id: 'd', name_last: 'Dee', name_first: 'Di', birth_date: '1969-05-07' },
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+      {
+        person: { id: 'e', name_last: 'Eve', name_first: 'Eli', birth_date: '2000-02-29' },
+        mailCallReceived: false,
+        mailCallAdopt: false,
+      },
+    ]);
+
+    expect(rows.map((row) => row.dob)).toEqual(['—', '—', '—', '05/07/1969', '02/29/2000']);
+  });
+
   test('formats a flight date as MMMM DD, YYYY from the YYYY-MM-DD string', () => {
     expect(formatFlightDateLong('2026-05-01')).toBe('May 01, 2026');
     expect(formatFlightDateLong('')).toBe('—');

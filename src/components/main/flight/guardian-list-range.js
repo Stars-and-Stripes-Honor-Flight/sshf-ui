@@ -1,5 +1,4 @@
 import { ACTIVITY_PRESETS, getColumnConfig } from '@/components/main/flight/column-configs';
-import { formatRosterBirthDate } from '@/components/main/flight/roster-format';
 
 export const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -168,6 +167,29 @@ export function formatPrintedAt(date, timeZone) {
 }
 
 /**
+ * PDF date of birth. A real YYYY-MM-DD prints as MM/DD/YYYY.
+ * Missing, non-dates, and impossible calendar dates print an em dash.
+ * The roster formatter still returns an unrecognized string unchanged.
+ * @param {string|undefined|null} value
+ * @returns {string}
+ */
+function formatGuardianListDob(value) {
+  if (typeof value !== 'string') return '—';
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return '—';
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (utc.getUTCFullYear() !== year || utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) {
+    return '—';
+  }
+
+  return `${match[2]}/${match[3]}/${match[1]}`;
+}
+
+/**
  * @param {Array<{ person: object, mailCallReceived: boolean, mailCallAdopt: boolean }>} guardians
  * @returns {Array}
  */
@@ -179,7 +201,7 @@ export function buildGuardianListRows(guardians) {
       name: formatGuardianListName(person),
       middle: (person?.name_middle ?? '').trim(),
       mobile: typeof person?.phone_mbl === 'string' ? person.phone_mbl : '',
-      dob: formatRosterBirthDate(person?.birth_date),
+      dob: formatGuardianListDob(person?.birth_date),
       training: training || '—',
       trainingComplete: Boolean(person?.training_complete),
       trainingNotes: person?.flight_training_notes ?? '',
