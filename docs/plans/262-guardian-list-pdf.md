@@ -1,6 +1,6 @@
 # Plan: Printable guardian list PDF by last-name letter range (#262)
 
-Planning only. No feature code in this change. Steve reviews this plan before implementation starts.
+Approved plan for issue #262. The decisions at the end of this document are final, including the all-veterans mail-call rule. Implementation follows this plan.
 
 ## Summary
 
@@ -12,19 +12,19 @@ Generate the PDF in the browser with the `@react-pdf/renderer` 4.0.0 dependency 
 
 The page already loads every field the PDF needs on `FlightDetailPerson` (`docs/openapi.json`). Confirmed present and rendered today:
 
-| PDF column | Person field | Already loaded |
-| --- | --- | --- |
-| Name | `name_last`, `name_first` | Yes |
-| Middle | `name_middle` | Yes |
-| Mobile | `phone_mbl` | Yes |
-| DOB | `birth_date` | Yes |
-| Training | `training`, and (proposed) `training_complete` | Yes |
-| Training notes | `flight_training_notes` | Yes |
-| Waivers | `flight_waiver` | Yes |
-| See Doc | `flight_training_see_doc` | Yes |
-| Mail Rcvd | paired veteran's `mail_call_received` | Yes, on the veteran in the same pair |
-| Mail Adopt | paired veteran's `mail_call_adopt` | Yes, on the veteran in the same pair |
-| Checked in | none (blank box) | n/a |
+| PDF column     | Person field                                   | Already loaded                       |
+| -------------- | ---------------------------------------------- | ------------------------------------ |
+| Name           | `name_last`, `name_first`                      | Yes                                  |
+| Middle         | `name_middle`                                  | Yes                                  |
+| Mobile         | `phone_mbl`                                    | Yes                                  |
+| DOB            | `birth_date`                                   | Yes                                  |
+| Training       | `training` and `training_complete`             | Yes                                  |
+| Training notes | `flight_training_notes`                        | Yes                                  |
+| Waivers        | `flight_waiver`                                | Yes                                  |
+| See Doc        | `flight_training_see_doc`                      | Yes                                  |
+| Mail Rcvd      | paired veteran's `mail_call_received`          | Yes, on the veteran in the same pair |
+| Mail Adopt     | paired veteran's `mail_call_adopt`             | Yes, on the veteran in the same pair |
+| Checked in     | none (blank box)                               | n/a                                  |
 
 ### Where the mail-call checks come from
 
@@ -40,11 +40,13 @@ So the source is the veteran `FlightDetailPerson` objects already sitting on `fl
 
 How pairs are shaped. The grid takes one veteran and one guardian per pair (`people.find`). `pairId` is the veteran's id, or the guardian's id when the pair has no veteran. The detail endpoint says guardians paired with multiple veterans are deduplicated **within each pair**, so one pair does not list the same guardian twice. It does not say the guardian is collapsed across the flight. A guardian flying with two veterans is expected as two pairs, and the roster would show that guardian twice. A single pair could still contain more than one veteran; the grid would only display the first (`find`), and the PDF must not copy that limit.
 
-Proposed row rule (open questions 11 and 12):
+Approved row rule (decisions 11 and 12):
 
 - One PDF row per guardian id. The list is guardians, not pairs.
 - Collect every `type === 'Veteran'` person in every pair that contains that guardian id. Use `filter`, not `find`.
-- `mailCallReceived` is true when any of those veterans has `mail_call_received` true. `mailCallAdopt` is the same OR for `mail_call_adopt`. The two flags are independent.
+- With exactly one paired veteran, `mailCallReceived` and `mailCallAdopt` copy that veteran's flags.
+- With more than one, a flag is true only when **every** paired veteran on this flight has that flag (both, when there are two). If any one is false or missing, the box is blank. The two flags are independent.
+- Steve changed the earlier "check if any" recommendation to this all-veterans rule.
 - An unpaired guardian (crew, or a pair whose `people` has no veteran, including `missingPairedPerson` with the veteran absent) prints both boxes blank. A veteran who is not on this flight is not in `flightData.pairs`, so that veteran's flags are not on the page and are not fetched.
 - The paired veteran's name stays off the row. `mail_call_notes` is not a column.
 - Training, notes, waiver, and the other guardian columns still come from the guardian object. If the API repeats that guardian, those fields are the same person; take them from the first copy.
@@ -63,24 +65,24 @@ Proposed row rule (open questions 11 and 12):
 
 ## Files to add
 
-| File | Role |
-| --- | --- |
-| `src/components/main/flight/roster-format.js` | Move the private roster birth-date formatter here so the PDF and the grid share one rule. |
-| `src/components/main/flight/guardian-list-range.js` | Pure letter-range filter, sort, name/date/timestamp formatters, row mapper, column-label list. No React, no `@react-pdf/renderer`. |
-| `src/components/main/flight/__tests__/guardian-list-range.test.js` | Helper tests listed below. |
-| `src/components/main/flight/guardian-list-print-dialog.js` | MUI dialog. Also export a small button that owns `open` state, so `page.js` stays a one-line mount. |
-| `src/components/main/flight/__tests__/guardian-list-print-dialog.test.js` | Dialog tests. Mock the PDF opener. |
-| `src/components/main/flight/guardian-list-document.js` | `GuardianListDocument` (`Document` / `Page` / `View` / `Text` only). |
-| `src/components/main/flight/guardian-list-pdf.js` | `openGuardianListPdf`. The only module that statically imports `@react-pdf/renderer` and the document. |
-| `src/components/main/flight/__tests__/guardian-list-document.test.js` | Layout tests under a local Jest mock of `@react-pdf/renderer`. |
+| File                                                                      | Role                                                                                                                               |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/main/flight/roster-format.js`                             | Move the private roster birth-date formatter here so the PDF and the grid share one rule.                                          |
+| `src/components/main/flight/guardian-list-range.js`                       | Pure letter-range filter, sort, name/date/timestamp formatters, row mapper, column-label list. No React, no `@react-pdf/renderer`. |
+| `src/components/main/flight/__tests__/guardian-list-range.test.js`        | Helper tests listed below.                                                                                                         |
+| `src/components/main/flight/guardian-list-print-dialog.js`                | MUI dialog. Also export a small button that owns `open` state, so `page.js` stays a one-line mount.                                |
+| `src/components/main/flight/__tests__/guardian-list-print-dialog.test.js` | Dialog tests. Mock the PDF opener.                                                                                                 |
+| `src/components/main/flight/guardian-list-document.js`                    | `GuardianListDocument` (`Document` / `Page` / `View` / `Text` only).                                                               |
+| `src/components/main/flight/guardian-list-pdf.js`                         | `openGuardianListPdf`. The only module that statically imports `@react-pdf/renderer` and the document.                             |
+| `src/components/main/flight/__tests__/guardian-list-document.test.js`     | Layout tests under a local Jest mock of `@react-pdf/renderer`.                                                                     |
 
 ## Files to change
 
-| File | Change |
-| --- | --- |
-| `src/components/main/flight/roster-cell-renderers.js` | Import `formatRosterBirthDate` from `roster-format.js`. No cell behavior change. Existing renderer tests stay as they are. |
-| `src/app/(main)/flights/details/page.js` | Mount `<GuardianListPrintButton pairs={pairs} flightName={flight.name} flightDate={flight.flight_date} />` in the Participants action row (the stack that already holds **Fix Bus Mismatches**, around the `Participants ({pairs.length})` heading). Pass the unfiltered `pairs` (`flightData?.pairs`), never the `filterPairs(...)` result. |
-| `src/app/(main)/flights/details/__tests__/page.test.js` | Add the three page tests below. Do not weaken the existing permission, completed-flight, or roster tests. |
+| File                                                    | Change                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/main/flight/roster-cell-renderers.js`   | Import `formatRosterBirthDate` from `roster-format.js`. No cell behavior change. Existing renderer tests stay as they are.                                                                                                                                                                                                                   |
+| `src/app/(main)/flights/details/page.js`                | Mount `<GuardianListPrintButton pairs={pairs} flightName={flight.name} flightDate={flight.flight_date} />` in the Participants action row (the stack that already holds **Fix Bus Mismatches**, around the `Participants ({pairs.length})` heading). Pass the unfiltered `pairs` (`flightData?.pairs`), never the `filterPairs(...)` result. |
+| `src/app/(main)/flights/details/__tests__/page.test.js` | Add the three page tests below. Do not weaken the existing permission, completed-flight, or roster tests.                                                                                                                                                                                                                                    |
 
 Do not change `src/lib/api.js`, `docs/openapi.json`, `src/schemas/generated/**`, `package.json`, or `next.config.mjs` unless `next build` fails as described under library loading.
 
@@ -108,10 +110,10 @@ export function getGuardianListColumns() {}
 { ok: false, reason: 'inverted-range', guardians: [], omittedUnlettered: 0 }
 ```
 
-Each `guardians` entry is `{ person, mailCallReceived, mailCallAdopt }`, not a bare guardian. `person` is the guardian. The two booleans are the OR described above.
+Each `guardians` entry is `{ person, mailCallReceived, mailCallAdopt }`, not a bare guardian. `person` is the guardian. The two booleans follow the all-veterans rule above.
 
 - Walk `pairs[].people`. Keep `type === 'Guardian'` only.
-- One row per guardian `id`. While collapsing repeats, OR `mail_call_received` and `mail_call_adopt` across every veteran in every pair that contains that id. Do not keep only the first pair's veteran, or a second veteran's check disappears.
+- One row per guardian `id`. While collapsing repeats, a mail-call box is checked only when every veteran in every pair that contains that id has the flag. Do not keep only the first pair's veteran.
 - Letter rule, applied to `name_last`:
   1. Trim.
   2. `normalize('NFD')` and strip combining marks (`\p{M}`).
@@ -124,17 +126,17 @@ Each `guardians` entry is `{ person, mailCallReceived, mailCallAdopt }`, not a b
 
 Worked examples for the letter rule:
 
-| `name_last` | Letter | Why |
-| --- | --- | --- |
-| `O'Brien` | O | First letter is O. The apostrophe is not the range key. |
-| `de la Cruz` | D | First letter of the stored last name. Particles are not skipped. |
-| `van Dyke` | V | Same rule. |
-| `smith` | S | Case fold. |
-| `Álvarez` | A | Accent folds off. Sorts beside `Alvarez`. |
-| `'Brien` | B | Leading non-letter is skipped. |
-| `  smith` | S | Trim, then S. |
-| `''` or `'` | none | Omitted. |
-| `Østergaard`, `Łukasiewicz` | none | The letter still is not A–Z after the fold. Omitted and counted. |
+| `name_last`                 | Letter | Why                                                              |
+| --------------------------- | ------ | ---------------------------------------------------------------- |
+| `O'Brien`                   | O      | First letter is O. The apostrophe is not the range key.          |
+| `de la Cruz`                | D      | First letter of the stored last name. Particles are not skipped. |
+| `van Dyke`                  | V      | Same rule.                                                       |
+| `smith`                     | S      | Case fold.                                                       |
+| `Álvarez`                   | A      | Accent folds off. Sorts beside `Alvarez`.                        |
+| `'Brien`                    | B      | Leading non-letter is skipped.                                   |
+| `  smith`                   | S      | Trim, then S.                                                    |
+| `''` or `'`                 | none   | Omitted.                                                         |
+| `Østergaard`, `Łukasiewicz` | none   | The letter still is not A–Z after the fold. Omitted and counted. |
 
 `formatGuardianListName`: `"Last, First"` when both sides are non-empty. If one side is empty, print the other side with no comma. If both are empty, print `—`.
 
@@ -148,12 +150,12 @@ Worked examples for the letter rule:
   mobile,            // phone_mbl as stored, or ''
   dob,               // formatRosterBirthDate
   training,          // trimmed training, or '—'
-  trainingComplete,  // Boolean(training_complete) — see open question 1
+  trainingComplete,  // Boolean(training_complete) — decision 1
   trainingNotes,     // flight_training_notes as stored, or ''
   waiver,            // Boolean(flight_waiver)
   seeDoc,            // Boolean(flight_training_see_doc)
-  mailCallReceived,  // OR of paired veterans' mail_call_received; false when none
-  mailCallAdopt,     // OR of paired veterans' mail_call_adopt; false when none
+  mailCallReceived,  // true only when every paired veteran has mail_call_received; false when none
+  mailCallAdopt,     // true only when every paired veteran has mail_call_adopt; false when none
 }
 ```
 
@@ -207,25 +209,25 @@ On Print:
 
 The flight details page is already behind `AuthGuard` and requires `records:read`. The CSV menu in the page header is a separate control: `FlightExportMenu` renders only when `can(PERMISSIONS.EXPORTS_READ)`.
 
-Proposed gate: show **Print guardian list** to anyone who can see the page, including a read-only volunteer and including a completed flight. Printing does not mutate and does not call the export endpoints. **Add Veterans from Waitlist** stays on `flights:manage` and stays disabled when the flight document is completed. **Fix Bus Mismatches** stays on `records:write`.
+Decided gate: show **Print guardian list** to anyone who can see the page, including a read-only volunteer and including a completed flight. Printing does not mutate and does not call the export endpoints. **Add Veterans from Waitlist** stays on `flights:manage` and stays disabled when the flight document is completed. **Fix Bus Mismatches** stays on `records:write`.
 
 ## Data mapping
 
 Source is one `FlightDetailPerson` inside `flightData.pairs[].people` from `GET /flights/{id}/detail` (`api.getFlightDetails`). The header uses `flightData.flight.name` and `flightData.flight.flight_date`. The separate `api.getFlight` document and `api.getFlightAssignments` are not inputs.
 
-| PDF column | Header | Source | Formatting |
-| --- | --- | --- | --- |
-| Name | `Name` | `name_last`, `name_first` | `Last, First`. See helper. Not the middle name. |
-| Middle | `Middle` | `name_middle` | Trimmed. Empty prints blank. The roster editor shows a placeholder, not a dash. |
-| Mobile | `Mobile` | `phone_mbl` | As stored. No reformatting. Empty prints blank. This is the Training column, not a different phone field. |
-| DOB | `DOB` | `birth_date` | `formatRosterBirthDate`. `1969-05-07` → `05/07/1969`. Blank → `—`. |
-| Training | `Training` | `training`, `training_complete` | Trimmed type, or `—` when empty (the cell already does `typeLabel \|\| '—'`). Proposed: a check mark when `training_complete` is true, otherwise nothing beside the type. |
-| Training notes | `Training notes` | `flight_training_notes` | Full string, wrapped. Empty prints blank. Do not ellipsize. |
-| Waivers | `Waivers` | `flight_waiver` | Check mark when true. Blank when false or missing. Not an em dash (veterans get a dash in the grid; this PDF has no veterans). |
-| See Doc | `See Doc` | `flight_training_see_doc` on the guardian | Same as Waivers. |
-| Mail Rcvd | `Mail Rcvd` | `mail_call_received` on each paired veteran in `flightData.pairs` | Check when any such veteran is true. Blank when every one is false or missing, and when the guardian has no veteran on the flight. Ignore the property on the guardian. Not `mail_call_notes`. |
-| Mail Adopt | `Mail Adopt` | `mail_call_adopt` on each paired veteran in `flightData.pairs` | Same OR rule, independent of Mail Rcvd. |
-| Checked in | `Checked in` | none | Empty square on every row, including when the other flags are checked. |
+| PDF column     | Header           | Source                                                            | Formatting                                                                                                                                                                                                                                 |
+| -------------- | ---------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Name           | `Name`           | `name_last`, `name_first`                                         | `Last, First`. See helper. Not the middle name.                                                                                                                                                                                            |
+| Middle         | `Middle`         | `name_middle`                                                     | Trimmed. Empty prints blank. The roster editor shows a placeholder, not a dash.                                                                                                                                                            |
+| Mobile         | `Mobile`         | `phone_mbl`                                                       | As stored. No reformatting. Empty prints blank. This is the Training column, not a different phone field.                                                                                                                                  |
+| DOB            | `DOB`            | `birth_date`                                                      | `formatRosterBirthDate`. `1969-05-07` → `05/07/1969`. Blank → `—`.                                                                                                                                                                         |
+| Training       | `Training`       | `training`, `training_complete`                                   | Trimmed type, or `—` when empty (the cell already does `typeLabel \|\| '—'`). A check mark when `training_complete` is true, otherwise nothing beside the type.                                                                  |
+| Training notes | `Training notes` | `flight_training_notes`                                           | Full string, wrapped. Empty prints blank. Do not ellipsize.                                                                                                                                                                                |
+| Waivers        | `Waivers`        | `flight_waiver`                                                   | Check mark when true. Blank when false or missing. Not an em dash (veterans get a dash in the grid; this PDF has no veterans).                                                                                                             |
+| See Doc        | `See Doc`        | `flight_training_see_doc` on the guardian                         | Same as Waivers.                                                                                                                                                                                                                           |
+| Mail Rcvd      | `Mail Rcvd`      | `mail_call_received` on each paired veteran in `flightData.pairs` | One veteran: that veteran's flag. More than one: check only when all of them are true. Blank when any is false or missing, and when the guardian has no veteran on the flight. Ignore the property on the guardian. Not `mail_call_notes`. |
+| Mail Adopt     | `Mail Adopt`     | `mail_call_adopt` on each paired veteran in `flightData.pairs`    | Same all-veterans rule, independent of Mail Rcvd.                                                                                                                                                                                          |
+| Checked in     | `Checked in`     | none                                                              | Empty square on every row, including when the other flags are checked.                                                                                                                                                                     |
 
 Flight header date: `flight.flight_date` through `formatFlightDateLong`, matching the subtitle `Flight on {dayjs(flight.flight_date).format('MMMM DD, YYYY')}`.
 
@@ -241,22 +243,23 @@ Flight header date: `flight.flight_date` through `formatFlightDateLong`, matchin
 - Body rows follow, about 8 pt, top-aligned so wrapped notes grow the row. Do not set a fixed row height. Default `wrap` lets a row move to the next page. A single note longer than one page is a residual risk; do not truncate it.
 - Column order and starting widths (points). Landscape letter content width is 736 pt after 28 pt side margins. Training notes is the only flex column and must stay the widest text column. Checkbox headers may wrap to two lines (`Mail` / `Rcvd`) so they can stay narrow.
 
-  | Column | Width |
-  | --- | ---: |
-  | Name | 110 |
-  | Middle | 48 |
-  | Mobile | 70 |
-  | DOB | 52 |
-  | Training | 68 |
+  | Column         |               Width |
+  | -------------- | ------------------: |
+  | Name           |                 110 |
+  | Middle         |                  48 |
+  | Mobile         |                  70 |
+  | DOB            |                  52 |
+  | Training       |                  68 |
   | Training notes | 166 (the remainder) |
-  | Waivers | 42 |
-  | See Doc | 42 |
-  | Mail Rcvd | 46 |
-  | Mail Adopt | 48 |
-  | Checked in | 44 |
+  | Waivers        |                  42 |
+  | See Doc        |                  42 |
+  | Mail Rcvd      |                  46 |
+  | Mail Adopt     |                  48 |
+  | Checked in     |                  44 |
 
   Fixed columns sum to 570 pt, leaving about 166 pt for notes. At 8 pt Helvetica that is roughly 35 characters per line, and the notes still wrap, so a long note stays fully printed. `Mail Rcvd` and `Mail Adopt` fit on one line at 8 pt bold in those widths; `Checked in` may wrap, which only makes the header row taller. Do not drop body type below 8 pt and do not switch to legal paper. Center Waivers, See Doc, Mail Rcvd, Mail Adopt, and Checked in.
-- Check mark: a `Text` node with `fontFamily: 'ZapfDingbats'`. Helvetica has no check glyph, so a Unicode `✓` would print blank or `.notdef`. Export the chosen character as `PDF_CHECK_GLYPH` and confirm the actual glyph in a generated PDF during implementation (Dingbats encoding is easy to get wrong). The unit test asserts the font family and that constant.
+
+- Check mark: two short black strokes inside a 9×8 pt view. `@react-pdf/renderer` 4.0.0's standard families are only Helvetica, Times, and Courier (ZapfDingbats is not registered, and using it throws). Helvetica has no check glyph. The unit tests count that check view: one when the flag is true, none when it is false.
 - Checked in: a `View` about 11 × 11 pt with a 1 pt border and no text. Same box on every row.
 - Fixed footer: `Printed {printedAtLabel}    Page {pageNumber} of {totalPages}`. Page numbers come from the `Text` `render` prop (`{ pageNumber, totalPages }`). `totalPages` is only reliable inside that callback.
 
@@ -278,13 +281,13 @@ Load path:
 
 Bundle: the flight details route must not gain this graph in its initial JS. Unpacked npm sizes of the packages already locked (not the minified browser chunk):
 
-| Package | Unpacked |
-| --- | ---: |
-| `@react-pdf/renderer@4.0.0` | 1.2 MB |
-| `@react-pdf/pdfkit@4.0.0` | 1.0 MB |
-| `@react-pdf/layout@4.2.0` | 104 KB |
-| `yoga-layout@3.2.1` | 219 KB |
-| `fontkit@2.0.4` | 5.6 MB |
+| Package                     | Unpacked |
+| --------------------------- | -------: |
+| `@react-pdf/renderer@4.0.0` |   1.2 MB |
+| `@react-pdf/pdfkit@4.0.0`   |   1.0 MB |
+| `@react-pdf/layout@4.2.0`   |   104 KB |
+| `yoga-layout@3.2.1`         |   219 KB |
+| `fontkit@2.0.4`             |   5.6 MB |
 
 Most of fontkit’s unpacked size is data the browser chunk will not carry one-for-one. The async Print chunk will still be large. The implementation PR should paste the `next build` size of that chunk. First load of the roster stays the same; the cost is paid on the first Print click of the session.
 
@@ -303,13 +306,15 @@ Knip’s `ignoreDependencies` is empty and its entries include `src/components/*
 ```js
 jest.mock('@react-pdf/renderer', () => {
   const React = require('react');
-  const el = (tag) => ({ children, render, ...props }) =>
-    React.createElement(
-      'div',
-      { 'data-pdf': tag, 'data-props': JSON.stringify(props) },
-      typeof render === 'function' ? render({ pageNumber: 2, totalPages: 5 }) : null,
-      children
-    );
+  const el =
+    (tag) =>
+    ({ children, render, ...props }) =>
+      React.createElement(
+        'div',
+        { 'data-pdf': tag, 'data-props': JSON.stringify(props) },
+        typeof render === 'function' ? render({ pageNumber: 2, totalPages: 5 }) : null,
+        children
+      );
   return {
     Document: el('Document'),
     Page: el('Page'),
@@ -342,11 +347,11 @@ Existing tests stay. Implementation adds the following and does not delete or re
 10. `uses B for a last name that starts with an apostrophe`
 11. `treats From equal to To as that single letter`
 12. `reports an inverted range and returns no guardians`
-13. `keeps one guardian row when the same id is on two pairs and checks mail call if either veteran is true`
+13. `keeps one guardian row when the same id is on two pairs and checks mail call only when every veteran is true`
 14. `formats Last, First and leaves a missing side without a dangling comma`
 15. `maps guardian fields from the guardian and ignores mail-call flags on the guardian object`
 16. `leaves both mail-call boxes blank when the guardian has no veteran on the flight`
-17. `ORs mail-call flags for every veteran in one pair, not only the first`
+17. `checks mail call for every veteran in one pair only when all of them have the flag`
 18. `does not include the paired veteran's name`
 19. `formats date of birth as MM/DD/YYYY without Date parsing`
 20. `formats a flight date as MMMM DD, YYYY from the YYYY-MM-DD string`
@@ -386,7 +391,7 @@ That is 41 new tests. Run `npx jest` on the four files above, then `npm test`. T
 ## Risks
 
 - **#267 header footgun.** `getColumnConfig('training')` relabels two columns for the mixed roster. The PDF passes `true` for those labels and adds `Mail Rcvd` and `Mail Adopt` as separate columns. Tests lock both.
-- **Dedupe dropping a second veteran's check.** Collapsing a repeated guardian id must OR the veterans' flags. Keeping the first pair only prints the wrong blank.
+- **Dedupe dropping a second veteran's check.** Collapsing a repeated guardian id must require every veteran's flag (decision 11). Keeping the first pair only, or checking when any veteran is true, prints the wrong mark.
 - **Reading the guardian's own mail-call fields.** The flight-detail booleans are veteran-only, and the guardian document has no `adopt`. Tests pass a guardian object with the flags set and a veteran with them clear, and expect a blank.
 - **SSR.** A static import of the renderer into the page or the dialog breaks the flight details render. The dynamic import is the guard.
 - **Popup blockers.** Opening the tab after `await pdf().toBlob()` is blocked. The synchronous blank tab is the mitigation, with a download fallback.
@@ -410,28 +415,19 @@ That is 41 new tests. Run `npx jest` on the four files above, then `npm test`. T
 
 There are no open pull requests. `origin/main` also contains #269/#270 (Copy to New Guardian) and #271 (age on birth-date **form labels**, `src/lib/birth-date-age.js`). Neither touches the flight details page, the roster grid, or the Training columns. This plan branch is cut from that `origin/main`.
 
-## Open questions for Steve
+## Decisions
 
-1. **Should the Training column include the training-complete check, or only the training type?** The grid’s guardian cell shows both: the `training` string and a checkbox bound to `training_complete`. The issue names the column and only says Waivers / See Doc print as a check or blank. **Recommend:** print the type and a check or blank for `training_complete`, under the header `Training`. That is what the volunteer sees on a Guardians-focus roster.
+Steve approved this plan on 2026-10-23. Questions 1–10 and 12 are the recommendations, unchanged. Question 11 is the one change: a mail-call box is checked only when every paired veteran on this flight has that flag.
 
-2. **Who can press the button?** **Recommend:** anyone who can open the flight details page (`records:read`), including a completed flight. Do not require `exports:read`. The CSV menu stays the gated server export. Check-in volunteers already see this data on screen.
-
-3. **Where does the button sit?** **Recommend:** the Participants action row, outlined, next to **Fix Bus Mismatches**. Not inside `FlightExportMenu`, and not in the filter row, where it would look like it honors the filters.
-
-4. **What if From is after To?** **Recommend:** do not swap. Show `From is after To` and disable Print.
-
-5. **What if the range matches nobody?** **Recommend:** disable Print and show `No guardians in this range.` Do not produce a header-only PDF.
-
-6. **How should awkward last names be lettered?** **Recommend:** the algorithm in the helper section. `O'Brien` → O, `de la Cruz` → D, `van Dyke` → V, `smith` → S, `Álvarez` → A, `'Brien` → B. Do not skip name particles; the printed name starts with the letter the table will scan for. Blank names and letters that are still outside A–Z (`Ø`, `Ł`) are left off every range, with a count in the dialog when that happens. Sort with base English `localeCompare`.
-
-7. **New tab or a downloaded file?** **Recommend:** open the PDF in a new tab so Print is one step away. Open the tab in the click, before the PDF is built, and fall back to a download if the browser blocks the window. Leave the dialog open after a success so the next letter range does not require reopening it.
-
-8. **Which time zone is the printed timestamp?** **Recommend:** the browser’s local zone, with a short name (`Oct 23, 2026, 1:45 PM CDT`). Not UTC, and not a hardcoded `America/Chicago`. Tests pin Chicago so a UTC CI run stays stable.
-
-9. **What prints in an empty cell?** **Recommend:** match the roster. Missing DOB and an empty training type print `—`. Empty middle, mobile, and notes print blank. A false waiver, see-doc, training-complete, mail-received, or mail-adopt flag prints blank, not a box and not a dash. An unpaired guardian's mail-call cells are that same blank. Checked in is the only always-empty square.
-
-10. **Does the flight title repeat on later pages, or only the column titles?** **Recommend:** repeat the whole header (flight name, flight date, `Guardians M–T`, and the column titles) plus the footer on every page, so a loose second sheet still says which flight and which table.
-
-11. **A guardian paired with two veterans whose mail-call flags differ.** The detail payload can list that guardian twice, once per veteran, or list both veterans on one pair. The grid's `people.find` only shows the first veteran. **Recommend:** still one PDF row per guardian. Check Mail Rcvd if any paired veteran on this flight has `mail_call_received`, and check Mail Adopt independently the same way. A blank means none of those veterans have the flag. Checking only when all are true would hide a mail call that did arrive. One row per veteran would print the same guardian twice on a check-in list.
-
-12. **Should the paired veteran's name be on the row?** Mail call belongs to the veteran, and question 11 collapses two veterans into one check. **Recommend:** leave the name hidden. The original issue says not to show the paired veteran, and the two check columns are the only veteran data on the sheet. A name column, or a second row, is the alternative if a table has to tell the two veterans apart.
+1. **Training column.** **Decided:** print the training type and a check or blank for `training_complete`, under the header `Training`.
+2. **Who sees the button.** **Decided:** anyone who can open the flight details page (`records:read`), including a completed flight. `exports:read` is not required. The CSV menu stays the gated server export.
+3. **Placement.** **Decided:** the Participants action row, outlined, next to **Fix Bus Mismatches**.
+4. **From after To.** **Decided:** do not swap. Show `From is after To.` and disable Print.
+5. **Nobody in range.** **Decided:** disable Print and show `No guardians in this range.` Do not produce a header-only PDF.
+6. **Awkward last names.** **Decided:** the letter algorithm in the helper section. `O'Brien` → O, `de la Cruz` → D, `van Dyke` → V, `smith` → S, `Álvarez` → A, `'Brien` → B. Particles stay. Blank names and letters still outside A–Z (`Ø`, `Ł`) are omitted, with a count in the dialog. Sort with base English `localeCompare`.
+7. **Open or download.** **Decided:** open a new tab from the click, before the PDF is built, and fall back to a download if the window is blocked. Leave the dialog open after success.
+8. **Printed time zone.** **Decided:** the browser's local zone, with a short name (`Oct 23, 2026, 1:45 PM CDT`). Tests pin `America/Chicago`.
+9. **Empty cells.** **Decided:** em dash for a missing DOB or empty training type. Blank for empty middle, mobile, and notes. Blank (no box, no dash) for a false waiver, see-doc, training-complete, mail-received, or mail-adopt flag, including an unpaired guardian. Checked in is the only always-empty square.
+10. **Later pages.** **Decided:** repeat the flight name, date, `Guardians M–T`, and column titles on every page, plus the footer `Page X of Y`.
+11. **Two or more veterans.** **Decided (changed from the recommendation):** still one PDF row per guardian. With exactly one paired veteran, use that veteran's flag. With more than one, check Mail Rcvd only when all of those veterans have `mail_call_received`, and check Mail Adopt independently the same way. Otherwise blank. The earlier recommendation was "check if any."
+12. **Paired veteran's name.** **Decided:** leave it hidden. The two check columns are the only veteran data on the sheet.

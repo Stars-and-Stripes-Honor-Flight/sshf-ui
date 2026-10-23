@@ -14,6 +14,7 @@ import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
 
+import { formatRosterBirthDate } from './roster-format';
 import { getAssignedTo, getPairStatusIssues, getVeteranGroup, normalizeMedExprnc } from './roster-helpers';
 
 /**
@@ -344,24 +345,6 @@ export function renderJacketSizeCell(person) {
 
 function RolePlaceholder() {
   return <Typography variant="body2">—</Typography>;
-}
-
-/**
- * Format a YYYY-MM-DD birth date for the roster without timezone shifting.
- * @param {string|undefined|null} value
- * @returns {string}
- */
-function formatRosterBirthDate(value) {
-  if (typeof value !== 'string' || value.trim() === '') {
-    return '—';
-  }
-
-  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) {
-    return value;
-  }
-
-  return `${match[2]}/${match[3]}/${match[1]}`;
 }
 
 /**
