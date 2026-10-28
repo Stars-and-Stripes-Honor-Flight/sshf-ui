@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import '@testing-library/jest-dom';
 import { AdditionalDetailsSection } from '../additional-details-section';
@@ -63,6 +64,28 @@ describe('AdditionalDetailsSection', () => {
     ]);
     expect(screen.getByText('Delivery Method')).toBeInTheDocument();
     expect(screen.queryByText('Delivery Status')).not.toBeInTheDocument();
+  });
+
+  test('uses None string values for apparel jacket and shirt size selects', async () => {
+    const user = userEvent.setup();
+    render(
+      <TestWrapper defaultValues={{ apparel: { jacket_size: 'None', shirt_size: 'None' } }}>
+        <AdditionalDetailsSection errors={{}} />
+      </TestWrapper>
+    );
+
+    const comboboxes = screen.getAllByRole('combobox');
+    const jacketSelect = comboboxes[1];
+    const shirtSelect = comboboxes[2];
+
+    await user.click(jacketSelect);
+    const jacketListbox = screen.getByRole('listbox');
+    expect(within(jacketListbox).getByRole('option', { name: 'None' })).toHaveAttribute('data-value', 'None');
+    await user.keyboard('{Escape}');
+
+    await user.click(shirtSelect);
+    const shirtListbox = screen.getByRole('listbox');
+    expect(within(shirtListbox).getByRole('option', { name: 'None' })).toHaveAttribute('data-value', 'None');
   });
 
   test('renders apparel information fields', () => {

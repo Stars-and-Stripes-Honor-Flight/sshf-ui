@@ -42,6 +42,7 @@ import { EssentialInfoSection } from './essential-info-section';
 import { ContactInfoSection } from './contact-info-section';
 import { AdditionalDetailsSection } from './additional-details-section';
 import { useNavigationBack } from '@/hooks/use-navigation-back';
+import { normalizeApparelSizeValue } from '@/constants/apparel-size-options';
 
 const getBranchImage = (branch) => {
   const images = {
@@ -251,15 +252,24 @@ export function VeteranEditForm({ veteran, onNavigationReady, onNavigate }) {
       how_heard_about: veteran.call?.how_heard_about ?? 'Unknown',
     },
     shirt: veteran.shirt || { size: '' },
-    apparel: veteran.apparel || { 
-      jacket_size: '', 
-      delivery: 'None',
-      item: '',
-      shirt_size: '',
-      date: '',
-      by: '',
-      notes: ''
-    },
+    apparel: (() => {
+      const apparelDefaults = {
+        jacket_size: 'None',
+        delivery: 'None',
+        item: '',
+        shirt_size: 'None',
+        date: '',
+        by: '',
+        notes: '',
+      };
+      const fromApi = veteran.apparel || {};
+      return {
+        ...apparelDefaults,
+        ...fromApi,
+        jacket_size: normalizeApparelSizeValue(fromApi.jacket_size ?? apparelDefaults.jacket_size),
+        shirt_size: normalizeApparelSizeValue(fromApi.shirt_size ?? apparelDefaults.shirt_size),
+      };
+    })(),
     media_newspaper_ok: veteran.media_newspaper_ok || 'No',
     media_interview_ok: veteran.media_interview_ok || 'No',
     accommodations: veteran.accommodations || { 

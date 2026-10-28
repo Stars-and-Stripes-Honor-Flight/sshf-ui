@@ -676,4 +676,45 @@ describe('VeteranEditForm - Flown/Deceased lock', () => {
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /cane/i })).toBeDisabled();
   });
+
+  test('normalizes blank apparel sizes to None on load without marking the form dirty', async () => {
+    const onNavigationReady = jest.fn();
+    const veteranWithBlankApparel = {
+      ...baseVeteran,
+      apparel: {
+        ...baseVeteran.apparel,
+        jacket_size: '',
+        shirt_size: '',
+      },
+    };
+
+    render(
+      <VeteranEditForm veteran={veteranWithBlankApparel} onNavigationReady={onNavigationReady} />
+    );
+
+    await waitFor(() => {
+      expect(onNavigationReady).toHaveBeenCalledWith({ isDirty: false });
+    });
+
+    const jacketSelect = document.querySelector('[name="apparel.jacket_size"]');
+    const shirtSelect = document.querySelector('[name="apparel.shirt_size"]');
+    expect(jacketSelect).toHaveValue('None');
+    expect(shirtSelect).toHaveValue('None');
+  });
+
+  test('displays roster None apparel sizes on load', () => {
+    const veteranFromRoster = {
+      ...baseVeteran,
+      apparel: {
+        ...baseVeteran.apparel,
+        jacket_size: 'None',
+        shirt_size: 'None',
+      },
+    };
+
+    render(<VeteranEditForm veteran={veteranFromRoster} />);
+
+    expect(document.querySelector('[name="apparel.jacket_size"]')).toHaveValue('None');
+    expect(document.querySelector('[name="apparel.shirt_size"]')).toHaveValue('None');
+  });
 });
