@@ -17,6 +17,7 @@ import {
   renderMobilePhoneCell,
   renderTrainingCell,
   renderTrainingNotesCell,
+  renderNotesCell,
   renderWaiverCell,
   renderSeeDocCell,
 } from '../roster-cell-renderers';
@@ -308,6 +309,55 @@ const trainingHandlers = {
   handleTrainingCompleteChange: jest.fn(),
   handleTrainingNotesChange: jest.fn(),
 };
+
+const apparelHandlers = {
+  EditableField: MockTrainingField,
+  handleApparelNotesChange: jest.fn(),
+};
+
+describe('apparel notes roster cell (issue #275)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('uses a multiline apparel notes field for veterans and guardians', async () => {
+    const user = userEvent.setup();
+
+    render(
+      renderNotesCell(
+        { id: 'vet-1', apparel_notes: 'Jacket exchange pending' },
+        'Veteran',
+        apparelHandlers
+      )
+    );
+
+    const veteranNotes = screen.getByRole('textbox', { name: 'Apparel notes' });
+    expect(veteranNotes.tagName).toBe('TEXTAREA');
+    expect(veteranNotes).toHaveValue('Jacket exchange pending');
+    await user.clear(veteranNotes);
+    await user.type(veteranNotes, 'Ordered 10/21');
+    await user.tab();
+    expect(apparelHandlers.handleApparelNotesChange).toHaveBeenCalledWith('Ordered 10/21', 'vet-1', 'Veteran');
+  });
+
+  test('saves guardian apparel notes on blur', async () => {
+    const user = userEvent.setup();
+    render(
+      renderNotesCell(
+        { id: 'grd-1', apparel_notes: 'Needs XL shirt' },
+        'Guardian',
+        apparelHandlers
+      )
+    );
+
+    const guardianNotes = screen.getByRole('textbox', { name: 'Apparel notes' });
+    expect(guardianNotes).toHaveValue('Needs XL shirt');
+    await user.clear(guardianNotes);
+    await user.type(guardianNotes, 'Shipped');
+    await user.tab();
+    expect(apparelHandlers.handleApparelNotesChange).toHaveBeenCalledWith('Shipped', 'grd-1', 'Guardian');
+  });
+});
 
 describe('training roster cells (issue #212)', () => {
   beforeEach(() => {

@@ -485,6 +485,99 @@ describe('Flight details roster — training preset (issue #212)', () => {
   });
 });
 
+describe('Flight details roster — apparel notes (issue #275)', () => {
+  const apparelDetails = {
+    flight: {
+      name: 'Oct 2026',
+      completed: false,
+      flight_date: '2026-10-10',
+      capacity: 40,
+    },
+    stats: {
+      flight: { Alpha: 2, Bravo: 0, None: 0 },
+      tours: { Alpha: 2, Bravo: 0, None: 0 },
+      buses: { Alpha2: 2 },
+    },
+    pairs: [
+      {
+        pairId: 'apparel-pair',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({
+            id: 'vet-apparel',
+            name_first: 'Vic',
+            name_last: 'Veteran',
+            apparel_shirt_size: 'L',
+            apparel_jacket_size: 'L',
+            apparel_notes: 'Needs tall sizes',
+          }),
+          guardian({
+            id: 'grd-apparel',
+            name_first: 'Gina',
+            name_last: 'Guardian',
+            apparel_shirt_size: 'M',
+            apparel_jacket_size: 'M',
+            apparel_notes: 'Exchange jacket',
+          }),
+        ],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue(apparelDetails);
+    api.getFlightAssignments.mockResolvedValue({
+      veterans: [],
+      guardians: [],
+      counts: { veterans: 0, guardians: 0 },
+    });
+    api.updateVeteranApparelNotes = jest.fn().mockResolvedValue({ ok: true });
+    api.updateGuardianApparelNotes = jest.fn().mockResolvedValue({ ok: true });
+    api.getVeteran = jest.fn();
+    api.getGuardian = jest.fn();
+    api.updateVeteran = jest.fn();
+    api.updateGuardian = jest.fn();
+  });
+
+  async function openApparelPreset(user) {
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Vic Veteran' })).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Columns' }));
+    await user.click(await screen.findByRole('option', { name: 'Apparel' }));
+    expect(screen.getByRole('columnheader', { name: 'Notes' })).toBeInTheDocument();
+  }
+
+  test('saves veteran and guardian apparel notes through dedicated PATCH endpoints', async () => {
+    const user = userEvent.setup();
+    await openApparelPreset(user);
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    const veteranNotes = within(veteranRow).getByRole('textbox', { name: 'Apparel notes' });
+    expect(veteranNotes.tagName).toBe('TEXTAREA');
+    await user.clear(veteranNotes);
+    await user.type(veteranNotes, 'Ordered 10/21');
+    await user.tab();
+
+    const guardianRow = screen.getByRole('link', { name: 'Gina Guardian' }).closest('tr');
+    const guardianNotes = within(guardianRow).getByRole('textbox', { name: 'Apparel notes' });
+    await user.clear(guardianNotes);
+    await user.type(guardianNotes, 'Shipped 10/22');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(api.updateVeteranApparelNotes).toHaveBeenCalledWith('vet-apparel', 'Ordered 10/21');
+      expect(api.updateGuardianApparelNotes).toHaveBeenCalledWith('grd-apparel', 'Shipped 10/22');
+    });
+    expect(api.getVeteran).not.toHaveBeenCalled();
+    expect(api.getGuardian).not.toHaveBeenCalled();
+    expect(api.updateVeteran).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+  });
+});
+
 function flightDetails(pairs) {
   return {
     flight: {

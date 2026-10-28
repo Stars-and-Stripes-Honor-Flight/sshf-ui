@@ -434,6 +434,17 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       }
     }
   };
+
+  const handleApparelNotesChange = async (newValue, personId, personType) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, personType, { apparel_notes: newValue });
+        toast.success('Apparel notes updated');
+      } catch (error) {
+        toast.error('Failed to update apparel notes');
+      }
+    }
+  };
   
   // Cell renderer handlers for activity cells
   const handlers = {
@@ -454,6 +465,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     handleMobilePhoneChange,
     handleTrainingCompleteChange,
     handleTrainingNotesChange,
+    handleApparelNotesChange,
   };
 
   // Guardians focus keeps the guardian row as the one staff see first. A veteran

@@ -1004,3 +1004,90 @@ describe('FlightDetailsGrid - add guardian pairings', () => {
     expect(payload.flight.bus).toBe('Bravo2');
   });
 });
+
+describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
+  const apparelProps = { activityPreset: ACTIVITY_PRESETS.APPAREL };
+
+  function buildApparelPair() {
+    return {
+      pairId: 'apparel-pair',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        {
+          type: 'Veteran',
+          id: 'vet-1',
+          name_first: 'Vic',
+          name_last: 'Veteran',
+          apparel_notes: 'Tall sizes',
+          bus: 'Alpha4',
+          confirmed: true,
+          nofly: false,
+        },
+        {
+          type: 'Guardian',
+          id: 'guard-1',
+          name_first: 'Gina',
+          name_last: 'Guardian',
+          apparel_notes: 'Exchange',
+          bus: 'Alpha4',
+          confirmed: true,
+          nofly: false,
+        },
+      ],
+    };
+  }
+
+  test('persists apparel notes for veteran and guardian via onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = jest.fn().mockResolvedValue(undefined);
+    render(
+      <FlightDetailsGrid
+        pairs={[buildApparelPair()]}
+        onUpdate={onUpdate}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        {...apparelProps}
+      />
+    );
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    const veteranNotes = within(veteranRow).getByRole('textbox', { name: 'Apparel notes' });
+    await user.clear(veteranNotes);
+    await user.type(veteranNotes, 'Ordered');
+    await user.tab();
+
+    const guardianRow = screen.getByRole('link', { name: 'Gina Guardian' }).closest('tr');
+    const guardianNotes = within(guardianRow).getByRole('textbox', { name: 'Apparel notes' });
+    await user.clear(guardianNotes);
+    await user.type(guardianNotes, 'Shipped');
+    await user.tab();
+
+    expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { apparel_notes: 'Ordered' });
+    expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', { apparel_notes: 'Shipped' });
+  });
+
+  test('disables apparel notes when readOnly', () => {
+    render(
+      <FlightDetailsGrid
+        pairs={[buildApparelPair()]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        readOnly
+        {...apparelProps}
+      />
+    );
+
+    expect(screen.getAllByRole('textbox', { name: 'Apparel notes' })).toHaveLength(2);
+    screen.getAllByRole('textbox', { name: 'Apparel notes' }).forEach((field) => {
+      expect(field).toBeDisabled();
+    });
+  });
+});

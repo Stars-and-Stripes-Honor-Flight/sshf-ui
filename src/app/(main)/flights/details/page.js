@@ -351,6 +351,12 @@ function FlightDetailsPage() {
         } else if (personType === 'Guardian') {
           await api.updateGuardianSeat(personId, updates.flight.seat);
         }
+      } else if (updates.apparel_notes !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranApparelNotes(personId, updates.apparel_notes);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardianApparelNotes(personId, updates.apparel_notes);
+        }
       } else {
         // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
         let fullPerson;

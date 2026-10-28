@@ -475,14 +475,24 @@ export function renderSeeDocCell(person, personType) {
 }
 
 /**
- * Render apparel notes cell
+ * Multiline apparel notes for veterans and guardians.
  */
-export function renderNotesCell(person) {
+export function renderNotesCell(person, personType, handlers) {
   if (!person) return null;
+
+  const { EditableField, handleApparelNotesChange } = handlers;
   return (
-    <Typography variant="body2" sx={{ fontSize: '0.875rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-      {person.apparel_notes || '—'}
-    </Typography>
+    <EditableField
+      value={person.apparel_notes || ''}
+      onBlur={(newValue) => handleApparelNotesChange(newValue, person.id, personType)}
+      placeholder="Apparel notes"
+      multiline
+      minRows={2}
+      maxRows={4}
+      maxWidth={280}
+      minWidth={180}
+      inputProps={{ 'aria-label': 'Apparel notes' }}
+    />
   );
 }
 
@@ -524,7 +534,7 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
     case 'jacket_size':
       return renderJacketSizeCell(person);
     case 'notes':
-      return renderNotesCell(person);
+      return renderNotesCell(person, personType, handlers);
     case 'name_middle':
       return renderMiddleNameCell(person, personType, handlers);
     case 'phone_mbl':

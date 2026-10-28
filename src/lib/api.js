@@ -278,6 +278,20 @@ class ApiClient {
     }
   }
 
+  // Update a veteran's apparel notes
+  async updateVeteranApparelNotes(id, notes) {
+    try {
+      const response = await this.request(`/veterans/${id}/apparel-notes`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: notes }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update veteran apparel notes: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Delete a veteran
   async deleteVeteran(id) {
     try {
@@ -342,6 +356,20 @@ class ApiClient {
       return await response.json();
     } catch (error) {
       toast.error(`Failed to update guardian seat: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Update a guardian's apparel notes
+  async updateGuardianApparelNotes(id, notes) {
+    try {
+      const response = await this.request(`/guardians/${id}/apparel-notes`, {
+        method: 'PATCH',
+        body: JSON.stringify({ value: notes }),
+      });
+      return await response.json();
+    } catch (error) {
+      toast.error(`Failed to update guardian apparel notes: ${error.message}`);
       throw error;
     }
   }
