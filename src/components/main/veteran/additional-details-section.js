@@ -16,6 +16,12 @@ import { TShirt, House, Camera, Clock } from '@phosphor-icons/react';
 import { Option } from '@/components/core/option';
 import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { FormTextField } from '@/components/main/shared/form-text-field';
+import {
+  APPAREL_JACKET_SIZE_VALUES,
+  APPAREL_SHIRT_SIZE_FORM_ORDER,
+  getApparelJacketSizeLabel,
+  getApparelShirtSizeLabel,
+} from '@/constants/apparel-size-options';
 
 export function AdditionalDetailsSection({ control, errors, disabled = false }) {
   return (
@@ -66,16 +72,11 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
                   <FormControl error={Boolean(errors.apparel?.jacket_size)} fullWidth disabled={disabled}>
                     <InputLabel>Jacket Size</InputLabel>
                     <Select {...field}>
-                      <Option value="">None</Option>
-                      <Option value="XS">XS</Option>
-                      <Option value="S">Small</Option>
-                      <Option value="M">Medium</Option>
-                      <Option value="L">Large</Option>
-                      <Option value="XL">X-Large</Option>
-                      <Option value="2XL">2X-Large</Option>
-                      <Option value="3XL">3X-Large</Option>
-                      <Option value="4XL">4X-Large</Option>
-                      <Option value="5XL">5X-Large</Option>
+                      {APPAREL_JACKET_SIZE_VALUES.map((size) => (
+                        <Option key={size} value={size}>
+                          {getApparelJacketSizeLabel(size)}
+                        </Option>
+                      ))}
                     </Select>
                     {errors.apparel?.jacket_size && <FormHelperText>{errors.apparel.jacket_size.message}</FormHelperText>}
                   </FormControl>
@@ -90,25 +91,11 @@ export function AdditionalDetailsSection({ control, errors, disabled = false }) 
                   <FormControl error={Boolean(errors.apparel?.shirt_size)} fullWidth disabled={disabled}>
                     <InputLabel>Apparel Shirt Size</InputLabel>
                     <Select {...field}>
-                      <Option value="">None</Option>
-                      <Option value="WXS">WXS</Option>
-                      <Option value="WS">WS</Option>
-                      <Option value="WM">WM</Option>
-                      <Option value="WL">WL</Option>
-                      <Option value="WXL">WXL</Option>
-                      <Option value="W2XL">W2XL</Option>
-                      <Option value="W3XL">W3XL</Option>
-                      <Option value="W4XL">W4XL</Option>
-                      <Option value="W5XL">W5XL</Option>
-                      <Option value="XS">XS</Option>
-                      <Option value="S">Small</Option>
-                      <Option value="M">Medium</Option>
-                      <Option value="L">Large</Option>
-                      <Option value="XL">X-Large</Option>
-                      <Option value="2XL">2X-Large</Option>
-                      <Option value="3XL">3X-Large</Option>
-                      <Option value="4XL">4X-Large</Option>
-                      <Option value="5XL">5X-Large</Option>
+                      {APPAREL_SHIRT_SIZE_FORM_ORDER.map((size) => (
+                        <Option key={size} value={size}>
+                          {getApparelShirtSizeLabel(size)}
+                        </Option>
+                      ))}
                     </Select>
                     {errors.apparel?.shirt_size && <FormHelperText>{errors.apparel.shirt_size.message}</FormHelperText>}
                   </FormControl>
