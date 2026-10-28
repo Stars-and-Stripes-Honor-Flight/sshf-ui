@@ -1019,6 +1019,9 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
           id: 'vet-1',
           name_first: 'Vic',
           name_last: 'Veteran',
+          shirt: 'XL',
+          apparel_shirt_size: 'L',
+          apparel_jacket_size: 'L',
           apparel_notes: 'Tall sizes',
           bus: 'Alpha4',
           confirmed: true,
@@ -1029,6 +1032,8 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
           id: 'guard-1',
           name_first: 'Gina',
           name_last: 'Guardian',
+          apparel_shirt_size: 'M',
+          apparel_jacket_size: 'M',
           apparel_notes: 'Exchange',
           bus: 'Alpha4',
           confirmed: true,
@@ -1037,6 +1042,34 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
       ],
     };
   }
+
+  test('persists apparel shirt and jacket sizes via onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = jest.fn().mockResolvedValue(undefined);
+    render(
+      <FlightDetailsGrid
+        pairs={[buildApparelPair()]}
+        onUpdate={onUpdate}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        {...apparelProps}
+      />
+    );
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    await user.click(within(veteranRow).getByRole('combobox', { name: 'Shirt size' }));
+    await user.click(await screen.findByRole('option', { name: 'M' }));
+
+    const guardianRow = screen.getByRole('link', { name: 'Gina Guardian' }).closest('tr');
+    await user.click(within(guardianRow).getByRole('combobox', { name: 'Jacket size' }));
+    await user.click(await screen.findByRole('option', { name: 'L' }));
+
+    expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { apparel_shirt_size: 'M' });
+    expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', { apparel_jacket_size: 'L' });
+  });
 
   test('persists apparel notes for veteran and guardian via onUpdate', async () => {
     const user = userEvent.setup();
@@ -1070,7 +1103,25 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
     expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', { apparel_notes: 'Shipped' });
   });
 
-  test('disables apparel notes when readOnly', () => {
+  test('shows apparel shirt size from apparel_shirt_size only, not application shirt', () => {
+    render(
+      <FlightDetailsGrid
+        pairs={[buildApparelPair()]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        {...apparelProps}
+      />
+    );
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    expect(within(veteranRow).getByRole('combobox', { name: 'Shirt size' })).toHaveTextContent('L');
+  });
+
+  test('disables apparel size selects and notes when readOnly', () => {
     render(
       <FlightDetailsGrid
         pairs={[buildApparelPair()]}
@@ -1088,6 +1139,14 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
     expect(screen.getAllByRole('textbox', { name: 'Apparel notes' })).toHaveLength(2);
     screen.getAllByRole('textbox', { name: 'Apparel notes' }).forEach((field) => {
       expect(field).toBeDisabled();
+    });
+    expect(screen.getAllByRole('combobox', { name: 'Shirt size' })).toHaveLength(2);
+    expect(screen.getAllByRole('combobox', { name: 'Jacket size' })).toHaveLength(2);
+    screen.getAllByRole('combobox', { name: 'Shirt size' }).forEach((field) => {
+      expect(field).toHaveAttribute('aria-disabled', 'true');
+    });
+    screen.getAllByRole('combobox', { name: 'Jacket size' }).forEach((field) => {
+      expect(field).toHaveAttribute('aria-disabled', 'true');
     });
   });
 });

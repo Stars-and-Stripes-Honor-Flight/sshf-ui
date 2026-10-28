@@ -536,6 +536,10 @@ describe('Flight details roster — apparel notes (issue #275)', () => {
     });
     api.updateVeteranApparelNotes = jest.fn().mockResolvedValue({ ok: true });
     api.updateGuardianApparelNotes = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranApparelShirtSize = jest.fn().mockResolvedValue({ ok: true });
+    api.updateGuardianApparelShirtSize = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranApparelJacketSize = jest.fn().mockResolvedValue({ ok: true });
+    api.updateGuardianApparelJacketSize = jest.fn().mockResolvedValue({ ok: true });
     api.getVeteran = jest.fn();
     api.getGuardian = jest.fn();
     api.updateVeteran = jest.fn();
@@ -549,6 +553,28 @@ describe('Flight details roster — apparel notes (issue #275)', () => {
     await user.click(await screen.findByRole('option', { name: 'Apparel' }));
     expect(screen.getByRole('columnheader', { name: 'Notes' })).toBeInTheDocument();
   }
+
+  test('saves apparel shirt and jacket sizes through dedicated PATCH endpoints', async () => {
+    const user = userEvent.setup();
+    await openApparelPreset(user);
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    await user.click(within(veteranRow).getByRole('combobox', { name: 'Shirt size' }));
+    await user.click(await screen.findByRole('option', { name: 'XL' }));
+
+    const guardianRow = screen.getByRole('link', { name: 'Gina Guardian' }).closest('tr');
+    await user.click(within(guardianRow).getByRole('combobox', { name: 'Jacket size' }));
+    await user.click(await screen.findByRole('option', { name: '2XL' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranApparelShirtSize).toHaveBeenCalledWith('vet-apparel', 'XL');
+      expect(api.updateGuardianApparelJacketSize).toHaveBeenCalledWith('grd-apparel', '2XL');
+    });
+    expect(api.getVeteran).not.toHaveBeenCalled();
+    expect(api.getGuardian).not.toHaveBeenCalled();
+    expect(api.updateVeteran).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+  });
 
   test('saves veteran and guardian apparel notes through dedicated PATCH endpoints', async () => {
     const user = userEvent.setup();

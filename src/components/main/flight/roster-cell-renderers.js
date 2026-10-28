@@ -327,20 +327,37 @@ export function renderLimitationsCell(person, personType) {
 }
 
 /**
- * Render shirt size cell (prefer apparel_shirt_size, fallback to shirt)
+ * Editable apparel shirt size (flight detail `apparel_shirt_size` only).
  */
-export function renderShirtSizeCell(person) {
+export function renderShirtSizeCell(person, personType, handlers) {
   if (!person) return null;
-  const size = person.apparel_shirt_size || person.shirt;
-  return <Typography variant="body2">{size || '—'}</Typography>;
+
+  const { ApparelShirtSizeSelect, handleApparelShirtSizeChange } = handlers;
+  return (
+    <ApparelShirtSizeSelect
+      value={person.apparel_shirt_size}
+      onChange={handleApparelShirtSizeChange}
+      personId={person.id}
+      personType={personType}
+    />
+  );
 }
 
 /**
- * Render jacket size cell
+ * Editable apparel jacket size (flight detail `apparel_jacket_size` only).
  */
-export function renderJacketSizeCell(person) {
+export function renderJacketSizeCell(person, personType, handlers) {
   if (!person) return null;
-  return <Typography variant="body2">{person.apparel_jacket_size || '—'}</Typography>;
+
+  const { ApparelJacketSizeSelect, handleApparelJacketSizeChange } = handlers;
+  return (
+    <ApparelJacketSizeSelect
+      value={person.apparel_jacket_size}
+      onChange={handleApparelJacketSizeChange}
+      personId={person.id}
+      personType={personType}
+    />
+  );
 }
 
 function RolePlaceholder() {
@@ -530,9 +547,9 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
     case 'limitations':
       return renderLimitationsCell(person, personType);
     case 'shirt_size':
-      return renderShirtSizeCell(person);
+      return renderShirtSizeCell(person, personType, handlers);
     case 'jacket_size':
-      return renderJacketSizeCell(person);
+      return renderJacketSizeCell(person, personType, handlers);
     case 'notes':
       return renderNotesCell(person, personType, handlers);
     case 'name_middle':

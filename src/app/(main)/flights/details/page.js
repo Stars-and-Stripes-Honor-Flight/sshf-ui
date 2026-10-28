@@ -351,6 +351,18 @@ function FlightDetailsPage() {
         } else if (personType === 'Guardian') {
           await api.updateGuardianSeat(personId, updates.flight.seat);
         }
+      } else if (updates.apparel_shirt_size !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranApparelShirtSize(personId, updates.apparel_shirt_size);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardianApparelShirtSize(personId, updates.apparel_shirt_size);
+        }
+      } else if (updates.apparel_jacket_size !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranApparelJacketSize(personId, updates.apparel_jacket_size);
+        } else if (personType === 'Guardian') {
+          await api.updateGuardianApparelJacketSize(personId, updates.apparel_jacket_size);
+        }
       } else if (updates.apparel_notes !== undefined) {
         if (personType === 'Veteran') {
           await api.updateVeteranApparelNotes(personId, updates.apparel_notes);

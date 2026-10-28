@@ -45,8 +45,19 @@ import { VeteranGuardianSearchDialog } from '@/components/main/flight/veteran-gu
 import { getColumnConfig, ACTIVITY_PRESETS } from '@/components/main/flight/column-configs';
 import { getAssignedTo } from '@/components/main/flight/roster-helpers';
 import { renderActivityCell } from '@/components/main/flight/roster-cell-renderers';
+import {
+  APPAREL_JACKET_SIZE_VALUES,
+  APPAREL_SHIRT_SIZE_VALUES,
+} from '@/constants/apparel-size-options';
 
 const BUS_OPTIONS = ['None', 'Alpha1', 'Alpha2', 'Alpha3', 'Alpha4', 'Alpha5', 'Bravo1', 'Bravo2', 'Bravo3', 'Bravo4', 'Bravo5'];
+
+function normalizeApparelSizeValue(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'None';
+  }
+  return value;
+}
 
 // Injected once for the roster. Per-input copies of these keyframes are what
 // make a full flight's TextFields/Selects expensive to mount in dev.
@@ -293,6 +304,67 @@ const BusSelector = React.memo(function BusSelector({ value, onChange, personId,
   );
 });
 
+const ApparelSizeSelect = React.memo(function ApparelSizeSelect({
+  value,
+  options,
+  onChange,
+  personId,
+  personType,
+  disabled = false,
+  ariaLabel,
+}) {
+  const selected = normalizeApparelSizeValue(value);
+  const menuOptions = React.useMemo(() => {
+    if (options.includes(selected)) {
+      return options;
+    }
+    return [selected, ...options];
+  }, [options, selected]);
+
+  const menuItems = React.useMemo(
+    () => menuOptions.map((size) => (
+      <MenuItem key={size} value={size}>
+        {size}
+      </MenuItem>
+    )),
+    [menuOptions]
+  );
+
+  return (
+    <Select
+      size="small"
+      disableInjectingGlobalStyles
+      value={selected}
+      onChange={(event) => onChange(event.target.value, personId, personType)}
+      disabled={disabled}
+      inputProps={{ 'aria-label': ariaLabel }}
+      sx={{ minWidth: 88, maxWidth: 112 }}
+    >
+      {menuItems}
+    </Select>
+  );
+});
+
+const ApparelShirtSizeSelect = React.memo(function ApparelShirtSizeSelect(props) {
+  return (
+    <ApparelSizeSelect
+      {...props}
+      options={APPAREL_SHIRT_SIZE_VALUES}
+      ariaLabel="Shirt size"
+    />
+  );
+});
+
+const ApparelJacketSizeSelect = React.memo(function ApparelJacketSizeSelect(props) {
+  return (
+    <ApparelSizeSelect
+      {...props}
+      options={APPAREL_JACKET_SIZE_VALUES}
+      ariaLabel="Jacket size"
+    />
+  );
+});
+
 // Memoized so a parent render (new callback, filter state that does not change
 // this pair) does not re-render every visible row's Select/TextField.
 const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdate, nameFilter, statusFilter, busFilter, onOpenPairingDialog, activityPreset = ACTIVITY_PRESETS.OPS, guardiansFocus = false, readOnly = false }) {
@@ -445,6 +517,32 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       }
     }
   };
+
+  const handleApparelShirtSizeChange = async (newValue, personId, personType) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, personType, {
+          apparel_shirt_size: normalizeApparelSizeValue(newValue),
+        });
+        toast.success('Shirt size updated');
+      } catch (error) {
+        toast.error('Failed to update shirt size');
+      }
+    }
+  };
+
+  const handleApparelJacketSizeChange = async (newValue, personId, personType) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, personType, {
+          apparel_jacket_size: normalizeApparelSizeValue(newValue),
+        });
+        toast.success('Jacket size updated');
+      } catch (error) {
+        toast.error('Failed to update jacket size');
+      }
+    }
+  };
   
   // Cell renderer handlers for activity cells
   const handlers = {
@@ -457,6 +555,12 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     BusSelector: readOnly
       ? (props) => <BusSelector {...props} disabled />
       : BusSelector,
+    ApparelShirtSizeSelect: readOnly
+      ? (props) => <ApparelShirtSizeSelect {...props} disabled />
+      : ApparelShirtSizeSelect,
+    ApparelJacketSizeSelect: readOnly
+      ? (props) => <ApparelJacketSizeSelect {...props} disabled />
+      : ApparelJacketSizeSelect,
     handleSeatChange,
     handleBusChange,
     handleAssignedToCallChange,
@@ -466,6 +570,8 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     handleTrainingCompleteChange,
     handleTrainingNotesChange,
     handleApparelNotesChange,
+    handleApparelShirtSizeChange,
+    handleApparelJacketSizeChange,
   };
 
   // Guardians focus keeps the guardian row as the one staff see first. A veteran
