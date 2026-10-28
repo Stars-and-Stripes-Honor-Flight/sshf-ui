@@ -327,20 +327,37 @@ export function renderLimitationsCell(person, personType) {
 }
 
 /**
- * Render shirt size cell (prefer apparel_shirt_size, fallback to shirt)
+ * Editable apparel shirt size (flight detail `apparel_shirt_size` only).
  */
-export function renderShirtSizeCell(person) {
+export function renderShirtSizeCell(person, personType, handlers) {
   if (!person) return null;
-  const size = person.apparel_shirt_size || person.shirt;
-  return <Typography variant="body2">{size || '—'}</Typography>;
+
+  const { ApparelShirtSizeSelect, handleApparelShirtSizeChange } = handlers;
+  return (
+    <ApparelShirtSizeSelect
+      value={person.apparel_shirt_size}
+      onChange={handleApparelShirtSizeChange}
+      personId={person.id}
+      personType={personType}
+    />
+  );
 }
 
 /**
- * Render jacket size cell
+ * Editable apparel jacket size (flight detail `apparel_jacket_size` only).
  */
-export function renderJacketSizeCell(person) {
+export function renderJacketSizeCell(person, personType, handlers) {
   if (!person) return null;
-  return <Typography variant="body2">{person.apparel_jacket_size || '—'}</Typography>;
+
+  const { ApparelJacketSizeSelect, handleApparelJacketSizeChange } = handlers;
+  return (
+    <ApparelJacketSizeSelect
+      value={person.apparel_jacket_size}
+      onChange={handleApparelJacketSizeChange}
+      personId={person.id}
+      personType={personType}
+    />
+  );
 }
 
 function RolePlaceholder() {
@@ -475,14 +492,24 @@ export function renderSeeDocCell(person, personType) {
 }
 
 /**
- * Render apparel notes cell
+ * Multiline apparel notes for veterans and guardians.
  */
-export function renderNotesCell(person) {
+export function renderNotesCell(person, personType, handlers) {
   if (!person) return null;
+
+  const { EditableField, handleApparelNotesChange } = handlers;
   return (
-    <Typography variant="body2" sx={{ fontSize: '0.875rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-      {person.apparel_notes || '—'}
-    </Typography>
+    <EditableField
+      value={person.apparel_notes || ''}
+      onBlur={(newValue) => handleApparelNotesChange(newValue, person.id, personType)}
+      placeholder="Apparel notes"
+      multiline
+      minRows={2}
+      maxRows={4}
+      maxWidth={280}
+      minWidth={180}
+      inputProps={{ 'aria-label': 'Apparel notes' }}
+    />
   );
 }
 
@@ -520,11 +547,11 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
     case 'limitations':
       return renderLimitationsCell(person, personType);
     case 'shirt_size':
-      return renderShirtSizeCell(person);
+      return renderShirtSizeCell(person, personType, handlers);
     case 'jacket_size':
-      return renderJacketSizeCell(person);
+      return renderJacketSizeCell(person, personType, handlers);
     case 'notes':
-      return renderNotesCell(person);
+      return renderNotesCell(person, personType, handlers);
     case 'name_middle':
       return renderMiddleNameCell(person, personType, handlers);
     case 'phone_mbl':

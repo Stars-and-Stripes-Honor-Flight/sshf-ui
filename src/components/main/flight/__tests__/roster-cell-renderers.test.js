@@ -17,6 +17,9 @@ import {
   renderMobilePhoneCell,
   renderTrainingCell,
   renderTrainingNotesCell,
+  renderNotesCell,
+  renderShirtSizeCell,
+  renderJacketSizeCell,
   renderWaiverCell,
   renderSeeDocCell,
 } from '../roster-cell-renderers';
@@ -308,6 +311,127 @@ const trainingHandlers = {
   handleTrainingCompleteChange: jest.fn(),
   handleTrainingNotesChange: jest.fn(),
 };
+
+const apparelHandlers = {
+  EditableField: MockTrainingField,
+  handleApparelNotesChange: jest.fn(),
+};
+
+function MockApparelSizeSelect({ value, onChange, personId, personType, disabled, ariaLabel }) {
+  return (
+    <select
+      aria-label={ariaLabel}
+      value={value || 'None'}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value, personId, personType)}
+    >
+      <option value="None">None</option>
+      <option value="M">M</option>
+      <option value="L">L</option>
+    </select>
+  );
+}
+
+const apparelSizeHandlers = {
+  ApparelShirtSizeSelect: (props) => <MockApparelSizeSelect {...props} ariaLabel="Shirt size" />,
+  ApparelJacketSizeSelect: (props) => <MockApparelSizeSelect {...props} ariaLabel="Jacket size" />,
+  handleApparelShirtSizeChange: jest.fn(),
+  handleApparelJacketSizeChange: jest.fn(),
+};
+
+describe('apparel size roster cells (issue #275)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('uses apparel_shirt_size only and ignores application shirt field', async () => {
+    const user = userEvent.setup();
+    render(
+      renderShirtSizeCell(
+        { id: 'vet-1', shirt: 'XL', apparel_shirt_size: 'M' },
+        'Veteran',
+        apparelSizeHandlers
+      )
+    );
+
+    const shirt = screen.getByLabelText('Shirt size');
+    expect(shirt).toHaveValue('M');
+    await user.selectOptions(shirt, 'L');
+    expect(apparelSizeHandlers.handleApparelShirtSizeChange).toHaveBeenCalledWith('L', 'vet-1', 'Veteran');
+  });
+
+  test('defaults empty apparel shirt size to None without using application shirt', () => {
+    render(
+      renderShirtSizeCell(
+        { id: 'vet-2', shirt: 'XL' },
+        'Veteran',
+        apparelSizeHandlers
+      )
+    );
+
+    expect(screen.getByLabelText('Shirt size')).toHaveValue('None');
+  });
+
+  test('saves jacket size on change for guardians', async () => {
+    const user = userEvent.setup();
+    render(
+      renderJacketSizeCell(
+        { id: 'grd-1', apparel_jacket_size: 'M' },
+        'Guardian',
+        apparelSizeHandlers
+      )
+    );
+
+    const jacket = screen.getByLabelText('Jacket size');
+    expect(jacket).toHaveValue('M');
+    await user.selectOptions(jacket, 'L');
+    expect(apparelSizeHandlers.handleApparelJacketSizeChange).toHaveBeenCalledWith('L', 'grd-1', 'Guardian');
+  });
+});
+
+describe('apparel notes roster cell (issue #275)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('uses a multiline apparel notes field for veterans and guardians', async () => {
+    const user = userEvent.setup();
+
+    render(
+      renderNotesCell(
+        { id: 'vet-1', apparel_notes: 'Jacket exchange pending' },
+        'Veteran',
+        apparelHandlers
+      )
+    );
+
+    const veteranNotes = screen.getByRole('textbox', { name: 'Apparel notes' });
+    expect(veteranNotes.tagName).toBe('TEXTAREA');
+    expect(veteranNotes).toHaveValue('Jacket exchange pending');
+    await user.clear(veteranNotes);
+    await user.type(veteranNotes, 'Ordered 10/21');
+    await user.tab();
+    expect(apparelHandlers.handleApparelNotesChange).toHaveBeenCalledWith('Ordered 10/21', 'vet-1', 'Veteran');
+  });
+
+  test('saves guardian apparel notes on blur', async () => {
+    const user = userEvent.setup();
+    render(
+      renderNotesCell(
+        { id: 'grd-1', apparel_notes: 'Needs XL shirt' },
+        'Guardian',
+        apparelHandlers
+      )
+    );
+
+    const guardianNotes = screen.getByRole('textbox', { name: 'Apparel notes' });
+    expect(guardianNotes).toHaveValue('Needs XL shirt');
+    await user.clear(guardianNotes);
+    await user.type(guardianNotes, 'Shipped');
+    await user.tab();
+    expect(apparelHandlers.handleApparelNotesChange).toHaveBeenCalledWith('Shipped', 'grd-1', 'Guardian');
+  });
+});
 
 describe('training roster cells (issue #212)', () => {
   beforeEach(() => {

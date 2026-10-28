@@ -278,6 +278,33 @@ class ApiClient {
     }
   }
 
+  // Update a veteran's apparel shirt size
+  async updateVeteranApparelShirtSize(id, size) {
+    const response = await this.request(`/veterans/${id}/apparel-shirt-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
+  }
+
+  // Update a veteran's apparel jacket size
+  async updateVeteranApparelJacketSize(id, size) {
+    const response = await this.request(`/veterans/${id}/apparel-jacket-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
+  }
+
+  // Update a veteran's apparel notes
+  async updateVeteranApparelNotes(id, notes) {
+    const response = await this.request(`/veterans/${id}/apparel-notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
+  }
+
   // Delete a veteran
   async deleteVeteran(id) {
     try {
@@ -344,6 +371,33 @@ class ApiClient {
       toast.error(`Failed to update guardian seat: ${error.message}`);
       throw error;
     }
+  }
+
+  // Update a guardian's apparel shirt size
+  async updateGuardianApparelShirtSize(id, size) {
+    const response = await this.request(`/guardians/${id}/apparel-shirt-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
+  }
+
+  // Update a guardian's apparel jacket size
+  async updateGuardianApparelJacketSize(id, size) {
+    const response = await this.request(`/guardians/${id}/apparel-jacket-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
+  }
+
+  // Update a guardian's apparel notes
+  async updateGuardianApparelNotes(id, notes) {
+    const response = await this.request(`/guardians/${id}/apparel-notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
   }
 
   // Delete a guardian
