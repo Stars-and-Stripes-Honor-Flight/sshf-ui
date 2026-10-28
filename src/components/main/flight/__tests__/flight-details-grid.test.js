@@ -99,6 +99,74 @@ describe('FlightDetailsGrid readOnly', () => {
     expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Add Guardian' })).not.toBeInTheDocument();
   });
+
+  test('keeps memoized selects mounted when a read-only row re-renders', () => {
+    const pair = {
+      pairId: 'pair-stable',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        {
+          type: 'Veteran',
+          id: 'vet-1',
+          name_first: 'Vic',
+          name_last: 'Veteran',
+          bus: 'Alpha4',
+          seat: '09E',
+          apparel_shirt_size: 'L',
+          apparel_jacket_size: 'M',
+          apparel_notes: 'Tall',
+          confirmed: true,
+          nofly: false,
+        },
+      ],
+    };
+    const props = {
+      pairs: [pair],
+      onUpdate: jest.fn(),
+      nameFilter: '',
+      statusFilter: 'all',
+      busFilter: 'all',
+      flightId: 'flight-1',
+      flightName: 'Test Flight',
+      readOnly: true,
+    };
+
+    const { rerender } = render(
+      <FlightDetailsGrid {...props} activityPreset={ACTIVITY_PRESETS.OPS} />
+    );
+
+    const seat = screen.getByRole('textbox', { name: 'Veteran seat assignment' });
+    const bus = screen.getByRole('combobox');
+    expect(seat).toBeDisabled();
+    expect(bus).toHaveAttribute('aria-disabled', 'true');
+
+    rerender(
+      <FlightDetailsGrid {...props} nameFilter="vic" activityPreset={ACTIVITY_PRESETS.OPS} />
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Veteran seat assignment' })).toBe(seat);
+    expect(screen.getByRole('combobox')).toBe(bus);
+
+    rerender(
+      <FlightDetailsGrid {...props} nameFilter="vic" activityPreset={ACTIVITY_PRESETS.APPAREL} />
+    );
+
+    const shirt = screen.getByRole('combobox', { name: 'Shirt size' });
+    const jacket = screen.getByRole('combobox', { name: 'Jacket size' });
+    const notes = screen.getByRole('textbox', { name: 'Apparel notes' });
+    expect(shirt).toHaveAttribute('aria-disabled', 'true');
+    expect(jacket).toHaveAttribute('aria-disabled', 'true');
+    expect(notes).toBeDisabled();
+
+    rerender(
+      <FlightDetailsGrid {...props} nameFilter="veteran" activityPreset={ACTIVITY_PRESETS.APPAREL} />
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Shirt size' })).toBe(shirt);
+    expect(screen.getByRole('combobox', { name: 'Jacket size' })).toBe(jacket);
+    expect(screen.getByRole('textbox', { name: 'Apparel notes' })).toBe(notes);
+  });
 });
 
 describe('FlightDetailsGrid - assigned_to display', () => {

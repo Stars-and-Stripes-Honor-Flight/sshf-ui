@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
 import { toast } from '@/components/core/toaster';
+import { ACTIVITY_PRESET_STORAGE_KEY, ACTIVITY_PRESETS } from '@/components/main/flight/column-configs';
 import { api } from '@/lib/api';
 
 import Page from '../page';
@@ -1310,5 +1311,225 @@ describe('Print guardian list (issue #262)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Print guardian list' }));
     expect(await screen.findByRole('dialog', { name: 'Print guardian list' })).toBeInTheDocument();
+  });
+});
+
+const completedRosterPairs = [
+  {
+    pairId: 'completed-pair',
+    busMismatch: false,
+    missingPairedPerson: false,
+    people: [
+      veteran({
+        id: 'vet-done',
+        name_first: 'Vic',
+        name_last: 'Done',
+        bus: 'Alpha1',
+        seat: '1A',
+        assigned_to: 'Karyn',
+        apparel_shirt_size: 'L',
+        apparel_jacket_size: 'L',
+        apparel_notes: 'Tall',
+        name_middle: 'Alan',
+        phone_mbl: '414-555-0101',
+        mail_call_received: true,
+        mail_call_adopt: false,
+      }),
+      guardian({
+        id: 'grd-done',
+        name_first: 'Gina',
+        name_last: 'Done',
+        bus: 'Alpha1',
+        seat: '1B',
+        assigned_to: 'Karyn',
+        apparel_shirt_size: 'M',
+        apparel_jacket_size: 'M',
+        apparel_notes: 'Exchange',
+        name_middle: 'Marie',
+        phone_mbl: '414-555-0102',
+        training: 'Main',
+        training_complete: true,
+        flight_training_notes: 'Bring forms',
+        flight_waiver: true,
+        flight_training_see_doc: false,
+      }),
+    ],
+  },
+  {
+    pairId: 'completed-unpaired',
+    busMismatch: false,
+    missingPairedPerson: true,
+    people: [
+      veteran({
+        id: 'vet-solo',
+        name_first: 'Uma',
+        name_last: 'Solo',
+        bus: 'Alpha2',
+        seat: '2A',
+        assigned_to: 'Karyn',
+        apparel_shirt_size: 'S',
+        apparel_jacket_size: 'S',
+        apparel_notes: '',
+        name_middle: 'Lee',
+        phone_mbl: '414-555-0199',
+      }),
+    ],
+  },
+];
+
+async function chooseColumns(user, label) {
+  await user.click(screen.getByRole('combobox', { name: 'Columns' }));
+  await user.click(await screen.findByRole('option', { name: label }));
+}
+
+describe('Completed flight roster edits (issue #286)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockCan.mockImplementation(() => true);
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: completedRosterPairs,
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 2,
+        guardians: 1,
+        veteransConfirmed: 2,
+        guardiansConfirmed: 1,
+        remaining: 10,
+      },
+    });
+  });
+
+  test('disables inline edits in every column layout and keeps view, sort, filter, and print', async () => {
+    const user = userEvent.setup();
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Gina Done' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Guardian' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Columns' })).toBeEnabled();
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toBeEnabled();
+    expect(screen.getByPlaceholderText('Search by name, phone, or city...')).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Print guardian list' })).toBeEnabled();
+
+    const vicRow = () => screen.getByRole('link', { name: 'Vic Done' }).closest('tr');
+    const ginaRow = () => screen.getByRole('link', { name: 'Gina Done' }).closest('tr');
+
+    expect(within(vicRow()).getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
+    expect(within(vicRow()).getByRole('combobox')).toHaveAttribute('aria-disabled', 'true');
+    expect(within(ginaRow()).getByRole('textbox', { name: 'Guardian seat assignment' })).toBeDisabled();
+
+    await user.click(screen.getByRole('combobox', { name: 'Sort by' }));
+    await user.click(await screen.findByRole('option', { name: 'Seat' }));
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveTextContent('Seat');
+    expect(screen.getByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText('Search by name, phone, or city...'), 'Solo');
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Vic Done' })).not.toBeInTheDocument();
+    await user.clear(screen.getByPlaceholderText('Search by name, phone, or city...'));
+    expect(await screen.findByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
+
+    await chooseColumns(user, 'Caller');
+    expect(within(vicRow()).getByRole('textbox')).toBeDisabled();
+
+    await chooseColumns(user, 'Medical');
+    expect(screen.getByRole('columnheader', { name: 'Med Notes / Med Experience' })).toBeInTheDocument();
+    const medicalTable = screen.getByRole('table');
+    expect(within(medicalTable).queryAllByRole('textbox')).toHaveLength(0);
+    expect(within(medicalTable).queryAllByRole('combobox')).toHaveLength(0);
+    expect(within(medicalTable).queryAllByRole('checkbox')).toHaveLength(0);
+
+    await chooseColumns(user, 'Apparel');
+    const apparelTable = screen.getByRole('table');
+    expect(within(apparelTable).getAllByRole('textbox', { name: 'Apparel notes' })).toHaveLength(3);
+    within(apparelTable).getAllByRole('textbox', { name: 'Apparel notes' }).forEach((field) => {
+      expect(field).toBeDisabled();
+    });
+    within(apparelTable).getAllByRole('combobox', { name: 'Shirt size' }).forEach((field) => {
+      expect(field).toHaveAttribute('aria-disabled', 'true');
+    });
+    within(apparelTable).getAllByRole('combobox', { name: 'Jacket size' }).forEach((field) => {
+      expect(field).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    await chooseColumns(user, 'Training');
+    await user.click(screen.getByRole('button', { name: 'Guardians focus' }));
+    expect(screen.getByRole('button', { name: 'Guardians focus' })).toHaveAttribute('aria-pressed', 'false');
+    screen.getAllByRole('textbox', { name: 'Middle name' }).forEach((field) => {
+      expect(field).toBeDisabled();
+    });
+    screen.getAllByRole('textbox', { name: 'Mobile phone' }).forEach((field) => {
+      expect(field).toBeDisabled();
+    });
+    expect(screen.getByRole('checkbox', { name: 'Training complete' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Training notes' })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Gina Done' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
+  });
+
+  test('disables roster edits when the flight document completed flag is the legacy string true', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: 'true' }));
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
+    const vicRow = screen.getByRole('link', { name: 'Vic Done' }).closest('tr');
+    expect(within(vicRow).getByRole('textbox', { name: 'Veteran seat assignment' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Print guardian list' })).toBeEnabled();
+  });
+});
+
+describe('Flight details column layout persistence (issue #286)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [paired],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 1,
+        guardians: 1,
+        veteransConfirmed: 1,
+        guardiansConfirmed: 1,
+        remaining: 10,
+      },
+    });
+  });
+
+  test('mounting does not overwrite a saved column layout with the default', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(ACTIVITY_PRESET_STORAGE_KEY, ACTIVITY_PRESETS.APPAREL);
+
+    render(
+      <React.StrictMode>
+        <Page />
+      </React.StrictMode>
+    );
+
+    expect(await screen.findByRole('link', { name: 'Pat Paired' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Columns' })).toHaveTextContent('Apparel');
+    expect(localStorage.getItem(ACTIVITY_PRESET_STORAGE_KEY)).toBe(ACTIVITY_PRESETS.APPAREL);
+
+    await user.click(screen.getByRole('combobox', { name: 'Columns' }));
+    await user.click(await screen.findByRole('option', { name: 'Caller' }));
+    expect(localStorage.getItem(ACTIVITY_PRESET_STORAGE_KEY)).toBe(ACTIVITY_PRESETS.CALLER);
   });
 });
