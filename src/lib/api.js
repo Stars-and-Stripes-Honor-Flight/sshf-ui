@@ -280,44 +280,29 @@ class ApiClient {
 
   // Update a veteran's apparel shirt size
   async updateVeteranApparelShirtSize(id, size) {
-    try {
-      const response = await this.request(`/veterans/${id}/apparel-shirt-size`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: size }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update veteran shirt size: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/veterans/${id}/apparel-shirt-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
   }
 
   // Update a veteran's apparel jacket size
   async updateVeteranApparelJacketSize(id, size) {
-    try {
-      const response = await this.request(`/veterans/${id}/apparel-jacket-size`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: size }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update veteran jacket size: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/veterans/${id}/apparel-jacket-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
   }
 
   // Update a veteran's apparel notes
   async updateVeteranApparelNotes(id, notes) {
-    try {
-      const response = await this.request(`/veterans/${id}/apparel-notes`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: notes }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update veteran apparel notes: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/veterans/${id}/apparel-notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
   }
 
   // Delete a veteran
@@ -390,44 +375,29 @@ class ApiClient {
 
   // Update a guardian's apparel shirt size
   async updateGuardianApparelShirtSize(id, size) {
-    try {
-      const response = await this.request(`/guardians/${id}/apparel-shirt-size`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: size }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update guardian shirt size: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/guardians/${id}/apparel-shirt-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
   }
 
   // Update a guardian's apparel jacket size
   async updateGuardianApparelJacketSize(id, size) {
-    try {
-      const response = await this.request(`/guardians/${id}/apparel-jacket-size`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: size }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update guardian jacket size: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/guardians/${id}/apparel-jacket-size`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: size }),
+    });
+    return await response.json();
   }
 
   // Update a guardian's apparel notes
   async updateGuardianApparelNotes(id, notes) {
-    try {
-      const response = await this.request(`/guardians/${id}/apparel-notes`, {
-        method: 'PATCH',
-        body: JSON.stringify({ value: notes }),
-      });
-      return await response.json();
-    } catch (error) {
-      toast.error(`Failed to update guardian apparel notes: ${error.message}`);
-      throw error;
-    }
+    const response = await this.request(`/guardians/${id}/apparel-notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
   }
 
   // Delete a guardian

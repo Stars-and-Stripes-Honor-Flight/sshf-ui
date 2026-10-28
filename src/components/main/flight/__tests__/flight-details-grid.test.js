@@ -1071,6 +1071,34 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
     expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', { apparel_jacket_size: 'L' });
   });
 
+  test('persists None for apparel shirt and jacket sizes via onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = jest.fn().mockResolvedValue(undefined);
+    render(
+      <FlightDetailsGrid
+        pairs={[buildApparelPair()]}
+        onUpdate={onUpdate}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        {...apparelProps}
+      />
+    );
+
+    const veteranRow = screen.getByRole('link', { name: 'Vic Veteran' }).closest('tr');
+    await user.click(within(veteranRow).getByRole('combobox', { name: 'Shirt size' }));
+    await user.click(await screen.findByRole('option', { name: 'None' }));
+
+    const guardianRow = screen.getByRole('link', { name: 'Gina Guardian' }).closest('tr');
+    await user.click(within(guardianRow).getByRole('combobox', { name: 'Jacket size' }));
+    await user.click(await screen.findByRole('option', { name: 'None' }));
+
+    expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { apparel_shirt_size: 'None' });
+    expect(onUpdate).toHaveBeenCalledWith('guard-1', 'Guardian', { apparel_jacket_size: 'None' });
+  });
+
   test('persists apparel notes for veteran and guardian via onUpdate', async () => {
     const user = userEvent.setup();
     const onUpdate = jest.fn().mockResolvedValue(undefined);

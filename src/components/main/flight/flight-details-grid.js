@@ -524,9 +524,9 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
         await onUpdate(personId, personType, {
           apparel_shirt_size: normalizeApparelSizeValue(newValue),
         });
-        toast.success('Shirt size updated');
+        toast.success('Apparel shirt size updated');
       } catch (error) {
-        toast.error('Failed to update shirt size');
+        toast.error('Failed to update apparel shirt size');
       }
     }
   };
@@ -537,9 +537,9 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
         await onUpdate(personId, personType, {
           apparel_jacket_size: normalizeApparelSizeValue(newValue),
         });
-        toast.success('Jacket size updated');
+        toast.success('Apparel jacket size updated');
       } catch (error) {
-        toast.error('Failed to update jacket size');
+        toast.error('Failed to update apparel jacket size');
       }
     }
   };

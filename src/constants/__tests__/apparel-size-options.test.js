@@ -1,20 +1,27 @@
-import { guardianSchema } from '@/schemas/guardian';
+import { Guardian } from '@/schemas/generated/guardian.zod';
+import { Veteran } from '@/schemas/generated/veteran.zod';
 import {
   APPAREL_JACKET_SIZE_VALUES,
   APPAREL_SHIRT_SIZE_VALUES,
 } from '@/constants/apparel-size-options';
 
-function zodEnumValues(zodField) {
-  const enumSchema = zodField._def?.innerType ?? zodField;
-  return enumSchema._def.values;
-}
-
 describe('apparel-size-options', () => {
-  const apparelFields = guardianSchema.shape.apparel.unwrap().shape;
+  const veteranApparelFields = Veteran.shape.apparel.unwrap().shape;
+  const guardianApparelFields = Guardian.shape.apparel.unwrap().shape;
 
-  test('exports jacket and shirt values from guardian apparel Zod enums', () => {
-    expect(APPAREL_JACKET_SIZE_VALUES).toEqual(zodEnumValues(apparelFields.jacket_size));
-    expect(APPAREL_SHIRT_SIZE_VALUES).toEqual(zodEnumValues(apparelFields.shirt_size));
+  test('exports jacket and shirt values from generated Veteran/Guardian apparel Zod enums', () => {
+    expect(APPAREL_JACKET_SIZE_VALUES).toEqual(
+      veteranApparelFields.jacket_size.removeDefault().options
+    );
+    expect(APPAREL_SHIRT_SIZE_VALUES).toEqual(
+      veteranApparelFields.shirt_size.removeDefault().options
+    );
+    expect(APPAREL_JACKET_SIZE_VALUES).toEqual(
+      guardianApparelFields.jacket_size.removeDefault().options
+    );
+    expect(APPAREL_SHIRT_SIZE_VALUES).toEqual(
+      guardianApparelFields.shirt_size.removeDefault().options
+    );
     expect(APPAREL_JACKET_SIZE_VALUES).toContain('None');
     expect(APPAREL_SHIRT_SIZE_VALUES).toContain('None');
     expect(APPAREL_SHIRT_SIZE_VALUES).toContain('WM');

@@ -1,14 +1,9 @@
-import { guardianSchema } from '@/schemas/guardian';
+import { Veteran } from '@/schemas/generated/veteran.zod';
 
-function zodEnumValues(zodField) {
-  const enumSchema = zodField._def?.innerType ?? zodField;
-  return enumSchema._def.values;
-}
+const veteranApparelFields = Veteran.shape.apparel.unwrap().shape;
 
-const apparelFields = guardianSchema.shape.apparel.unwrap().shape;
+/** Apparel jacket size codes (shared by veterans and guardians; matches generated API Zod enums). */
+export const APPAREL_JACKET_SIZE_VALUES = veteranApparelFields.jacket_size.removeDefault().options;
 
-/** Apparel jacket size codes (shared by veterans and guardians; matches form/API Zod enums). */
-export const APPAREL_JACKET_SIZE_VALUES = zodEnumValues(apparelFields.jacket_size);
-
-/** Apparel shirt size codes (shared by veterans and guardians; matches form/API Zod enums). */
-export const APPAREL_SHIRT_SIZE_VALUES = zodEnumValues(apparelFields.shirt_size);
+/** Apparel shirt size codes (shared by veterans and guardians; matches generated API Zod enums). */
+export const APPAREL_SHIRT_SIZE_VALUES = veteranApparelFields.shirt_size.removeDefault().options;
