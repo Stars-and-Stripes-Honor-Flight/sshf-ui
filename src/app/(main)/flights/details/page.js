@@ -111,6 +111,7 @@ function FlightDetailsPage() {
   const [assignmentCount, setAssignmentCount] = React.useState('1');
   const [addingAssignments, setAddingAssignments] = React.useState(false);
   const rosterPersistCoordinatorRef = React.useRef(createInitialRosterPersistCoordinatorState());
+  const activityPresetPersistRef = React.useRef(createInitialRosterPersistCoordinatorState());
   
   // Bus mismatch auto-fix states
   const [showBusMismatchDialog, setShowBusMismatchDialog] = React.useState(false);
@@ -240,12 +241,24 @@ function FlightDetailsPage() {
 
   React.useEffect(() => {
     document.title = `Flight Details | ${config.site.name}`;
-    // Load saved activity preset
+    // Load the saved column layout, then skip the first persist so the default
+    // Ops value is not written over localStorage. Strict mode runs this effect
+    // twice; the coordinator keeps both passes from saving until state updates.
+    activityPresetPersistRef.current = beginRosterControlsHydrate(
+      activityPresetPersistRef.current
+    );
     setActivityPreset(loadSavedPreset());
   }, []);
-  
-  // Save activity preset when it changes
+
   React.useEffect(() => {
+    const evaluation = evaluateRosterControlsPersist(
+      activityPresetPersistRef.current,
+      'activity-preset'
+    );
+    activityPresetPersistRef.current = evaluation.state;
+    if (!evaluation.shouldPersist) {
+      return;
+    }
     savePreset(activityPreset);
   }, [activityPreset]);
 
@@ -1006,7 +1019,7 @@ function FlightDetailsPage() {
                       flightName={flight.name}
                       activityPreset={activityPreset}
                       guardiansFocus={activityPreset === ACTIVITY_PRESETS.TRAINING && trainingGuardiansFocus}
-                      readOnly={!canWriteRecords}
+                      readOnly={!canWriteRecords || isCompleted}
                     />
                   );
                 })()}

@@ -544,23 +544,16 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     }
   };
   
-  // Cell renderer handlers for activity cells
+  // Stable component types plus a disabled flag. Inline wrappers such as
+  // `(props) => <Component {...props} disabled />` are a new component type
+  // on every render and remount the memoized selects.
   const handlers = {
-    EditableField: readOnly
-      ? (props) => <EditableField {...props} disabled />
-      : EditableField,
-    EditableCheckbox: readOnly
-      ? (props) => <EditableCheckbox {...props} disabled />
-      : EditableCheckbox,
-    BusSelector: readOnly
-      ? (props) => <BusSelector {...props} disabled />
-      : BusSelector,
-    ApparelShirtSizeSelect: readOnly
-      ? (props) => <ApparelShirtSizeSelect {...props} disabled />
-      : ApparelShirtSizeSelect,
-    ApparelJacketSizeSelect: readOnly
-      ? (props) => <ApparelJacketSizeSelect {...props} disabled />
-      : ApparelJacketSizeSelect,
+    EditableField,
+    EditableCheckbox,
+    BusSelector,
+    ApparelShirtSizeSelect,
+    ApparelJacketSizeSelect,
+    readOnly,
     handleSeatChange,
     handleBusChange,
     handleAssignedToCallChange,

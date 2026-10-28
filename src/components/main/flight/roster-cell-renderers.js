@@ -23,7 +23,7 @@ import { getAssignedTo, getPairStatusIssues, getVeteranGroup, normalizeMedExprnc
 export function renderSeatCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { EditableField, handleSeatChange } = handlers;
+  const { EditableField, handleSeatChange, readOnly } = handlers;
   return (
     <EditableField
       value={person.seat || ''}
@@ -31,6 +31,7 @@ export function renderSeatCell(person, personType, handlers) {
       placeholder="e.g., 04A"
       maxWidth={112}
       minWidth={72}
+      disabled={readOnly}
       inputProps={{
         style: { minWidth: '4.5ch', textAlign: 'center' },
         'aria-label': `${personType} seat assignment`,
@@ -46,13 +47,14 @@ export function renderBusCell(person, personType, handlers) {
   if (!person) return null;
   
   if (personType === 'Veteran') {
-    const { BusSelector, handleBusChange } = handlers;
+    const { BusSelector, handleBusChange, readOnly } = handlers;
     return (
       <BusSelector
         value={person.bus}
         onChange={handleBusChange}
         personId={person.id}
         personType={personType}
+        disabled={readOnly}
       />
     );
   }
@@ -205,13 +207,14 @@ export function renderAssignedToCell(person, pair, personType, handlers, localAs
   if (!person) return null;
   
   if (personType === 'Veteran') {
-    const { EditableField, handleAssignedToCallChange } = handlers;
+    const { EditableField, handleAssignedToCallChange, readOnly } = handlers;
     return (
       <EditableField
         value={getAssignedTo(person)}
         onBlur={handleAssignedToCallChange}
         placeholder="Assign to call"
         maxWidth={150}
+        disabled={readOnly}
       />
     );
   }
@@ -332,13 +335,14 @@ export function renderLimitationsCell(person, personType) {
 export function renderShirtSizeCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { ApparelShirtSizeSelect, handleApparelShirtSizeChange } = handlers;
+  const { ApparelShirtSizeSelect, handleApparelShirtSizeChange, readOnly } = handlers;
   return (
     <ApparelShirtSizeSelect
       value={person.apparel_shirt_size}
       onChange={handleApparelShirtSizeChange}
       personId={person.id}
       personType={personType}
+      disabled={readOnly}
     />
   );
 }
@@ -349,13 +353,14 @@ export function renderShirtSizeCell(person, personType, handlers) {
 export function renderJacketSizeCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { ApparelJacketSizeSelect, handleApparelJacketSizeChange } = handlers;
+  const { ApparelJacketSizeSelect, handleApparelJacketSizeChange, readOnly } = handlers;
   return (
     <ApparelJacketSizeSelect
       value={person.apparel_jacket_size}
       onChange={handleApparelJacketSizeChange}
       personId={person.id}
       personType={personType}
+      disabled={readOnly}
     />
   );
 }
@@ -378,13 +383,14 @@ export function renderBirthDateCell(person) {
 export function renderMiddleNameCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { EditableField, handleMiddleNameChange } = handlers;
+  const { EditableField, handleMiddleNameChange, readOnly } = handlers;
   return (
     <EditableField
       value={person.name_middle || ''}
       onBlur={(newValue) => handleMiddleNameChange(newValue, person.id, personType)}
       placeholder="Middle"
       maxWidth={140}
+      disabled={readOnly}
       inputProps={{ 'aria-label': 'Middle name' }}
     />
   );
@@ -396,13 +402,14 @@ export function renderMiddleNameCell(person, personType, handlers) {
 export function renderMobilePhoneCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { EditableField, handleMobilePhoneChange } = handlers;
+  const { EditableField, handleMobilePhoneChange, readOnly } = handlers;
   return (
     <EditableField
       value={person.phone_mbl || ''}
       onBlur={(newValue) => handleMobilePhoneChange(newValue, person.id, personType)}
       placeholder="Mobile"
       maxWidth={170}
+      disabled={readOnly}
       inputProps={{ 'aria-label': 'Mobile phone' }}
     />
   );
@@ -419,7 +426,7 @@ export function renderTrainingCell(person, personType, handlers) {
   }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
-  const { EditableCheckbox, handleTrainingCompleteChange } = handlers;
+  const { EditableCheckbox, handleTrainingCompleteChange, readOnly } = handlers;
   const typeLabel = (person.training || '').trim();
 
   return (
@@ -429,6 +436,7 @@ export function renderTrainingCell(person, personType, handlers) {
         checked={Boolean(person.training_complete)}
         onChange={(next) => handleTrainingCompleteChange(next, person.id)}
         ariaLabel="Training complete"
+        disabled={readOnly}
       />
     </Stack>
   );
@@ -445,7 +453,7 @@ export function renderTrainingNotesCell(person, personType, handlers) {
   }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
-  const { EditableField, handleTrainingNotesChange } = handlers;
+  const { EditableField, handleTrainingNotesChange, readOnly } = handlers;
   return (
     <EditableField
       value={person.flight_training_notes || ''}
@@ -456,6 +464,7 @@ export function renderTrainingNotesCell(person, personType, handlers) {
       maxRows={4}
       maxWidth={280}
       minWidth={180}
+      disabled={readOnly}
       inputProps={{ 'aria-label': 'Training notes' }}
     />
   );
@@ -497,7 +506,7 @@ export function renderSeeDocCell(person, personType) {
 export function renderNotesCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { EditableField, handleApparelNotesChange } = handlers;
+  const { EditableField, handleApparelNotesChange, readOnly } = handlers;
   return (
     <EditableField
       value={person.apparel_notes || ''}
@@ -508,6 +517,7 @@ export function renderNotesCell(person, personType, handlers) {
       maxRows={4}
       maxWidth={280}
       minWidth={180}
+      disabled={readOnly}
       inputProps={{ 'aria-label': 'Apparel notes' }}
     />
   );
