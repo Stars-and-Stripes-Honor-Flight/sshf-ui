@@ -292,12 +292,13 @@ function MockTrainingField({ value, onBlur, multiline, inputProps }) {
   return <input {...shared} />;
 }
 
-function MockTrainingCheckbox({ checked, onChange, ariaLabel }) {
+function MockTrainingCheckbox({ checked, onChange, ariaLabel, disabled }) {
   return (
     <input
       type="checkbox"
       aria-label={ariaLabel}
-      defaultChecked={checked}
+      checked={Boolean(checked)}
+      disabled={disabled}
       onChange={(event) => onChange(event.target.checked)}
     />
   );
@@ -310,6 +311,11 @@ const trainingHandlers = {
   handleMobilePhoneChange: jest.fn(),
   handleTrainingCompleteChange: jest.fn(),
   handleTrainingNotesChange: jest.fn(),
+  handleMailCallReceivedChange: jest.fn(),
+  handleMailCallAdoptChange: jest.fn(),
+  handleWaiverChange: jest.fn(),
+  handleTrainingSeeDocChange: jest.fn(),
+  readOnly: false,
 };
 
 const apparelHandlers = {
@@ -518,8 +524,11 @@ describe('training roster cells (issue #212)', () => {
     );
     expect(screen.queryByText('Main')).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
+    const mailReceived = screen.getByRole('checkbox', { name: 'Mail call received' });
+    expect(mailReceived).toBeEnabled();
+    expect(mailReceived).not.toBeChecked();
+    await user.click(mailReceived);
+    expect(trainingHandlers.handleMailCallReceivedChange).toHaveBeenCalledWith(true, 'vet-1');
   });
 
   test('uses a multiline training notes field for guardians and a mail call checkbox for veterans', async () => {
@@ -548,47 +557,67 @@ describe('training roster cells (issue #212)', () => {
     );
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByText('nope')).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeChecked();
+    const mailAdopt = screen.getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(mailAdopt).toBeEnabled();
+    expect(mailAdopt).toBeChecked();
+    await user.click(mailAdopt);
+    expect(trainingHandlers.handleMailCallAdoptChange).toHaveBeenCalledWith(false, 'vet-1');
   });
 
-  test('shows a read-only mail call received checkbox for veterans, checked and unchecked', () => {
+  test('shows editable mail call received checkbox for veterans, checked and unchecked', async () => {
+    const user = userEvent.setup();
     const { rerender } = render(
       renderTrainingCell({ id: 'vet-1', mail_call_received: true }, 'Veteran', trainingHandlers)
     );
 
     const checked = screen.getByRole('checkbox', { name: 'Mail call received' });
     expect(checked).toBeChecked();
-    expect(checked).toBeDisabled();
-    expect(checked).toHaveAttribute('readonly');
+    expect(checked).toBeEnabled();
     expect(screen.queryByText('Mail call received')).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
 
     rerender(renderTrainingCell({ id: 'vet-2', mail_call_received: false }, 'Veteran', trainingHandlers));
     const unchecked = screen.getByRole('checkbox', { name: 'Mail call received' });
     expect(unchecked).not.toBeChecked();
-    expect(unchecked).toBeDisabled();
-    expect(unchecked).toHaveAttribute('readonly');
-    expect(screen.queryByText('Mail call received')).not.toBeInTheDocument();
+    expect(unchecked).toBeEnabled();
+    await user.click(unchecked);
+    expect(trainingHandlers.handleMailCallReceivedChange).toHaveBeenCalledWith(true, 'vet-2');
   });
 
-  test('shows a read-only mail call adoption checkbox for veterans, checked and unchecked', () => {
+  test('shows editable mail call adoption checkbox for veterans, checked and unchecked', async () => {
+    const user = userEvent.setup();
     const { rerender } = render(
       renderTrainingNotesCell({ id: 'vet-1', mail_call_adopt: false }, 'Veteran', trainingHandlers)
     );
 
     const unchecked = screen.getByRole('checkbox', { name: 'Mail call adoption' });
     expect(unchecked).not.toBeChecked();
-    expect(unchecked).toBeDisabled();
-    expect(unchecked).toHaveAttribute('readonly');
-    expect(screen.queryByText('Mail call adoption')).not.toBeInTheDocument();
+    expect(unchecked).toBeEnabled();
     expect(screen.queryByRole('textbox', { name: 'Training notes' })).not.toBeInTheDocument();
 
     rerender(renderTrainingNotesCell({ id: 'vet-2', mail_call_adopt: true }, 'Veteran', trainingHandlers));
     const checked = screen.getByRole('checkbox', { name: 'Mail call adoption' });
     expect(checked).toBeChecked();
-    expect(checked).toBeDisabled();
-    expect(checked).toHaveAttribute('readonly');
+    expect(checked).toBeEnabled();
+    await user.click(checked);
+    expect(trainingHandlers.handleMailCallAdoptChange).toHaveBeenCalledWith(false, 'vet-2');
+  });
+
+  test('disables training layout checkboxes when readOnly', () => {
+    const readOnlyHandlers = { ...trainingHandlers, readOnly: true };
+    render(
+      <div>
+        {renderTrainingCell({ id: 'vet-1', mail_call_received: true }, 'Veteran', readOnlyHandlers)}
+        {renderTrainingNotesCell({ id: 'vet-1', mail_call_adopt: false }, 'Veteran', readOnlyHandlers)}
+        {renderWaiverCell({ id: 'grd-1', flight_waiver: true }, 'Guardian', readOnlyHandlers)}
+        {renderSeeDocCell({ id: 'grd-1', flight_training_see_doc: false }, 'Guardian', readOnlyHandlers)}
+      </div>
+    );
+
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Waiver' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'See doc' })).toBeDisabled();
   });
 
   test('keeps guardian training controls when mail call flags are present', () => {
@@ -622,23 +651,31 @@ describe('training roster cells (issue #212)', () => {
     expect(screen.queryByRole('checkbox', { name: 'Mail call adoption' })).not.toBeInTheDocument();
   });
 
-  test('shows read-only waiver and see doc checkboxes for guardians only', () => {
+  test('shows editable waiver and see doc checkboxes for guardians only', async () => {
+    const user = userEvent.setup();
     const { rerender } = render(
       <div>
-        {renderWaiverCell({ flight_waiver: true }, 'Guardian')}
-        {renderSeeDocCell({ flight_training_see_doc: false }, 'Guardian')}
+        {renderWaiverCell({ id: 'grd-1', flight_waiver: true }, 'Guardian', trainingHandlers)}
+        {renderSeeDocCell({ id: 'grd-1', flight_training_see_doc: false }, 'Guardian', trainingHandlers)}
       </div>
     );
 
-    expect(screen.getByRole('checkbox', { name: 'Waiver' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Waiver' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'See doc' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'See doc' })).not.toBeChecked();
+    const waiver = screen.getByRole('checkbox', { name: 'Waiver' });
+    expect(waiver).toBeEnabled();
+    expect(waiver).toBeChecked();
+    await user.click(waiver);
+    expect(trainingHandlers.handleWaiverChange).toHaveBeenCalledWith(false, 'grd-1');
+
+    const seeDoc = screen.getByRole('checkbox', { name: 'See doc' });
+    expect(seeDoc).toBeEnabled();
+    expect(seeDoc).not.toBeChecked();
+    await user.click(seeDoc);
+    expect(trainingHandlers.handleTrainingSeeDocChange).toHaveBeenCalledWith(true, 'grd-1');
 
     rerender(
       <div>
-        {renderWaiverCell({ flight_waiver: true }, 'Veteran')}
-        {renderSeeDocCell({ flight_training_see_doc: true }, 'Veteran')}
+        {renderWaiverCell({ flight_waiver: true }, 'Veteran', trainingHandlers)}
+        {renderSeeDocCell({ flight_training_see_doc: true }, 'Veteran', trainingHandlers)}
       </div>
     );
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();

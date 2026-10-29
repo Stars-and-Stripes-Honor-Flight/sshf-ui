@@ -543,6 +543,54 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       }
     }
   };
+
+  const handleWaiverChange = async (nextValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Guardian', { flight_waiver: nextValue });
+        toast.success('Waiver updated');
+      } catch (error) {
+        toast.error('Failed to update waiver');
+        throw error;
+      }
+    }
+  };
+
+  const handleTrainingSeeDocChange = async (nextValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Guardian', { flight_training_see_doc: nextValue });
+        toast.success('See doc updated');
+      } catch (error) {
+        toast.error('Failed to update see doc');
+        throw error;
+      }
+    }
+  };
+
+  const handleMailCallReceivedChange = async (nextValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Veteran', { mail_call_received: nextValue });
+        toast.success('Mail call received updated');
+      } catch (error) {
+        toast.error('Failed to update mail call received');
+        throw error;
+      }
+    }
+  };
+
+  const handleMailCallAdoptChange = async (nextValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Veteran', { mail_call_adopt: nextValue });
+        toast.success('Mail call adoption updated');
+      } catch (error) {
+        toast.error('Failed to update mail call adoption');
+        throw error;
+      }
+    }
+  };
   
   // Stable component types plus a disabled flag. Inline wrappers such as
   // `(props) => <Component {...props} disabled />` are a new component type
@@ -565,6 +613,10 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     handleApparelNotesChange,
     handleApparelShirtSizeChange,
     handleApparelJacketSizeChange,
+    handleWaiverChange,
+    handleTrainingSeeDocChange,
+    handleMailCallReceivedChange,
+    handleMailCallAdoptChange,
   };
 
   // Guardians focus keeps the guardian row as the one staff see first. A veteran

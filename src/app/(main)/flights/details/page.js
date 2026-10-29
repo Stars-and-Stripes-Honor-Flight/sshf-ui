@@ -382,6 +382,22 @@ function FlightDetailsPage() {
         } else if (personType === 'Guardian') {
           await api.updateGuardianApparelNotes(personId, updates.apparel_notes);
         }
+      } else if (updates.flight_waiver !== undefined) {
+        if (personType === 'Guardian') {
+          await api.updateGuardianWaiver(personId, updates.flight_waiver);
+        }
+      } else if (updates.flight_training_see_doc !== undefined) {
+        if (personType === 'Guardian') {
+          await api.updateGuardianTrainingSeeDoc(personId, updates.flight_training_see_doc);
+        }
+      } else if (updates.mail_call_received !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranMailCallReceived(personId, updates.mail_call_received);
+        }
+      } else if (updates.mail_call_adopt !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranMailCallAdopt(personId, updates.mail_call_adopt);
+        }
       } else {
         // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
         let fullPerson;

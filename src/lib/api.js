@@ -305,6 +305,24 @@ class ApiClient {
     return await response.json();
   }
 
+  // Update a veteran's mail-call received flag
+  async updateVeteranMailCallReceived(id, value) {
+    const response = await this.request(`/veterans/${id}/mail-call-received`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value }),
+    });
+    return await response.json();
+  }
+
+  // Update a veteran's mail-call adopt flag
+  async updateVeteranMailCallAdopt(id, value) {
+    const response = await this.request(`/veterans/${id}/mail-call-adopt`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value }),
+    });
+    return await response.json();
+  }
+
   // Delete a veteran
   async deleteVeteran(id) {
     try {
@@ -396,6 +414,24 @@ class ApiClient {
     const response = await this.request(`/guardians/${id}/apparel-notes`, {
       method: 'PATCH',
       body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
+  }
+
+  // Update a guardian's flight waiver flag
+  async updateGuardianWaiver(id, value) {
+    const response = await this.request(`/guardians/${id}/waiver`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value }),
+    });
+    return await response.json();
+  }
+
+  // Update a guardian's training see-doc flag
+  async updateGuardianTrainingSeeDoc(id, value) {
+    const response = await this.request(`/guardians/${id}/training-see-doc`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value }),
     });
     return await response.json();
   }
