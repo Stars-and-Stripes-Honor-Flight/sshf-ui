@@ -308,8 +308,6 @@ export function getPairStatusIssues(pair) {
   // Per-person readiness checks
   const veteran = pair.people.find(p => p.type === 'Veteran');
   const guardian = pair.people.find(p => p.type === 'Guardian');
-  
-  // Check veteran
   if (veteran) {
     if (veteran.confirmed !== true) {
       issues.push({ id: 'veteranNotConfirmed', label: 'Vet Not Confirmed', severity: 'warning', personType: 'Veteran' });
@@ -340,6 +338,21 @@ export function getPairStatusIssues(pair) {
     if (!guardian.bus || guardian.bus === 'None') {
       issues.push({ id: 'guardianNoBus', label: 'Grd No Bus', severity: 'warning', personType: 'Guardian' });
     }
+  }
+
+  if (
+    veteran &&
+    guardian &&
+    guardian.training_complete === true &&
+    (guardian.training ?? '').trim() !== '' &&
+    veteran.mail_call_received !== true
+  ) {
+    issues.push({
+      id: 'veteranMissingMail',
+      label: 'Vet Missing Mail',
+      severity: 'warning',
+      personType: 'Veteran',
+    });
   }
   
   return issues;
@@ -385,6 +398,7 @@ export function pairHasIssues(pair) {
  * @param {string} filters.assignedCallerFilter - Assigned caller filter
  * @param {boolean} filters.noGuardianOnly - When true, keep only veterans with no guardian
  * @param {string[]} filters.trainingTypeFilter - Guardian training types to keep; empty means all
+ * @param {boolean} filters.missingMailOnly - When true, keep only veterans without mail received
  * @returns {Array} Filtered pairs
  */
 export function filterPairs(pairs, filters) {
@@ -396,6 +410,7 @@ export function filterPairs(pairs, filters) {
     assignedCallerFilter = 'all',
     noGuardianOnly = false,
     trainingTypeFilter = [],
+    missingMailOnly = false,
   } = filters;
   
   return pairs.filter(pair => {
@@ -470,6 +485,12 @@ export function filterPairs(pairs, filters) {
       const selected = new Set(trainingTypeFilter.map((type) => String(type).trim()));
       const training = (guardian?.training ?? '').trim();
       if (!selected.has(training)) {
+        return false;
+      }
+    }
+
+    if (missingMailOnly) {
+      if (!veteran || veteran.mail_call_received === true) {
         return false;
       }
     }

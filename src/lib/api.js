@@ -323,6 +323,15 @@ class ApiClient {
     return await response.json();
   }
 
+  // Update a veteran's mail-call notes
+  async updateVeteranMailCallNotes(id, notes) {
+    const response = await this.request(`/veterans/${id}/mail-call-notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: notes }),
+    });
+    return await response.json();
+  }
+
   // Delete a veteran
   async deleteVeteran(id) {
     try {

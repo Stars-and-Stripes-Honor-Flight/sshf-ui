@@ -104,6 +104,7 @@ function FlightDetailsPage() {
   const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
   const [trainingTypeFilter, setTrainingTypeFilter] = React.useState([]);
   const [trainingGuardiansFocus, setTrainingGuardiansFocus] = React.useState(true);
+  const [missingMailOnly, setMissingMailOnly] = React.useState(false);
   const [sortBy, setSortBy] = React.useState('name'); // name, guardianName, bus, assignment, group, medExprnc, status, seat
   const [activityPreset, setActivityPreset] = React.useState(ACTIVITY_PRESETS.OPS);
   const [assignmentData, setAssignmentData] = React.useState(null);
@@ -281,6 +282,7 @@ function FlightDetailsPage() {
     setNoGuardianOnly(savedControls.noGuardianOnly);
     setTrainingTypeFilter(savedControls.trainingTypeFilter);
     setTrainingGuardiansFocus(savedControls.trainingGuardiansFocus);
+    setMissingMailOnly(savedControls.missingMailOnly);
     setSortBy(savedControls.sortBy);
   }, [flightId]);
 
@@ -310,16 +312,17 @@ function FlightDetailsPage() {
         noGuardianOnly,
         trainingTypeFilter,
         trainingGuardiansFocus,
+        missingMailOnly,
       });
     },
-    [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus]
+    [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly]
   );
 
   // Persist roster controls when values change. The coordinator skips the first persist
   // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
-  }, [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, persistRosterControls]);
+  }, [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly, persistRosterControls]);
 
   // Debounce name filter persistence while typing
   React.useEffect(() => {
@@ -348,6 +351,7 @@ function FlightDetailsPage() {
     setNoGuardianOnly(defaults.noGuardianOnly);
     setTrainingTypeFilter(defaults.trainingTypeFilter);
     setTrainingGuardiansFocus(defaults.trainingGuardiansFocus);
+    setMissingMailOnly(defaults.missingMailOnly);
     setSortBy(defaults.sortBy);
     rosterPersistCoordinatorRef.current = {
       skipNextPersist: false,
@@ -397,6 +401,10 @@ function FlightDetailsPage() {
       } else if (updates.mail_call_adopt !== undefined) {
         if (personType === 'Veteran') {
           await api.updateVeteranMailCallAdopt(personId, updates.mail_call_adopt);
+        }
+      } else if (updates.mail_call_notes !== undefined) {
+        if (personType === 'Veteran') {
+          await api.updateVeteranMailCallNotes(personId, updates.mail_call_notes);
         }
       } else {
         // Handle other updates (bus, call.assigned_to, etc.) by fetching full person and merging
@@ -770,6 +778,7 @@ function FlightDetailsPage() {
                     assignedCallerFilter,
                     noGuardianOnly,
                     trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
+                    missingMailOnly: activityPreset === ACTIVITY_PRESETS.MAIL_CALL && missingMailOnly,
                   });
                   
                   const statusCounts = {
@@ -921,6 +930,17 @@ function FlightDetailsPage() {
                             </TextField>
                           </>
                         )}
+                        {activityPreset === ACTIVITY_PRESETS.MAIL_CALL && (
+                          <Chip
+                            label="Missing mail only"
+                            clickable
+                            color={missingMailOnly ? 'primary' : 'default'}
+                            variant={missingMailOnly ? 'filled' : 'outlined'}
+                            aria-pressed={missingMailOnly}
+                            onClick={() => setMissingMailOnly((current) => !current)}
+                            sx={{ alignSelf: 'center' }}
+                          />
+                        )}
                         <TextField
                           placeholder="Search by name, phone, or city..."
                           size="small"
@@ -1020,6 +1040,7 @@ function FlightDetailsPage() {
                     assignedCallerFilter,
                     noGuardianOnly,
                     trainingTypeFilter: activityPreset === ACTIVITY_PRESETS.TRAINING ? trainingTypeFilter : [],
+                    missingMailOnly: activityPreset === ACTIVITY_PRESETS.MAIL_CALL && missingMailOnly,
                   });
                   const sortedPairs = sortPairs(filteredPairs, sortBy);
 

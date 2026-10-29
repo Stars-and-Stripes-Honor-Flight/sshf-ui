@@ -545,6 +545,66 @@ export function renderNotesCell(person, personType, handlers) {
 }
 
 /**
+ * Mail call received checkbox for veterans. Guardians show an em dash.
+ */
+export function renderMailCallReceivedCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Veteran') return <RolePlaceholder />;
+
+  const { EditableCheckbox, handleMailCallReceivedChange, readOnly } = handlers;
+  return (
+    <EditableCheckbox
+      checked={Boolean(person.mail_call_received)}
+      onChange={(next) => handleMailCallReceivedChange(next, person.id)}
+      ariaLabel="Mail call received"
+      disabled={readOnly}
+    />
+  );
+}
+
+/**
+ * Mail call adoption checkbox for veterans. Guardians show an em dash.
+ */
+export function renderMailCallAdoptCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Veteran') return <RolePlaceholder />;
+
+  const { EditableCheckbox, handleMailCallAdoptChange, readOnly } = handlers;
+  return (
+    <EditableCheckbox
+      checked={Boolean(person.mail_call_adopt)}
+      onChange={(next) => handleMailCallAdoptChange(next, person.id)}
+      ariaLabel="Mail call adoption"
+      disabled={readOnly}
+    />
+  );
+}
+
+/**
+ * Multiline mail call notes for veterans. Guardians show an em dash.
+ */
+export function renderMailCallNotesCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Veteran') return <RolePlaceholder />;
+
+  const { EditableField, handleMailCallNotesChange, readOnly } = handlers;
+  return (
+    <EditableField
+      value={person.mail_call_notes || ''}
+      onBlur={(newValue) => handleMailCallNotesChange(newValue, person.id)}
+      placeholder="Mail call notes"
+      multiline
+      minRows={2}
+      maxRows={4}
+      maxWidth={280}
+      minWidth={180}
+      disabled={readOnly}
+      inputProps={{ 'aria-label': 'Mail call notes' }}
+    />
+  );
+}
+
+/**
  * Main cell renderer that routes to specific renderers based on column ID
  */
 export function renderActivityCell(columnId, person, pair, personType, handlers, localAssignedTo, hasCallMismatch) {
@@ -597,6 +657,12 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return renderWaiverCell(person, personType, handlers);
     case 'flight_training_see_doc':
       return renderSeeDocCell(person, personType, handlers);
+    case 'mail_call_received':
+      return renderMailCallReceivedCell(person, personType, handlers);
+    case 'mail_call_adopt':
+      return renderMailCallAdoptCell(person, personType, handlers);
+    case 'mail_call_notes':
+      return renderMailCallNotesCell(person, personType, handlers);
     default:
       return null;
   }

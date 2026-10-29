@@ -8,6 +8,7 @@ export const ACTIVITY_PRESETS = {
   MEDICAL: 'medical',
   APPAREL: 'apparel',
   TRAINING: 'training',
+  MAIL_CALL: 'mailcall',
 };
 
 export const ACTIVITY_PRESET_LABELS = {
@@ -16,6 +17,7 @@ export const ACTIVITY_PRESET_LABELS = {
   [ACTIVITY_PRESETS.MEDICAL]: 'Medical',
   [ACTIVITY_PRESETS.APPAREL]: 'Apparel',
   [ACTIVITY_PRESETS.TRAINING]: 'Training',
+  [ACTIVITY_PRESETS.MAIL_CALL]: 'Mail Call',
 };
 
 /**
@@ -54,6 +56,11 @@ export const COLUMN_CONFIGS = {
     { id: 'training_notes', label: 'Training notes', width: 260, minWidth: 200 },
     { id: 'flight_waiver', label: 'Waivers', width: 96, align: 'center' },
     { id: 'flight_training_see_doc', label: 'See Doc', width: 96, align: 'center' },
+  ],
+  [ACTIVITY_PRESETS.MAIL_CALL]: [
+    { id: 'mail_call_received', label: 'Mail Rcvd', width: 120, align: 'center' },
+    { id: 'mail_call_adopt', label: 'Mail Adopt', width: 120, align: 'center' },
+    { id: 'mail_call_notes', label: 'Mail Call Notes', width: 260, minWidth: 200 },
   ],
 };
 
