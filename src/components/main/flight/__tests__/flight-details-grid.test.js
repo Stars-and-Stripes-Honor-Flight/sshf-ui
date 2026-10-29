@@ -1287,6 +1287,16 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
   });
 });
 
+function rosterColumnCell(row, label) {
+  const table = row.closest('table');
+  const headers = within(table).getAllByRole('columnheader');
+  const columnIndex = headers.findIndex((header) => header.textContent.trim() === label);
+  if (columnIndex < 0) {
+    throw new Error(`Roster column "${label}" was not found`);
+  }
+  return within(row).getAllByRole('cell')[columnIndex];
+}
+
 describe('FlightDetailsGrid - mail call preset (issue #284)', () => {
   const mailCallProps = { activityPreset: ACTIVITY_PRESETS.MAIL_CALL };
 
@@ -1372,7 +1382,12 @@ describe('FlightDetailsGrid - mail call preset (issue #284)', () => {
     const guardianRow = screen.getByRole('link', { name: 'Gary Zeta' }).closest('tr');
     expect(within(guardianRow).queryByRole('checkbox')).not.toBeInTheDocument();
     expect(within(guardianRow).queryByRole('textbox')).not.toBeInTheDocument();
-    expect(within(guardianRow).getAllByText('—')).toHaveLength(3);
+    for (const label of ['Mail Rcvd', 'Mail Adopt', 'Mail Call Notes']) {
+      const cell = rosterColumnCell(guardianRow, label);
+      expect(cell).toHaveTextContent('—');
+      expect(within(cell).queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(within(cell).queryByRole('textbox')).not.toBeInTheDocument();
+    }
   });
 
   test('saves received and adopt through onUpdate and shows one toast each', async () => {

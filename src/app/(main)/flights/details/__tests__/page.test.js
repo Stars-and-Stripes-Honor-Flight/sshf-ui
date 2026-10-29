@@ -1437,6 +1437,16 @@ async function chooseColumns(user, label) {
   await user.click(await screen.findByRole('option', { name: label }));
 }
 
+function rosterColumnCell(row, label) {
+  const table = row.closest('table');
+  const headers = within(table).getAllByRole('columnheader');
+  const columnIndex = headers.findIndex((header) => header.textContent.trim() === label);
+  if (columnIndex < 0) {
+    throw new Error(`Roster column "${label}" was not found`);
+  }
+  return within(row).getAllByRole('cell')[columnIndex];
+}
+
 describe('Completed flight roster edits (issue #286)', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -1733,7 +1743,12 @@ describe('Flight details roster — mail call layout (issue #284)', () => {
     const garyRow = screen.getByRole('link', { name: 'Gary Zeta' }).closest('tr');
     expect(within(garyRow).queryByRole('checkbox')).not.toBeInTheDocument();
     expect(within(garyRow).queryByRole('textbox')).not.toBeInTheDocument();
-    expect(within(garyRow).getAllByText('—')).toHaveLength(3);
+    for (const label of ['Mail Rcvd', 'Mail Adopt', 'Mail Call Notes']) {
+      const cell = rosterColumnCell(garyRow, label);
+      expect(cell).toHaveTextContent('—');
+      expect(within(cell).queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(within(cell).queryByRole('textbox')).not.toBeInTheDocument();
+    }
   });
 
   test('restores the Mail Call layout after leaving the flight', async () => {
@@ -1778,6 +1793,53 @@ describe('Flight details roster — mail call layout (issue #284)', () => {
     expect(api.updateVeteran).not.toHaveBeenCalled();
     expect(api.getGuardian).not.toHaveBeenCalled();
     expect(api.updateGuardian).not.toHaveBeenCalled();
+  });
+
+  test('checking Mail Rcvd clears Vet Missing Mail and drops the pair from Issues Only', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    expect(within(zoeRow).getByText('Vet Missing Mail')).toBeInTheDocument();
+
+    await chooseColumns(user, 'Mail Call');
+    const refreshed = mailCallDetails();
+    refreshed.pairs[0].people[0].mail_call_received = true;
+    api.getFlightDetails.mockResolvedValue(refreshed);
+
+    const receivedRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    await user.click(within(receivedRow).getByRole('checkbox', { name: 'Mail call received' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallReceived).toHaveBeenCalledWith('vet-zeta', true);
+    });
+
+    await chooseColumns(user, 'Ops');
+    const updatedRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    expect(within(updatedRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
+    expect(within(updatedRow).getByText('OK')).toBeInTheDocument();
+
+    await user.click(screen.getByText('All Statuses'));
+    await user.click(await screen.findByRole('option', { name: 'Issues Only' }));
+    expect(screen.queryByRole('link', { name: 'Zoe Zeta' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Gary Zeta' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+  });
+
+  test('checking Mail Rcvd shows exactly one success toast', async () => {
+    const user = userEvent.setup();
+    await openMailCall(user);
+    toast.success.mockClear();
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    await user.click(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallReceived).toHaveBeenCalledWith('vet-zeta', true);
+    });
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledWith('Mail call received updated');
   });
 
   test('saves mail call notes through PATCH /veterans/{id}/mail-call-notes and never the PUT fallback', async () => {
@@ -1867,7 +1929,10 @@ describe('Flight details roster — mail call layout (issue #284)', () => {
     await user.click(screen.getByLabelText('Sort by'));
     await user.click(await screen.findByRole('option', { name: 'Status' }));
 
-    const names = screen.getAllByRole('link').map((link) => link.textContent);
+    const roster = screen.getByRole('table');
+    const names = within(roster)
+      .getAllByRole('link')
+      .map((link) => link.textContent);
     expect(names.indexOf('Zoe Zeta')).toBeGreaterThanOrEqual(0);
     expect(names.indexOf('Zoe Zeta')).toBeLessThan(names.indexOf('Ann Apple'));
   });

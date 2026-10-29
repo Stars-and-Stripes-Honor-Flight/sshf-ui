@@ -61,6 +61,7 @@ describe('flight-roster-controls-storage', () => {
           noGuardianOnly: false,
           trainingTypeFilter: [],
           trainingGuardiansFocus: true,
+          missingMailOnly: false,
         })
       );
     });
