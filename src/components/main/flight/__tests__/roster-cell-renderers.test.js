@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
+import { ACTIVITY_PRESETS, getColumnConfig } from '../column-configs';
 import {
   renderSeatCell,
   renderBusCell,
@@ -680,5 +681,174 @@ describe('training roster cells (issue #212)', () => {
     );
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.getAllByText('—')).toHaveLength(2);
+  });
+});
+
+function MockMailCallField({ value, onBlur, multiline, minRows, maxRows, disabled, inputProps }) {
+  const shared = {
+    'aria-label': inputProps?.['aria-label'],
+    defaultValue: value,
+    disabled,
+    'data-min-rows': minRows,
+    'data-max-rows': maxRows,
+    onBlur: (event) => onBlur(event.target.value),
+  };
+
+  if (multiline) {
+    return <textarea {...shared} />;
+  }
+
+  return <input {...shared} />;
+}
+
+function mailCallColumnId(label) {
+  const columns = ACTIVITY_PRESETS.MAIL_CALL ? getColumnConfig(ACTIVITY_PRESETS.MAIL_CALL) : [];
+  const column = columns.find((item) => item.label === label);
+  if (!column) {
+    throw new Error(`Mail Call column "${label}" is not configured`);
+  }
+  return column.id;
+}
+
+describe('mail call roster cells (issue #284)', () => {
+  const mailCallHandlers = {
+    ...trainingHandlers,
+    EditableField: MockMailCallField,
+    handleMailCallNotesChange: jest.fn(),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function renderColumn(label, person, personType, handlers = mailCallHandlers) {
+    return render(
+      <div>{renderActivityCell(mailCallColumnId(label), person, { people: [person] }, personType, handlers)}</div>
+    );
+  }
+
+  test('renders an editable mail received checkbox for veterans and an em dash for guardians', async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderColumn('Mail Rcvd', { id: 'vet-1', mail_call_received: false }, 'Veteran');
+
+    const received = screen.getByRole('checkbox', { name: 'Mail call received' });
+    expect(received).toBeEnabled();
+    expect(received).not.toBeChecked();
+    await user.click(received);
+    expect(mailCallHandlers.handleMailCallReceivedChange).toHaveBeenCalledWith(true, 'vet-1');
+
+    rerender(
+      <div>
+        {renderActivityCell(
+          mailCallColumnId('Mail Rcvd'),
+          { id: 'vet-2', mail_call_received: true },
+          { people: [] },
+          'Veteran',
+          mailCallHandlers
+        )}
+      </div>
+    );
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeChecked();
+
+    rerender(
+      <div>
+        {renderActivityCell(
+          mailCallColumnId('Mail Rcvd'),
+          { id: 'grd-1', mail_call_received: true, training_complete: true },
+          { people: [] },
+          'Guardian',
+          mailCallHandlers
+        )}
+      </div>
+    );
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('renders an editable mail adopt checkbox for veterans and an em dash for guardians', async () => {
+    const user = userEvent.setup();
+    const view = renderColumn('Mail Adopt', { id: 'vet-1', mail_call_adopt: true }, 'Veteran');
+
+    const adopt = screen.getByRole('checkbox', { name: 'Mail call adoption' });
+    expect(adopt).toBeEnabled();
+    expect(adopt).toBeChecked();
+    await user.click(adopt);
+    expect(mailCallHandlers.handleMailCallAdoptChange).toHaveBeenCalledWith(false, 'vet-1');
+
+    view.rerender(
+      <div>
+        {renderActivityCell(
+          mailCallColumnId('Mail Adopt'),
+          { id: 'grd-1', mail_call_adopt: true },
+          { people: [] },
+          'Guardian',
+          mailCallHandlers
+        )}
+      </div>
+    );
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('renders mail call notes as a 2 to 4 row multiline field for veterans only', async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderColumn('Mail Call Notes', { id: 'vet-1', mail_call_notes: 'Call Tuesday' }, 'Veteran');
+
+    const notes = screen.getByRole('textbox', { name: 'Mail call notes' });
+    expect(notes.tagName).toBe('TEXTAREA');
+    expect(notes).toHaveAttribute('data-min-rows', '2');
+    expect(notes).toHaveAttribute('data-max-rows', '4');
+    expect(notes).toHaveValue('Call Tuesday');
+    await user.clear(notes);
+    await user.type(notes, 'Left at desk');
+    await user.tab();
+    expect(mailCallHandlers.handleMailCallNotesChange).toHaveBeenCalledWith('Left at desk', 'vet-1');
+
+    rerender(
+      <div>
+        {renderActivityCell(
+          mailCallColumnId('Mail Call Notes'),
+          { id: 'grd-1', mail_call_notes: 'ignored' },
+          { people: [] },
+          'Guardian',
+          mailCallHandlers
+        )}
+      </div>
+    );
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  test('disables mail call received, adopt, and notes when readOnly', () => {
+    const readOnlyHandlers = { ...mailCallHandlers, readOnly: true };
+    render(
+      <div>
+        {renderActivityCell(
+          mailCallColumnId('Mail Rcvd'),
+          { id: 'vet-1', mail_call_received: true },
+          { people: [] },
+          'Veteran',
+          readOnlyHandlers
+        )}
+        {renderActivityCell(
+          mailCallColumnId('Mail Adopt'),
+          { id: 'vet-1', mail_call_adopt: false },
+          { people: [] },
+          'Veteran',
+          readOnlyHandlers
+        )}
+        {renderActivityCell(
+          mailCallColumnId('Mail Call Notes'),
+          { id: 'vet-1', mail_call_notes: 'Call Tuesday' },
+          { people: [] },
+          'Veteran',
+          readOnlyHandlers
+        )}
+      </div>
+    );
+
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Mail call notes' })).toBeDisabled();
   });
 });

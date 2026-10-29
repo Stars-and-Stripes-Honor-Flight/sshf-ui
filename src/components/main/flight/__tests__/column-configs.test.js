@@ -198,4 +198,32 @@ describe('column-configs', () => {
       Storage.prototype.getItem = originalGetItem;
     });
   });
+
+  describe('mail call preset (issue #284)', () => {
+    test('defines the mail call preset as mailcall with the label Mail Call', () => {
+      expect(ACTIVITY_PRESETS.MAIL_CALL).toBe('mailcall');
+      expect(ACTIVITY_PRESET_LABELS[ACTIVITY_PRESETS.MAIL_CALL]).toBe('Mail Call');
+    });
+
+    test('lists Mail Rcvd, Mail Adopt, and Mail Call Notes', () => {
+      const stored = COLUMN_CONFIGS[ACTIVITY_PRESETS.MAIL_CALL];
+      expect(stored).toEqual(expect.any(Array));
+      expect(stored.map((column) => column.label)).toEqual(['Mail Rcvd', 'Mail Adopt', 'Mail Call Notes']);
+      expect(getColumnConfig(ACTIVITY_PRESETS.MAIL_CALL).map((column) => column.label)).toEqual([
+        'Mail Rcvd',
+        'Mail Adopt',
+        'Mail Call Notes',
+      ]);
+      expect(getColumnConfig(ACTIVITY_PRESETS.MAIL_CALL, true).map((column) => column.label)).toEqual([
+        'Mail Rcvd',
+        'Mail Adopt',
+        'Mail Call Notes',
+      ]);
+    });
+
+    test('saves and loads the mail call preset', () => {
+      savePreset('mailcall');
+      expect(loadSavedPreset()).toBe('mailcall');
+    });
+  });
 });

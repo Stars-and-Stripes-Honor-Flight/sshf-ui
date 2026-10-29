@@ -183,6 +183,7 @@ function EditableField({
       multiline={multiline}
       minRows={minRows}
       maxRows={maxRows}
+      rows={multiline && minRows != null ? minRows : undefined}
       fullWidth={Boolean(minWidth)}
       sx={{
         maxWidth,
@@ -591,6 +592,17 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
       }
     }
   };
+
+  const handleMailCallNotesChange = async (newValue, personId) => {
+    if (onUpdate) {
+      try {
+        await onUpdate(personId, 'Veteran', { mail_call_notes: newValue });
+        toast.success('Mail call notes updated');
+      } catch (error) {
+        toast.error('Failed to update mail call notes');
+      }
+    }
+  };
   
   // Stable component types plus a disabled flag. Inline wrappers such as
   // `(props) => <Component {...props} disabled />` are a new component type
@@ -617,6 +629,7 @@ const PairRowStacked = React.memo(function PairRowStacked({ pair, index, onUpdat
     handleTrainingSeeDocChange,
     handleMailCallReceivedChange,
     handleMailCallAdoptChange,
+    handleMailCallNotesChange,
   };
 
   // Guardians focus keeps the guardian row as the one staff see first. A veteran

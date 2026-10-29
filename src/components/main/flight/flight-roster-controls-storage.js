@@ -14,6 +14,7 @@ export const DEFAULT_ROSTER_CONTROLS = {
   noGuardianOnly: false,
   trainingTypeFilter: [],
   trainingGuardiansFocus: true,
+  missingMailOnly: false,
 };
 
 const STATUS_FILTER_VALUES = new Set(['all', 'ok', 'issues', 'nofly']);
@@ -122,6 +123,7 @@ export function loadFlightRosterControls(flightId) {
         parsed.trainingGuardiansFocus,
         DEFAULT_ROSTER_CONTROLS.trainingGuardiansFocus
       ),
+      missingMailOnly: normalizeBoolean(parsed.missingMailOnly, DEFAULT_ROSTER_CONTROLS.missingMailOnly),
     };
   } catch (error) {
     console.warn('Failed to load flight roster controls:', error);
@@ -164,6 +166,7 @@ export function saveFlightRosterControls(flightId, controls) {
       controls.trainingGuardiansFocus,
       DEFAULT_ROSTER_CONTROLS.trainingGuardiansFocus
     ),
+    missingMailOnly: normalizeBoolean(controls.missingMailOnly, DEFAULT_ROSTER_CONTROLS.missingMailOnly),
   };
 
   try {

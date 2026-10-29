@@ -50,17 +50,20 @@ describe('flight-roster-controls-storage', () => {
         sortBy: 'seat',
       });
 
-      expect(loadFlightRosterControls('flight-1')).toEqual({
-        nameFilter: 'smith',
-        statusFilter: 'issues',
-        busFilter: 'Bus 2',
-        planeFilter: 'all',
-        assignedCallerFilter: 'Jane Doe',
-        sortBy: 'seat',
-        noGuardianOnly: false,
-        trainingTypeFilter: [],
-        trainingGuardiansFocus: true,
-      });
+      expect(loadFlightRosterControls('flight-1')).toEqual(
+        expect.objectContaining({
+          nameFilter: 'smith',
+          statusFilter: 'issues',
+          busFilter: 'Bus 2',
+          planeFilter: 'all',
+          assignedCallerFilter: 'Jane Doe',
+          sortBy: 'seat',
+          noGuardianOnly: false,
+          trainingTypeFilter: [],
+          trainingGuardiansFocus: true,
+          missingMailOnly: false,
+        })
+      );
     });
 
     test('round-trips the plane filter and coerces invalid values to all', () => {
@@ -292,6 +295,62 @@ describe('flight-roster-controls-storage', () => {
     test('no-ops when flight id is missing', () => {
       expect(resetFlightRosterControls('')).toEqual(DEFAULT_ROSTER_CONTROLS);
       expect(localStorage.length).toBe(0);
+    });
+  });
+
+  describe('missing mail only (issue #284)', () => {
+    test('defaults missingMailOnly to false for a new flight and for legacy saved controls', () => {
+      expect(loadFlightRosterControls('flight-mail').missingMailOnly).toBe(false);
+
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('legacy-mail'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          nameFilter: 'smith',
+          noGuardianOnly: true,
+        })
+      );
+
+      expect(loadFlightRosterControls('legacy-mail').missingMailOnly).toBe(false);
+      expect(loadFlightRosterControls('legacy-mail').noGuardianOnly).toBe(true);
+    });
+
+    test('round-trips missingMailOnly per flight', () => {
+      saveFlightRosterControls('flight-a', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        missingMailOnly: true,
+      });
+      saveFlightRosterControls('flight-b', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        missingMailOnly: false,
+      });
+
+      expect(loadFlightRosterControls('flight-a').missingMailOnly).toBe(true);
+      expect(loadFlightRosterControls('flight-b').missingMailOnly).toBe(false);
+      expect(loadFlightRosterControls('flight-a').nameFilter).toBe('');
+    });
+
+    test('coerces a non-boolean missingMailOnly value to false', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('flight-bad-mail'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          missingMailOnly: 'yes',
+        })
+      );
+
+      expect(loadFlightRosterControls('flight-bad-mail').missingMailOnly).toBe(false);
+    });
+
+    test('reset clears missingMailOnly', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        missingMailOnly: true,
+        nameFilter: 'smith',
+      });
+
+      expect(resetFlightRosterControls('flight-1').missingMailOnly).toBe(false);
+      expect(loadFlightRosterControls('flight-1').missingMailOnly).toBe(false);
     });
   });
 });

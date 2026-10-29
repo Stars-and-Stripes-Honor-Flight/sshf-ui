@@ -71,4 +71,15 @@ describe('roster boolean PATCH API client (issue #277)', () => {
     expect(options.method).toBe('PATCH');
     expect(JSON.parse(options.body)).toEqual({ value: false });
   });
+
+  test('updateVeteranMailCallNotes PATCHes /veterans/{id}/mail-call-notes', async () => {
+    mockFetchWith({ ok: true });
+
+    await api.updateVeteranMailCallNotes('vet-3', 'Left at the front desk');
+
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toContain('/veterans/vet-3/mail-call-notes');
+    expect(options.method).toBe('PATCH');
+    expect(JSON.parse(options.body)).toEqual({ value: 'Left at the front desk' });
+  });
 });
