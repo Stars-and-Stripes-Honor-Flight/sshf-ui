@@ -1,9 +1,10 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import '@testing-library/jest-dom';
 
+import { toast } from '@/components/core/toaster';
 import { api } from '@/lib/api';
 
 import { ACTIVITY_PRESETS } from '../column-configs';
@@ -59,6 +60,7 @@ function buildPair({ veteranAssignedTo, guardianAssignedTo } = {}) {
         medical_form: true,
         medical_level: 'Level 1',
         nofly: false,
+        mail_call_received: true,
       },
       {
         type: 'Guardian',
@@ -1282,5 +1284,226 @@ describe('FlightDetailsGrid - apparel preset (issue #275)', () => {
     screen.getAllByRole('combobox', { name: 'Jacket size' }).forEach((field) => {
       expect(field).toHaveAttribute('aria-disabled', 'true');
     });
+  });
+});
+
+describe('FlightDetailsGrid - mail call preset (issue #284)', () => {
+  const mailCallProps = { activityPreset: ACTIVITY_PRESETS.MAIL_CALL };
+
+  function buildMailPair() {
+    return {
+      pairId: 'mail-pair',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        {
+          type: 'Veteran',
+          id: 'vet-1',
+          name_first: 'Zoe',
+          name_last: 'Zeta',
+          mail_call_received: false,
+          mail_call_adopt: true,
+          mail_call_notes: 'Call Tuesday',
+          bus: 'Alpha1',
+          confirmed: true,
+          medical_form: true,
+          medical_level: 'Level 1',
+          nofly: false,
+        },
+        {
+          type: 'Guardian',
+          id: 'grd-1',
+          name_first: 'Gary',
+          name_last: 'Zeta',
+          training: 'Main',
+          training_complete: true,
+          bus: 'Alpha1',
+          confirmed: true,
+          medical_form: true,
+          nofly: false,
+        },
+      ],
+    };
+  }
+
+  function renderMailGrid(pairs, extra = {}) {
+    const onUpdate = extra.onUpdate || jest.fn().mockResolvedValue(undefined);
+    render(
+      <FlightDetailsGrid
+        pairs={pairs}
+        onUpdate={onUpdate}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        {...mailCallProps}
+        {...extra}
+      />
+    );
+    return { onUpdate };
+  }
+
+  beforeEach(() => {
+    toast.success.mockClear();
+    toast.error.mockClear();
+  });
+
+  test('shows mail call columns, editable veteran cells, and an em dash for guardians', () => {
+    renderMailGrid([buildMailPair()]);
+
+    expect(screen.getByRole('columnheader', { name: /^Mail Rcvd$/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^Mail Adopt$/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^Mail Call Notes$/ })).toBeInTheDocument();
+
+    const veteranRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const received = within(veteranRow).getByRole('checkbox', { name: 'Mail call received' });
+    const adopt = within(veteranRow).getByRole('checkbox', { name: 'Mail call adoption' });
+    const notes = within(veteranRow).getByRole('textbox', { name: 'Mail call notes' });
+    expect(received).toBeEnabled();
+    expect(received).not.toBeChecked();
+    expect(adopt).toBeEnabled();
+    expect(adopt).toBeChecked();
+    expect(notes.tagName).toBe('TEXTAREA');
+    expect(notes).toHaveAttribute('rows', '2');
+    expect(notes).toHaveValue('Call Tuesday');
+    expect(within(veteranRow).queryByText('—')).not.toBeInTheDocument();
+
+    const guardianRow = screen.getByRole('link', { name: 'Gary Zeta' }).closest('tr');
+    expect(within(guardianRow).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(within(guardianRow).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(within(guardianRow).getAllByText('—')).toHaveLength(3);
+  });
+
+  test('saves received and adopt through onUpdate and shows one toast each', async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderMailGrid([buildMailPair()]);
+
+    const veteranRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    await user.click(within(veteranRow).getByRole('checkbox', { name: 'Mail call received' }));
+    await user.click(within(veteranRow).getByRole('checkbox', { name: 'Mail call adoption' }));
+
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { mail_call_received: true });
+      expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { mail_call_adopt: false });
+    });
+    expect(toast.success).toHaveBeenCalledTimes(2);
+    expect(toast.success).toHaveBeenNthCalledWith(1, 'Mail call received updated');
+    expect(toast.success).toHaveBeenNthCalledWith(2, 'Mail call adoption updated');
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  test('saves mail call notes through onUpdate and shows one toast', async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderMailGrid([buildMailPair()]);
+
+    const veteranRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const notes = within(veteranRow).getByRole('textbox', { name: 'Mail call notes' });
+    await user.clear(notes);
+    await user.type(notes, 'Left at desk');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith('vet-1', 'Veteran', { mail_call_notes: 'Left at desk' });
+    });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledWith('Mail call notes updated');
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  test('disables mail call controls when readOnly', () => {
+    renderMailGrid([buildMailPair()], { readOnly: true });
+
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Mail call notes' })).toBeDisabled();
+  });
+
+  test('keeps mail call controls mounted when a read-only row re-renders', () => {
+    const props = {
+      pairs: [buildMailPair()],
+      onUpdate: jest.fn(),
+      nameFilter: '',
+      statusFilter: 'all',
+      busFilter: 'all',
+      flightId: 'flight-1',
+      flightName: 'Test Flight',
+      readOnly: true,
+      ...mailCallProps,
+    };
+
+    const { rerender } = render(<FlightDetailsGrid {...props} />);
+
+    const received = screen.getByRole('checkbox', { name: 'Mail call received' });
+    const adopt = screen.getByRole('checkbox', { name: 'Mail call adoption' });
+    const notes = screen.getByRole('textbox', { name: 'Mail call notes' });
+    expect(received).toBeDisabled();
+    expect(adopt).toBeDisabled();
+    expect(notes).toBeDisabled();
+
+    rerender(<FlightDetailsGrid {...props} nameFilter="zoe" />);
+
+    expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBe(received);
+    expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBe(adopt);
+    expect(screen.getByRole('textbox', { name: 'Mail call notes' })).toBe(notes);
+  });
+
+  test('shows a Vet Missing Mail chip once the guardian is trained', () => {
+    const ready = buildMailPair();
+    ready.pairId = 'ready';
+    ready.people[0] = {
+      ...ready.people[0],
+      id: 'vet-ready',
+      name_first: 'Ann',
+      name_last: 'Apple',
+      mail_call_received: true,
+    };
+    ready.people[1] = {
+      ...ready.people[1],
+      id: 'grd-ready',
+      name_first: 'Gail',
+      name_last: 'Apple',
+    };
+    const solo = {
+      pairId: 'solo',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        {
+          type: 'Veteran',
+          id: 'vet-solo',
+          name_first: 'Uma',
+          name_last: 'Solo',
+          mail_call_received: false,
+          bus: 'Alpha1',
+          confirmed: true,
+          medical_form: true,
+          medical_level: 'Level 1',
+          nofly: false,
+        },
+      ],
+    };
+
+    render(
+      <FlightDetailsGrid
+        pairs={[buildMailPair(), ready, solo]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+      />
+    );
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const annRow = screen.getByRole('link', { name: 'Ann Apple' }).closest('tr');
+    const umaRow = screen.getByRole('link', { name: 'Uma Solo' }).closest('tr');
+    expect(within(zoeRow).getByText('Vet Missing Mail')).toBeInTheDocument();
+    expect(within(annRow).getByText('OK')).toBeInTheDocument();
+    expect(within(annRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
+    expect(within(umaRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
+    expect(within(umaRow).getByText('No Guardian')).toBeInTheDocument();
   });
 });

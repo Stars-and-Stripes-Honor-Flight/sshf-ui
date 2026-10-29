@@ -147,6 +147,7 @@ describe('roster-helpers', () => {
             medical_form: true,
             medical_level: 'Level 1',
             bus: 'Alpha1',
+            mail_call_received: true,
           },
           {
             type: 'Guardian',
@@ -354,7 +355,14 @@ describe('roster-helpers', () => {
         busMismatch: false,
         missingPairedPerson: false,
         people: [
-          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          {
+            type: 'Veteran',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'L1',
+            bus: 'Alpha1',
+            mail_call_received: true,
+          },
           {
             type: 'Guardian',
             confirmed: true,
@@ -453,7 +461,14 @@ describe('roster-helpers', () => {
         busMismatch: false,
         missingPairedPerson: false,
         people: [
-          { type: 'Veteran', confirmed: true, medical_form: true, medical_level: 'L1', bus: 'Alpha1' },
+          {
+            type: 'Veteran',
+            confirmed: true,
+            medical_form: true,
+            medical_level: 'L1',
+            bus: 'Alpha1',
+            mail_call_received: true,
+          },
           { type: 'Guardian', confirmed: true, medical_form: true, training_complete: true, training: 'Complete', bus: 'Alpha1' },
         ],
       };
@@ -480,6 +495,7 @@ describe('roster-helpers', () => {
             medical_form: true,
             medical_level: 'Level 1',
             nofly: false,
+            mail_call_received: true,
           },
           {
             type: 'Guardian',
@@ -790,6 +806,7 @@ describe('roster-helpers', () => {
             confirmed: true,
             medical_form: true,
             medical_level: 'Level 1',
+            mail_call_received: true,
           },
           {
             type: 'Guardian',
@@ -832,6 +849,7 @@ describe('roster-helpers', () => {
             confirmed: true,
             medical_form: true,
             medical_level: 'Level 1',
+            mail_call_received: true,
           },
           {
             type: 'Guardian',
@@ -1049,6 +1067,7 @@ describe('roster-helpers', () => {
               confirmed: true,
               medical_form: true,
               medical_level: 'Level 1',
+              mail_call_received: true,
             },
             {
               type: 'Guardian',
@@ -1551,6 +1570,141 @@ describe('roster-helpers', () => {
       const result = filterPairs(pairs, { busFilter: 'None' });
       expect(result).toHaveLength(1);
       expect(result[0].pairId).toBe('crew-none');
+    });
+  });
+
+  describe('veteran missing mail (issue #284)', () => {
+    const VETERAN_MISSING_MAIL = {
+      id: 'veteranMissingMail',
+      label: 'Vet Missing Mail',
+      severity: 'warning',
+      personType: 'Veteran',
+    };
+
+    function issueIds(pair) {
+      return getPairStatusIssues(pair).map((issue) => issue.id);
+    }
+
+    function mailPair({
+      pairId = 'pair',
+      mailCallReceived = false,
+      includeMail = true,
+      includeGuardian = true,
+      includeVeteran = true,
+      trainingComplete = true,
+      includeTrainingComplete = true,
+      nofly = false,
+      veteran = {},
+      guardian = {},
+    } = {}) {
+      const people = [];
+
+      if (includeVeteran) {
+        const veteranPerson = {
+          type: 'Veteran',
+          name_first: 'Zoe',
+          name_last: 'Zeta',
+          confirmed: true,
+          medical_form: true,
+          medical_level: 'L1',
+          bus: 'Alpha1',
+          ...veteran,
+        };
+        if (includeMail) {
+          veteranPerson.mail_call_received = mailCallReceived;
+        }
+        people.push(veteranPerson);
+      }
+
+      if (includeGuardian) {
+        const guardianPerson = {
+          type: 'Guardian',
+          name_first: 'Gary',
+          name_last: 'Zeta',
+          confirmed: true,
+          medical_form: true,
+          training: 'Main',
+          bus: 'Alpha1',
+          nofly,
+          ...guardian,
+        };
+        if (includeTrainingComplete) {
+          guardianPerson.training_complete = trainingComplete;
+        }
+        people.push(guardianPerson);
+      }
+
+      return {
+        pairId,
+        busMismatch: false,
+        missingPairedPerson: false,
+        people,
+      };
+    }
+
+    test('adds Vet Missing Mail only when the guardian is trained and mail is not received', () => {
+      expect(getPairStatusIssues(mailPair({ mailCallReceived: false }))).toContainEqual(VETERAN_MISSING_MAIL);
+      expect(getPairStatusIssues(mailPair({ includeMail: false }))).toContainEqual(VETERAN_MISSING_MAIL);
+      expect(getPairStatusIssues(mailPair({ mailCallReceived: null }))).toContainEqual(VETERAN_MISSING_MAIL);
+
+      expect(issueIds(mailPair({ mailCallReceived: true }))).not.toContain('veteranMissingMail');
+      expect(issueIds(mailPair({ mailCallReceived: false, trainingComplete: false }))).not.toContain(
+        'veteranMissingMail'
+      );
+      expect(issueIds(mailPair({ includeMail: false, includeTrainingComplete: false }))).not.toContain(
+        'veteranMissingMail'
+      );
+    });
+
+    test('does not flag a pair with no guardian, and still flags a trained no-fly guardian', () => {
+      expect(getPairStatusIssues(mailPair({ mailCallReceived: false, nofly: true }))).toContainEqual(
+        VETERAN_MISSING_MAIL
+      );
+      expect(issueIds(mailPair({ includeGuardian: false, mailCallReceived: false }))).not.toContain(
+        'veteranMissingMail'
+      );
+      expect(issueIds(mailPair({ includeVeteran: false }))).not.toContain('veteranMissingMail');
+    });
+
+    test('issues filter keeps a trained pair that is missing mail and ok keeps a pair whose mail was received', () => {
+      const missing = mailPair({ pairId: 'missing', mailCallReceived: false });
+      const ready = mailPair({ pairId: 'ready', mailCallReceived: true });
+
+      expect(filterPairs([missing, ready], { statusFilter: 'issues' }).map((pair) => pair.pairId)).toEqual(['missing']);
+      expect(filterPairs([missing, ready], { statusFilter: 'ok' }).map((pair) => pair.pairId)).toEqual(['ready']);
+    });
+
+    test('status sort lists a vet missing mail pair before an otherwise ready pair', () => {
+      const missing = mailPair({
+        pairId: 'missing',
+        mailCallReceived: false,
+        veteran: { name_first: 'Zoe', name_last: 'Zeta' },
+      });
+      const ready = mailPair({
+        pairId: 'ready',
+        mailCallReceived: true,
+        veteran: { name_first: 'Ann', name_last: 'Apple' },
+      });
+
+      expect(sortPairs([ready, missing], 'status').map((pair) => pair.pairId)).toEqual(['missing', 'ready']);
+    });
+
+    test('missing mail only keeps veterans without mail received and drops guardian-only rows', () => {
+      const pairs = [
+        mailPair({ pairId: 'false-flag', mailCallReceived: false }),
+        mailPair({ pairId: 'missing-flag', includeMail: false }),
+        mailPair({ pairId: 'null-flag', mailCallReceived: null }),
+        mailPair({ pairId: 'received', mailCallReceived: true }),
+        mailPair({ pairId: 'crew', includeVeteran: false }),
+        mailPair({ pairId: 'unpaired', includeGuardian: false, mailCallReceived: false }),
+      ];
+
+      expect(filterPairs(pairs, { missingMailOnly: true }).map((pair) => pair.pairId)).toEqual([
+        'false-flag',
+        'missing-flag',
+        'null-flag',
+        'unpaired',
+      ]);
     });
   });
 });

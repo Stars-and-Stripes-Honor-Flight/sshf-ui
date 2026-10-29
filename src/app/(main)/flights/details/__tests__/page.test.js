@@ -82,7 +82,7 @@ const paired = {
   busMismatch: false,
   missingPairedPerson: false,
   people: [
-    veteran({ id: 'vet-paired', name_first: 'Pat', name_last: 'Paired' }),
+    veteran({ id: 'vet-paired', name_first: 'Pat', name_last: 'Paired', mail_call_received: true }),
     guardian({ id: 'grd-paired', name_first: 'Gail', name_last: 'Guardian' }),
   ],
 };
@@ -99,7 +99,7 @@ const noFlyPair = {
   busMismatch: false,
   missingPairedPerson: false,
   people: [
-    veteran({ id: 'vet-dc', name_first: 'Ned', name_last: 'District' }),
+    veteran({ id: 'vet-dc', name_first: 'Ned', name_last: 'District', mail_call_received: true }),
     guardian({
       id: 'grd-dc',
       name_first: 'Dana',
@@ -1590,5 +1590,368 @@ describe('Flight details column layout persistence (issue #286)', () => {
     await user.click(screen.getByRole('combobox', { name: 'Columns' }));
     await user.click(await screen.findByRole('option', { name: 'Caller' }));
     expect(localStorage.getItem(ACTIVITY_PRESET_STORAGE_KEY)).toBe(ACTIVITY_PRESETS.CALLER);
+  });
+});
+
+function mailCallDetails() {
+  return {
+    flight: {
+      name: 'May 2026',
+      completed: false,
+      flight_date: '2026-05-01',
+      capacity: 40,
+    },
+    stats: {
+      flight: { Alpha: 3, Bravo: 0, None: 0 },
+      tours: { Alpha: 3, Bravo: 0, None: 0 },
+      buses: { Alpha1: 3 },
+    },
+    pairs: [
+      {
+        pairId: 'missing',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({
+            id: 'vet-zeta',
+            name_first: 'Zoe',
+            name_last: 'Zeta',
+            mail_call_received: false,
+            mail_call_adopt: false,
+            mail_call_notes: 'Call Tuesday',
+          }),
+          guardian({
+            id: 'grd-zeta',
+            name_first: 'Gary',
+            name_last: 'Zeta',
+            training: 'Main',
+            training_complete: true,
+          }),
+        ],
+      },
+      {
+        pairId: 'received',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({
+            id: 'vet-apple',
+            name_first: 'Ann',
+            name_last: 'Apple',
+            mail_call_received: true,
+            mail_call_adopt: true,
+            mail_call_notes: 'Delivered',
+          }),
+          guardian({
+            id: 'grd-apple',
+            name_first: 'Gail',
+            name_last: 'Apple',
+            training: 'Main',
+            training_complete: true,
+          }),
+        ],
+      },
+      {
+        pairId: 'crew',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          guardian({
+            id: 'grd-crew',
+            name_first: 'Casey',
+            name_last: 'Crew',
+            training: 'Main',
+            training_complete: true,
+          }),
+        ],
+      },
+      {
+        pairId: 'solo',
+        busMismatch: false,
+        missingPairedPerson: false,
+        people: [
+          veteran({
+            id: 'vet-solo',
+            name_first: 'Uma',
+            name_last: 'Solo',
+            mail_call_received: false,
+          }),
+        ],
+      },
+    ],
+  };
+}
+
+describe('Flight details roster — mail call layout (issue #284)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    toast.success.mockClear();
+    toast.error.mockClear();
+    api.getFlight.mockResolvedValue(flightDocument({ completed: false }));
+    api.getFlightDetails.mockResolvedValue(mailCallDetails());
+    api.getFlightAssignments.mockResolvedValue({
+      counts: {
+        veterans: 3,
+        guardians: 3,
+        veteransConfirmed: 3,
+        guardiansConfirmed: 3,
+        remaining: 10,
+      },
+    });
+    api.updateVeteranMailCallReceived = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranMailCallAdopt = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranMailCallNotes = jest.fn().mockResolvedValue({ ok: true });
+    api.getVeteran = jest.fn();
+    api.getGuardian = jest.fn();
+    api.updateVeteran = jest.fn();
+    api.updateGuardian = jest.fn();
+  });
+
+  async function openMailCall(user) {
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    await chooseColumns(user, 'Mail Call');
+  }
+
+  test('shows the Mail Call layout and remembers it', async () => {
+    const user = userEvent.setup();
+    await openMailCall(user);
+
+    expect(screen.getByRole('columnheader', { name: /^Mail Rcvd$/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^Mail Adopt$/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^Mail Call Notes$/ })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Columns' })).toHaveTextContent('Mail Call');
+    expect(localStorage.getItem(ACTIVITY_PRESET_STORAGE_KEY)).toBe('mailcall');
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' })).toBeEnabled();
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeEnabled();
+    expect(within(zoeRow).getByRole('textbox', { name: 'Mail call notes' })).toHaveValue('Call Tuesday');
+
+    const garyRow = screen.getByRole('link', { name: 'Gary Zeta' }).closest('tr');
+    expect(within(garyRow).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(within(garyRow).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(within(garyRow).getAllByText('—')).toHaveLength(3);
+  });
+
+  test('restores the Mail Call layout after leaving the flight', async () => {
+    localStorage.setItem(ACTIVITY_PRESET_STORAGE_KEY, 'mailcall');
+
+    render(
+      <React.StrictMode>
+        <Page />
+      </React.StrictMode>
+    );
+
+    expect(await screen.findByRole('columnheader', { name: /^Mail Rcvd$/ })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Columns' })).toHaveTextContent('Mail Call');
+    expect(localStorage.getItem(ACTIVITY_PRESET_STORAGE_KEY)).toBe('mailcall');
+  });
+
+  test('saves received and adopt through the training PATCH methods, once each, and refreshes', async () => {
+    const user = userEvent.setup();
+    await openMailCall(user);
+
+    const detailsBefore = api.getFlightDetails.mock.calls.length;
+    const assignmentsBefore = api.getFlightAssignments.mock.calls.length;
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    await user.click(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallReceived).toHaveBeenCalledWith('vet-zeta', true);
+      expect(api.getFlightDetails).toHaveBeenCalledTimes(detailsBefore + 1);
+      expect(api.getFlightAssignments).toHaveBeenCalledTimes(assignmentsBefore + 1);
+    });
+    expect(toast.success.mock.calls.filter(([message]) => message === 'Mail call received updated')).toHaveLength(1);
+
+    await user.click(within(zoeRow).getByRole('checkbox', { name: 'Mail call adoption' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallAdopt).toHaveBeenCalledWith('vet-zeta', true);
+      expect(api.getFlightDetails).toHaveBeenCalledTimes(detailsBefore + 2);
+      expect(api.getFlightAssignments).toHaveBeenCalledTimes(assignmentsBefore + 2);
+    });
+    expect(toast.success.mock.calls.filter(([message]) => message === 'Mail call adoption updated')).toHaveLength(1);
+    expect(api.getVeteran).not.toHaveBeenCalled();
+    expect(api.updateVeteran).not.toHaveBeenCalled();
+    expect(api.getGuardian).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+  });
+
+  test('saves mail call notes through PATCH /veterans/{id}/mail-call-notes and never the PUT fallback', async () => {
+    const user = userEvent.setup();
+    await openMailCall(user);
+
+    const detailsBefore = api.getFlightDetails.mock.calls.length;
+    const assignmentsBefore = api.getFlightAssignments.mock.calls.length;
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const notes = within(zoeRow).getByRole('textbox', { name: 'Mail call notes' });
+    expect(notes.tagName).toBe('TEXTAREA');
+    expect(notes).toHaveAttribute('rows', '2');
+    await user.clear(notes);
+    await user.type(notes, 'Left at desk');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallNotes).toHaveBeenCalledWith('vet-zeta', 'Left at desk');
+      expect(api.getFlightDetails).toHaveBeenCalledTimes(detailsBefore + 1);
+      expect(api.getFlightAssignments).toHaveBeenCalledTimes(assignmentsBefore + 1);
+    });
+    expect(toast.success.mock.calls.filter(([message]) => message === 'Mail call notes updated')).toHaveLength(1);
+    expect(api.getVeteran).not.toHaveBeenCalled();
+    expect(api.updateVeteran).not.toHaveBeenCalled();
+    expect(api.getGuardian).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+  });
+
+  test('disables mail call controls for a read-only user', async () => {
+    const user = userEvent.setup();
+    mockCan.mockImplementation((permission) => permission === 'records:read' || permission === 'exports:read');
+    await openMailCall(user);
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(within(zoeRow).getByRole('textbox', { name: 'Mail call notes' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Columns' })).toBeEnabled();
+  });
+
+  test('disables mail call controls on a completed flight', async () => {
+    const user = userEvent.setup();
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+    await openMailCall(user);
+
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(zoeRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(within(zoeRow).getByRole('textbox', { name: 'Mail call notes' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Print guardian list' })).toBeEnabled();
+  });
+
+  test('shows Vet Missing Mail on the veteran row only after the guardian is trained', async () => {
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const annRow = screen.getByRole('link', { name: 'Ann Apple' }).closest('tr');
+    const umaRow = screen.getByRole('link', { name: 'Uma Solo' }).closest('tr');
+
+    expect(within(zoeRow).getByText('Vet Missing Mail')).toBeInTheDocument();
+    expect(within(annRow).getByText('OK')).toBeInTheDocument();
+    expect(within(annRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
+    expect(within(umaRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
+    expect(within(umaRow).getByText('No Guardian')).toBeInTheDocument();
+  });
+
+  test('Issues Only includes a trained veteran who is missing mail', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+
+    await user.click(screen.getByText('All Statuses'));
+    await user.click(await screen.findByRole('option', { name: 'Issues Only' }));
+
+    expect(screen.getByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ann Apple' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Gail Apple' })).not.toBeInTheDocument();
+  });
+
+  test('status sort lists a vet missing mail pair ahead of a ready pair', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Ann Apple' })).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Sort by'));
+    await user.click(await screen.findByRole('option', { name: 'Status' }));
+
+    const names = screen.getAllByRole('link').map((link) => link.textContent);
+    expect(names.indexOf('Zoe Zeta')).toBeGreaterThanOrEqual(0);
+    expect(names.indexOf('Zoe Zeta')).toBeLessThan(names.indexOf('Ann Apple'));
+  });
+
+  test('still shows Vet Missing Mail on a completed flight', async () => {
+    api.getFlight.mockResolvedValue(flightDocument({ completed: true }));
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    const zoeRow = screen.getByRole('link', { name: 'Zoe Zeta' }).closest('tr');
+    const annRow = screen.getByRole('link', { name: 'Ann Apple' }).closest('tr');
+    expect(within(zoeRow).getByText('Vet Missing Mail')).toBeInTheDocument();
+    expect(within(annRow).getByText('OK')).toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+  });
+
+  test('Missing mail only applies while the Mail Call layout is active and persists per flight', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Ann Apple' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Missing mail only' })).not.toBeInTheDocument();
+
+    await chooseColumns(user, 'Mail Call');
+    const toggle = screen.getByRole('button', { name: 'Missing mail only' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await user.click(toggle);
+
+    expect(screen.getByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Gary Zeta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ann Apple' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Gail Apple' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.missingMailOnly).toBe(true);
+    });
+
+    await chooseColumns(user, 'Ops');
+    expect(screen.queryByRole('button', { name: 'Missing mail only' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ann Apple' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Casey Crew' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214')).missingMailOnly).toBe(true);
+
+    await chooseColumns(user, 'Mail Call');
+    expect(screen.queryByRole('link', { name: 'Ann Apple' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }));
+    expect(await screen.findByRole('link', { name: 'Ann Apple' })).toBeInTheDocument();
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.missingMailOnly).toBe(false);
+    });
+  });
+
+  test('restores Missing mail only after leaving and returning to the flight', async () => {
+    localStorage.setItem(ACTIVITY_PRESET_STORAGE_KEY, 'mailcall');
+    localStorage.setItem(
+      'sshf.flightRosterControls.v1.flight-214',
+      JSON.stringify({
+        version: 1,
+        missingMailOnly: true,
+        nameFilter: '',
+        statusFilter: 'all',
+        busFilter: 'all',
+        planeFilter: 'all',
+        assignedCallerFilter: 'all',
+        sortBy: 'name',
+        noGuardianOnly: false,
+        trainingTypeFilter: [],
+        trainingGuardiansFocus: true,
+      })
+    );
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Zoe Zeta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Uma Solo' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ann Apple' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Missing mail only' })).toHaveAttribute('aria-pressed', 'true');
+    expect(JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214')).missingMailOnly).toBe(true);
   });
 });
