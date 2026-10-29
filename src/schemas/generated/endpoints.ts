@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.2
+ * OpenAPI spec version: 1.1.3
  */
 import * as zod from 'zod';
 
@@ -882,6 +882,21 @@ export const PatchVeteransIdMailCallAdoptBody = zod.object({
 })
 
 export const PatchVeteransIdMailCallAdoptResponse = zod.unknown()
+
+
+/**
+ * Patches one field on the record. Requires records:write.
+ * @summary Update veteran mail call notes
+ */
+export const PatchVeteransIdMailCallNotesParams = zod.object({
+  "id": zod.string().describe('Record id')
+})
+
+export const PatchVeteransIdMailCallNotesBody = zod.object({
+  "value": zod.string()
+})
+
+export const PatchVeteransIdMailCallNotesResponse = zod.unknown()
 
 
 /**
