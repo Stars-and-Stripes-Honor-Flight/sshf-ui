@@ -5,7 +5,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -422,7 +421,15 @@ export function renderMobilePhoneCell(person, personType, handlers) {
 export function renderTrainingCell(person, personType, handlers) {
   if (!person) return null;
   if (personType === 'Veteran') {
-    return <ReadOnlyCheckbox checked={person.mail_call_received} ariaLabel="Mail call received" />;
+    const { EditableCheckbox, handleMailCallReceivedChange, readOnly } = handlers;
+    return (
+      <EditableCheckbox
+        checked={Boolean(person.mail_call_received)}
+        onChange={(next) => handleMailCallReceivedChange(next, person.id)}
+        ariaLabel="Mail call received"
+        disabled={readOnly}
+      />
+    );
   }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
@@ -449,7 +456,15 @@ export function renderTrainingCell(person, personType, handlers) {
 export function renderTrainingNotesCell(person, personType, handlers) {
   if (!person) return null;
   if (personType === 'Veteran') {
-    return <ReadOnlyCheckbox checked={person.mail_call_adopt} ariaLabel="Mail call adoption" />;
+    const { EditableCheckbox, handleMailCallAdoptChange, readOnly } = handlers;
+    return (
+      <EditableCheckbox
+        checked={Boolean(person.mail_call_adopt)}
+        onChange={(next) => handleMailCallAdoptChange(next, person.id)}
+        ariaLabel="Mail call adoption"
+        disabled={readOnly}
+      />
+    );
   }
   if (personType !== 'Guardian') return <RolePlaceholder />;
 
@@ -470,34 +485,40 @@ export function renderTrainingNotesCell(person, personType, handlers) {
   );
 }
 
-function ReadOnlyCheckbox({ checked, ariaLabel }) {
+/**
+ * Editable waiver checkbox for guardians. Veterans show an em dash.
+ */
+export function renderWaiverCell(person, personType, handlers) {
+  if (!person) return null;
+  if (personType !== 'Guardian') return <RolePlaceholder />;
+
+  const { EditableCheckbox, handleWaiverChange, readOnly } = handlers;
   return (
-    <Checkbox
-      size="small"
-      checked={Boolean(checked)}
-      disabled
-      inputProps={{ 'aria-label': ariaLabel, readOnly: true }}
-      sx={{ p: 0.5 }}
+    <EditableCheckbox
+      checked={Boolean(person.flight_waiver)}
+      onChange={(next) => handleWaiverChange(next, person.id)}
+      ariaLabel="Waiver"
+      disabled={readOnly}
     />
   );
 }
 
 /**
- * Read-only waiver checkbox for guardians. Veterans show an em dash.
+ * Editable see-doc checkbox for guardians. Veterans show an em dash.
  */
-export function renderWaiverCell(person, personType) {
+export function renderSeeDocCell(person, personType, handlers) {
   if (!person) return null;
   if (personType !== 'Guardian') return <RolePlaceholder />;
-  return <ReadOnlyCheckbox checked={person.flight_waiver} ariaLabel="Waiver" />;
-}
 
-/**
- * Read-only see-doc checkbox for guardians. Veterans show an em dash.
- */
-export function renderSeeDocCell(person, personType) {
-  if (!person) return null;
-  if (personType !== 'Guardian') return <RolePlaceholder />;
-  return <ReadOnlyCheckbox checked={person.flight_training_see_doc} ariaLabel="See doc" />;
+  const { EditableCheckbox, handleTrainingSeeDocChange, readOnly } = handlers;
+  return (
+    <EditableCheckbox
+      checked={Boolean(person.flight_training_see_doc)}
+      onChange={(next) => handleTrainingSeeDocChange(next, person.id)}
+      ariaLabel="See doc"
+      disabled={readOnly}
+    />
+  );
 }
 
 /**
@@ -573,9 +594,9 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
     case 'training_notes':
       return renderTrainingNotesCell(person, personType, handlers);
     case 'flight_waiver':
-      return renderWaiverCell(person, personType);
+      return renderWaiverCell(person, personType, handlers);
     case 'flight_training_see_doc':
-      return renderSeeDocCell(person, personType);
+      return renderSeeDocCell(person, personType, handlers);
     default:
       return null;
   }

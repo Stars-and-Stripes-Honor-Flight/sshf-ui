@@ -253,75 +253,75 @@ describe('Flight details roster — unpaired veterans (issue #214)', () => {
   });
 });
 
-describe('Flight details roster — training preset (issue #212)', () => {
-  const trainingDetails = {
-    flight: {
-      name: 'Oct 2026',
-      completed: false,
-      flight_date: '2026-10-10',
-      capacity: 40,
+const trainingDetails = {
+  flight: {
+    name: 'Oct 2026',
+    completed: false,
+    flight_date: '2026-10-10',
+    capacity: 40,
+  },
+  stats: {
+    flight: { Alpha: 2, Bravo: 0, None: 0 },
+    tours: { Alpha: 2, Bravo: 0, None: 0 },
+    buses: { Alpha2: 2 },
+  },
+  pairs: [
+    {
+      pairId: 'main-pair',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({
+          id: 'vet-main',
+          name_first: 'Dawn',
+          name_last: 'Brust',
+          name_middle: 'M',
+          phone_mbl: '414-111-1111',
+          birth_date: '1945-01-02',
+        }),
+        guardian({
+          id: 'grd-main',
+          name_first: 'Gail',
+          name_last: 'Main',
+          name_middle: 'Marie',
+          phone_mbl: '414-327-5999',
+          birth_date: '1969-05-07',
+          training: 'Main',
+          training_complete: false,
+          flight_training_notes: 'Passport later',
+          flight_waiver: true,
+          flight_training_see_doc: true,
+        }),
+      ],
     },
-    stats: {
-      flight: { Alpha: 2, Bravo: 0, None: 0 },
-      tours: { Alpha: 2, Bravo: 0, None: 0 },
-      buses: { Alpha2: 2 },
+    {
+      pairId: 'web-pair',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [
+        veteran({ id: 'vet-web', name_first: 'Wes', name_last: 'Webber' }),
+        guardian({
+          id: 'grd-web',
+          name_first: 'Wendy',
+          name_last: 'Web',
+          training: 'Web',
+          training_complete: true,
+          flight_training_notes: '',
+          flight_waiver: false,
+          flight_training_see_doc: false,
+        }),
+      ],
     },
-    pairs: [
-      {
-        pairId: 'main-pair',
-        busMismatch: false,
-        missingPairedPerson: false,
-        people: [
-          veteran({
-            id: 'vet-main',
-            name_first: 'Dawn',
-            name_last: 'Brust',
-            name_middle: 'M',
-            phone_mbl: '414-111-1111',
-            birth_date: '1945-01-02',
-          }),
-          guardian({
-            id: 'grd-main',
-            name_first: 'Gail',
-            name_last: 'Main',
-            name_middle: 'Marie',
-            phone_mbl: '414-327-5999',
-            birth_date: '1969-05-07',
-            training: 'Main',
-            training_complete: false,
-            flight_training_notes: 'Passport later',
-            flight_waiver: true,
-            flight_training_see_doc: true,
-          }),
-        ],
-      },
-      {
-        pairId: 'web-pair',
-        busMismatch: false,
-        missingPairedPerson: false,
-        people: [
-          veteran({ id: 'vet-web', name_first: 'Wes', name_last: 'Webber' }),
-          guardian({
-            id: 'grd-web',
-            name_first: 'Wendy',
-            name_last: 'Web',
-            training: 'Web',
-            training_complete: true,
-            flight_training_notes: '',
-            flight_waiver: false,
-            flight_training_see_doc: false,
-          }),
-        ],
-      },
-      {
-        pairId: 'solo',
-        busMismatch: false,
-        missingPairedPerson: false,
-        people: [veteran({ id: 'vet-solo', name_first: 'Uma', name_last: 'Unpaired' })],
-      },
-    ],
-  };
+    {
+      pairId: 'solo',
+      busMismatch: false,
+      missingPairedPerson: false,
+      people: [veteran({ id: 'vet-solo', name_first: 'Uma', name_last: 'Unpaired' })],
+    },
+  ],
+};
 
+describe('Flight details roster — training preset (issue #212)', () => {
   beforeEach(() => {
     mockCan.mockImplementation(() => true);
     localStorage.clear();
@@ -446,11 +446,10 @@ describe('Flight details roster — training preset (issue #212)', () => {
     expect(screen.queryByRole('columnheader', { name: 'Mail Adopt / Training Notes' })).not.toBeInTheDocument();
 
     const umaRow = screen.getByRole('link', { name: 'Uma Unpaired' }).closest('tr');
-    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).toBeEnabled();
     expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).not.toBeChecked();
-    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
+    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeEnabled();
     expect(within(umaRow).getByRole('checkbox', { name: 'Mail call adoption' })).toBeChecked();
-    expect(within(umaRow).getByRole('checkbox', { name: 'Mail call received' })).toHaveAttribute('readonly');
 
     const gailRow = screen.getByRole('link', { name: 'Gail Main' }).closest('tr');
     expect(within(gailRow).getByText('Main')).toBeInTheDocument();
@@ -472,10 +471,9 @@ describe('Flight details roster — training preset (issue #212)', () => {
     const dawnReceived = within(dawnRow).getByRole('checkbox', { name: 'Mail call received' });
     const dawnAdopt = within(dawnRow).getByRole('checkbox', { name: 'Mail call adoption' });
     expect(dawnReceived).toBeChecked();
-    expect(dawnReceived).toBeDisabled();
-    expect(dawnReceived).toHaveAttribute('readonly');
+    expect(dawnReceived).toBeEnabled();
     expect(dawnAdopt).not.toBeChecked();
-    expect(dawnAdopt).toBeDisabled();
+    expect(dawnAdopt).toBeEnabled();
     expect(dawnReceived.closest('td')).toHaveTextContent('');
     expect(dawnAdopt.closest('td')).toHaveTextContent('');
     expect(within(dawnRow).queryByRole('checkbox', { name: 'Training complete' })).not.toBeInTheDocument();
@@ -483,6 +481,63 @@ describe('Flight details roster — training preset (issue #212)', () => {
 
     expect(within(gailRow).getByRole('checkbox', { name: 'Training complete' })).toBeEnabled();
     expect(within(gailRow).getByRole('textbox', { name: 'Training notes' })).toHaveValue('Passport later');
+  });
+});
+
+describe('Flight details roster — training checkboxes (issue #277)', () => {
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue(trainingDetails);
+    api.getFlightAssignments.mockResolvedValue({
+      veterans: [],
+      guardians: [],
+      counts: { veterans: 0, guardians: 0 },
+    });
+    api.updateGuardianWaiver = jest.fn().mockResolvedValue({ ok: true });
+    api.updateGuardianTrainingSeeDoc = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranMailCallReceived = jest.fn().mockResolvedValue({ ok: true });
+    api.updateVeteranMailCallAdopt = jest.fn().mockResolvedValue({ ok: true });
+    api.getVeteran = jest.fn();
+    api.getGuardian = jest.fn();
+    api.updateVeteran = jest.fn();
+    api.updateGuardian = jest.fn();
+  });
+
+  async function openTrainingPreset(user) {
+    render(<Page />);
+    expect(await screen.findByRole('link', { name: 'Uma Unpaired' })).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Columns' }));
+    await user.click(await screen.findByRole('option', { name: 'Training' }));
+    await user.click(screen.getByRole('button', { name: 'Guardians focus' }));
+  }
+
+  test('saves waiver, see doc, and mail call flags through dedicated PATCH endpoints', async () => {
+    const user = userEvent.setup();
+    await openTrainingPreset(user);
+
+    const dawnRow = screen.getByRole('link', { name: 'Dawn Brust' }).closest('tr');
+    await user.click(within(dawnRow).getByRole('checkbox', { name: 'Mail call received' }));
+    await user.click(within(dawnRow).getByRole('checkbox', { name: 'Mail call adoption' }));
+
+    const gailRow = screen.getByRole('link', { name: 'Gail Main' }).closest('tr');
+    await user.click(within(gailRow).getByRole('checkbox', { name: 'Waiver' }));
+    await user.click(within(gailRow).getByRole('checkbox', { name: 'See doc' }));
+
+    await waitFor(() => {
+      expect(api.updateVeteranMailCallReceived).toHaveBeenCalledWith('vet-main', true);
+      expect(api.updateVeteranMailCallAdopt).toHaveBeenCalledWith('vet-main', true);
+      expect(api.updateGuardianWaiver).toHaveBeenCalledWith('grd-main', false);
+      expect(api.updateGuardianTrainingSeeDoc).toHaveBeenCalledWith('grd-main', false);
+    });
+    expect(api.getVeteran).not.toHaveBeenCalled();
+    expect(api.getGuardian).not.toHaveBeenCalled();
+    expect(api.updateVeteran).not.toHaveBeenCalled();
+    expect(api.updateGuardian).not.toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith('Mail call received updated');
+    expect(toast.success).toHaveBeenCalledWith('Mail call adoption updated');
+    expect(toast.success).toHaveBeenCalledWith('Waiver updated');
+    expect(toast.success).toHaveBeenCalledWith('See doc updated');
   });
 });
 
@@ -1473,6 +1528,10 @@ describe('Completed flight roster edits (issue #286)', () => {
     });
     expect(screen.getByRole('checkbox', { name: 'Training complete' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Training notes' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Waiver' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'See doc' })).toBeDisabled();
+    expect(within(vicRow()).getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
+    expect(within(vicRow()).getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
     expect(screen.getByRole('link', { name: 'Gina Done' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Vic Done' })).toBeInTheDocument();
   });
