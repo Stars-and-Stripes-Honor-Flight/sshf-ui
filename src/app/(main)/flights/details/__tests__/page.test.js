@@ -50,6 +50,9 @@ jest.mock('@/hooks/use-permissions', () => ({
   }),
 }));
 
+// Full-roster render + userEvent interactions can exceed 5s under parallel Jest workers.
+jest.setTimeout(15000);
+
 function veteran(overrides) {
   return {
     type: 'Veteran',
