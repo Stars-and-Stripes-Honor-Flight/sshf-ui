@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import esbuild from 'esbuild';
 
+import { nodeEsmInvokeArgs } from './node-esm-args.mjs';
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../../../../../');
 const outfile = path.join(root, `tmp-guardian-list-render-${process.pid}.mjs`);
@@ -23,7 +25,7 @@ await esbuild.build({
 
 const result = spawnSync(
   process.execPath,
-  ['--import', path.join(here, 'register-next-react.mjs'), outfile],
+  nodeEsmInvokeArgs(path.join(here, 'register-next-react.mjs'), outfile),
   { cwd: root, encoding: 'utf8' }
 );
 fs.rmSync(outfile, { force: true });
