@@ -73,6 +73,7 @@ import {
   loadFlightRosterControls,
   saveFlightRosterControls,
   resetFlightRosterControls,
+  CREW_POSITION_OPTIONS,
   DEFAULT_ROSTER_CONTROLS,
 } from '@/components/main/flight/flight-roster-controls-storage';
 import {
@@ -100,6 +101,7 @@ function FlightDetailsPage() {
   const [nameFilter, setNameFilter] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all'); // all, ok, issues, nofly
   const [busFilter, setBusFilter] = React.useState('all');
+  const [crewFilter, setCrewFilter] = React.useState('all');
   const [planeFilter, setPlaneFilter] = React.useState('all');
   const [assignedCallerFilter, setAssignedCallerFilter] = React.useState('all');
   const [noGuardianOnly, setNoGuardianOnly] = React.useState(false);
@@ -281,6 +283,7 @@ function FlightDetailsPage() {
     setNameFilter(savedControls.nameFilter);
     setStatusFilter(savedControls.statusFilter);
     setBusFilter(savedControls.busFilter);
+    setCrewFilter(savedControls.crewFilter);
     setPlaneFilter(savedControls.planeFilter);
     setAssignedCallerFilter(savedControls.assignedCallerFilter);
     setNoGuardianOnly(savedControls.noGuardianOnly);
@@ -310,6 +313,7 @@ function FlightDetailsPage() {
         nameFilter: nameValue,
         statusFilter,
         busFilter,
+        crewFilter,
         planeFilter,
         assignedCallerFilter,
         sortBy,
@@ -319,14 +323,14 @@ function FlightDetailsPage() {
         missingMailOnly,
       });
     },
-    [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly]
+    [flightId, statusFilter, busFilter, crewFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly]
   );
 
   // Persist roster controls when values change. The coordinator skips the first persist
   // pass after hydrate so pending setState does not overwrite saved localStorage.
   React.useEffect(() => {
     persistRosterControls(nameFilter);
-  }, [flightId, statusFilter, busFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly, persistRosterControls]);
+  }, [flightId, statusFilter, busFilter, crewFilter, planeFilter, assignedCallerFilter, sortBy, noGuardianOnly, trainingTypeFilter, trainingGuardiansFocus, missingMailOnly, persistRosterControls]);
 
   // Debounce name filter persistence while typing
   React.useEffect(() => {
@@ -350,6 +354,7 @@ function FlightDetailsPage() {
     setNameFilter(defaults.nameFilter);
     setStatusFilter(defaults.statusFilter);
     setBusFilter(defaults.busFilter);
+    setCrewFilter(defaults.crewFilter);
     setPlaneFilter(defaults.planeFilter);
     setAssignedCallerFilter(defaults.assignedCallerFilter);
     setNoGuardianOnly(defaults.noGuardianOnly);
@@ -886,6 +891,7 @@ function FlightDetailsPage() {
                     nameFilter,
                     statusFilter,
                     busFilter,
+                    crewFilter,
                     planeFilter: effectivePlaneFilter,
                     assignedCallerFilter,
                     noGuardianOnly,
@@ -1107,6 +1113,22 @@ function FlightDetailsPage() {
                             <MenuItem key={bus} value={bus}>{bus}</MenuItem>
                           ))}
                         </TextField>
+                        <TextField
+                          select
+                          size="small"
+                          label="Crew"
+                          value={crewFilter}
+                          onChange={(e) => setCrewFilter(e.target.value)}
+                          sx={{ minWidth: 140 }}
+                        >
+                          <MenuItem value="all">All</MenuItem>
+                          <MenuItem value="any">Any crew</MenuItem>
+                          {CREW_POSITION_OPTIONS.map((position) => (
+                            <MenuItem key={position} value={position}>
+                              {position}
+                            </MenuItem>
+                          ))}
+                        </TextField>
                         {showPlaneFilter && (
                           <TextField
                             select
@@ -1148,6 +1170,7 @@ function FlightDetailsPage() {
                     nameFilter,
                     statusFilter,
                     busFilter,
+                    crewFilter,
                     planeFilter: effectivePlaneFilter,
                     assignedCallerFilter,
                     noGuardianOnly,

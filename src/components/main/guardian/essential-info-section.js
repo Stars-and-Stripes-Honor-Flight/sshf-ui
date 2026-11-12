@@ -23,6 +23,16 @@ import { PersonalInformationCard } from '@/components/main/shared/personal-infor
 import { FormSelectField } from '@/components/main/shared/form-select-field';
 import { howHeardAboutOptions } from '@/schemas/call';
 
+const crewPositionOptions = [
+  '',
+  'Bus Captain',
+  'Tour Lead',
+  'Medical Team',
+  'PR',
+  'Fly Ahead',
+  'Photographer',
+];
+
 const shirtSizeOptions = [
   { value: 'None', label: 'None' },
   { value: 'S', label: 'Small' },
@@ -316,6 +326,42 @@ export function EssentialInfoSection({ control, errors, guardian, onOpenHistory,
                     control={<Checkbox {...field} checked={field.value} disabled={disabled} />}
                     label="Email Sent"
                   />
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <Controller
+                control={control}
+                name="crew.crew_position"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.crew?.crew_position)} fullWidth disabled={disabled}>
+                    <InputLabel>Crew Position</InputLabel>
+                    <Select {...field} name="crew.crew_position">
+                      {crewPositionOptions.map((option) => (
+                        <Option key={option || 'blank'} value={option}>
+                          {option}
+                        </Option>
+                      ))}
+                    </Select>
+                    {errors.crew?.crew_position ? (
+                      <FormHelperText>{errors.crew.crew_position.message}</FormHelperText>
+                    ) : null}
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid xs={12} md={6}>
+              <Controller
+                control={control}
+                name="crew.comms_username"
+                render={({ field }) => (
+                  <FormControl error={Boolean(errors.crew?.comms_username)} fullWidth disabled={disabled}>
+                    <InputLabel>Comms Username</InputLabel>
+                    <OutlinedInput {...field} name="crew.comms_username" />
+                    {errors.crew?.comms_username ? (
+                      <FormHelperText>{errors.crew.comms_username.message}</FormHelperText>
+                    ) : null}
+                  </FormControl>
                 )}
               />
             </Grid>

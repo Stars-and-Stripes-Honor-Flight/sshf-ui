@@ -157,6 +157,25 @@ export function renderFltGrpMedExpCell(person, personType) {
 }
 
 /**
+ * Render guardian crew position; veterans and non-crew guardians show an em dash.
+ */
+export function renderCrewCell(person, personType) {
+  if (!person) return null;
+
+  if (personType !== 'Guardian') {
+    return <Typography variant="body2">—</Typography>;
+  }
+
+  const position = person.crew?.crew_position;
+  if (typeof position !== 'string') {
+    return <Typography variant="body2">—</Typography>;
+  }
+
+  const trimmed = position.trim();
+  return <Typography variant="body2">{trimmed || '—'}</Typography>;
+}
+
+/**
  * Veteran med_limits is built as "[" + level + "/" + alt_level + "] " + limitations.
  * Return the bracket when at least one side has a level; otherwise "".
  * @param {string|undefined|null} medLimits
@@ -619,6 +638,8 @@ export function renderActivityCell(columnId, person, pair, personType, handlers,
       return renderGroupCell(person, personType);
     case 'flt_grp_med_exp':
       return renderFltGrpMedExpCell(person, personType);
+    case 'crew':
+      return renderCrewCell(person, personType);
     case 'med_lvl':
       return renderMedLvlCell(person, personType);
     case 'med_exprnc':
