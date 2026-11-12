@@ -823,6 +823,31 @@ class ApiClient {
     }
   }
 
+  /**
+   * Mark a flight completed and its Active people as Flown.
+   * Returns HTTP status and body so 207 partial failure is distinguishable from 200.
+   */
+  async completeFlight(id) {
+    const response = await this.request(`/flights/${id}/complete`, {
+      method: 'POST',
+    });
+    const body = await response.json();
+    return { status: response.status, body };
+  }
+
+  /**
+   * Change every person with the given Future-* status to Active.
+   * Returns HTTP status and body so 207 partial failure is distinguishable from 200.
+   */
+  async activateFutureStatus(status) {
+    const response = await this.request('/flights/future-status/activate', {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    });
+    const body = await response.json();
+    return { status: response.status, body };
+  }
+
   // Export tour lead as CSV
   async exportTourLead(flightName = '') {
     try {

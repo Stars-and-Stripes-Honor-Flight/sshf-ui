@@ -15,7 +15,10 @@ import TablePagination from '@mui/material/TablePagination';
 import { useMediaQuery, useTheme } from '@mui/material';
 
 import { api } from '@/lib/api';
+import { PERMISSIONS } from '@/lib/auth/permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { WaitlistTypeFilter } from '@/components/main/waitlist/waitlist-type-filter';
+import { WaitlistFutureStatusActivate } from '@/components/main/waitlist/waitlist-future-status-activate';
 import { WaitlistItem } from '@/components/main/waitlist/waitlist-item';
 import { WaitlistMobileCard } from '@/components/main/waitlist/waitlist-mobile-card';
 
@@ -33,6 +36,8 @@ function parseWaitlistPage(pageParam) {
 }
 
 export function WaitlistView() {
+  const { can } = usePermissions();
+  const canManageFlights = can(PERMISSIONS.FLIGHTS_MANAGE);
   const searchParams = useSearchParams();
   const router = useRouter();
   const theme = useTheme();
@@ -67,54 +72,59 @@ export function WaitlistView() {
     // Fixed page size for now
   };
 
-  React.useEffect(() => {
-    const fetchWaitlist = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const waitlistRequest = React.useMemo(
+    () => ({
+      type: waitlistType,
+      offset,
+      limit: DEFAULT_PAGE_SIZE + 1,
+    }),
+    [waitlistType, offset]
+  );
 
-        // Fetch one extra record to detect if there are more pages
-        const response = await api.getWaitlist({
-          type: waitlistType,
-          offset: offset,
-          limit: DEFAULT_PAGE_SIZE + 1,
-        });
+  const loadWaitlist = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        // Handle both array and object response formats
-        let allResults = Array.isArray(response) ? response : (response.rows || []);
-        
-        // Check if we got more than the page size (indicating there are more pages)
-        const hasMorePages = allResults.length > DEFAULT_PAGE_SIZE;
-        
-        // Only display the page-sized amount
-        const pageEntries = allResults.slice(0, DEFAULT_PAGE_SIZE);
-        setEntries(pageEntries);
-        
-        if (!Array.isArray(response) && response.total_rows != null) {
-          setTotalRows(response.total_rows);
-        } else if (hasMorePages) {
-          setTotalRows(offset + DEFAULT_PAGE_SIZE + 1);
-        } else if (Array.isArray(response)) {
-          setTotalRows(offset + pageEntries.length);
-        } else {
-          setTotalRows(offset + pageEntries.length);
-        }
-      } catch (err) {
-        setError(err.message || 'Failed to fetch waitlist');
-        setEntries([]);
-        setTotalRows(0);
-      } finally {
-        setIsLoading(false);
+      const response = await api.getWaitlist(waitlistRequest);
+
+      let allResults = Array.isArray(response) ? response : (response.rows || []);
+
+      const hasMorePages = allResults.length > DEFAULT_PAGE_SIZE;
+      const pageEntries = allResults.slice(0, DEFAULT_PAGE_SIZE);
+      setEntries(pageEntries);
+
+      if (!Array.isArray(response) && response.total_rows != null) {
+        setTotalRows(response.total_rows);
+      } else if (hasMorePages) {
+        setTotalRows(offset + DEFAULT_PAGE_SIZE + 1);
+      } else if (Array.isArray(response)) {
+        setTotalRows(offset + pageEntries.length);
+      } else {
+        setTotalRows(offset + pageEntries.length);
       }
-    };
+    } catch (err) {
+      setError(err.message || 'Failed to fetch waitlist');
+      setEntries([]);
+      setTotalRows(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [waitlistRequest, offset]);
 
-    fetchWaitlist();
-  }, [waitlistType, offset]);
+  React.useEffect(() => {
+    loadWaitlist();
+  }, [loadWaitlist]);
 
   return (
     <Stack spacing={2}>
       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <WaitlistTypeFilter value={waitlistType} onChange={handleTypeChange} />
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <WaitlistTypeFilter value={waitlistType} onChange={handleTypeChange} />
+          {canManageFlights ? (
+            <WaitlistFutureStatusActivate onActivated={loadWaitlist} />
+          ) : null}
+        </Stack>
       </Box>
 
       {error && (

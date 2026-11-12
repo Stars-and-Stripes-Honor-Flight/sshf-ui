@@ -18,6 +18,14 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
+jest.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({
+    can: () => false,
+    hasAccess: true,
+    permissions: [],
+  }),
+}));
+
 import { api } from '@/lib/api';
 import { WaitlistView } from '@/components/main/waitlist/waitlist-view';
 

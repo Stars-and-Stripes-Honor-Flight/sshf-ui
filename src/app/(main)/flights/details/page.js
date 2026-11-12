@@ -49,6 +49,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { dayjs } from '@/lib/dayjs';
 import { formatFlightNameForDisplay } from '@/lib/flights';
 import { toast } from '@/components/core/toaster';
+import { toastCompleteFlightResult } from '@/lib/flight-status-bulk-toast';
 import { FlightExportMenu } from '@/components/main/flight/flight-export-menu';
 import { FlightDetailsGrid } from '@/components/main/flight/flight-details-grid';
 import { FlightStatsSection } from '@/components/main/flight/flight-stats-section';
@@ -114,6 +115,9 @@ function FlightDetailsPage() {
   const rosterPersistCoordinatorRef = React.useRef(createInitialRosterPersistCoordinatorState());
   const activityPresetPersistRef = React.useRef(createInitialRosterPersistCoordinatorState());
   
+  const [showCompleteFlightDialog, setShowCompleteFlightDialog] = React.useState(false);
+  const [completingFlight, setCompletingFlight] = React.useState(false);
+
   // Bus mismatch auto-fix states
   const [showBusMismatchDialog, setShowBusMismatchDialog] = React.useState(false);
   const [busMismatchFixes, setBusMismatchFixes] = React.useState([]);
@@ -450,6 +454,33 @@ function FlightDetailsPage() {
     }
   }, [flightId]);
 
+  const refetchFlightData = React.useCallback(async () => {
+    const [detailsData, newAssignmentData, flightRecord] = await Promise.all([
+      api.getFlightDetails(flightId),
+      api.getFlightAssignments(flightId),
+      api.getFlight(flightId),
+    ]);
+    setFlightData(detailsData);
+    setAssignmentData(newAssignmentData);
+    setFlightDocument(flightRecord);
+  }, [flightId]);
+
+  const handleConfirmCompleteFlight = async () => {
+    try {
+      setCompletingFlight(true);
+      const result = await api.completeFlight(flightId);
+      if (result.status === 200 || result.status === 207) {
+        await refetchFlightData();
+        setShowCompleteFlightDialog(false);
+        toastCompleteFlightResult(result.status, result.body);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to complete flight.');
+    } finally {
+      setCompletingFlight(false);
+    }
+  };
+
   // If no flightId, don't render anything (will redirect)
   if (!flightId) {
     return null;
@@ -463,6 +494,24 @@ function FlightDetailsPage() {
   // Same boolean the flight list reads from the flight document.
   const isCompleted =
     flightDocument?.completed === true || flightDocument?.completed === 'true';
+
+  const flightDateForComplete =
+    flightDocument?.flight_date ?? flight?.flight_date ?? flightData?.flight?.flight_date;
+  const completeFlightDateHelpId = 'complete-flight-date-help';
+  let completeFlightEnabled = false;
+  let completeFlightDateHelp = '';
+  if (flightDateForComplete == null || flightDateForComplete === '') {
+    completeFlightDateHelp = 'Flight date is missing, so Complete Flight is not available yet.';
+  } else {
+    const parsedFlightDate = dayjs(flightDateForComplete);
+    if (!parsedFlightDate.isValid()) {
+      completeFlightDateHelp = 'Flight date is invalid, so Complete Flight is not available yet.';
+    } else {
+      const today = dayjs().startOf('day');
+      const flightDay = parsedFlightDate.startOf('day');
+      completeFlightEnabled = today.isAfter(flightDay);
+    }
+  }
 
   return (
     <Box
@@ -512,6 +561,43 @@ function FlightDetailsPage() {
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
+                      {canManageFlights && !isCompleted ? (
+                        <>
+                          {completeFlightDateHelp ? (
+                            <Typography
+                              id={completeFlightDateHelpId}
+                              variant="caption"
+                              sx={{
+                                position: 'absolute',
+                                width: 1,
+                                height: 1,
+                                overflow: 'hidden',
+                                clip: 'rect(0 0 0 0)',
+                              }}
+                            >
+                              {completeFlightDateHelp}
+                            </Typography>
+                          ) : null}
+                          <Tooltip
+                            title={completeFlightDateHelp}
+                            disableHoverListener={!completeFlightDateHelp}
+                          >
+                            <span>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                disabled={!completeFlightEnabled}
+                                aria-describedby={
+                                  completeFlightDateHelp ? completeFlightDateHelpId : undefined
+                                }
+                                onClick={() => setShowCompleteFlightDialog(true)}
+                              >
+                                Complete Flight
+                              </Button>
+                            </span>
+                          </Tooltip>
+                        </>
+                      ) : null}
                     </Stack>
                   </Box>
                   {canExport ? (
@@ -646,6 +732,32 @@ function FlightDetailsPage() {
                   </CardContent>
                 </Card>
               )}
+
+              <Dialog
+                open={showCompleteFlightDialog}
+                onClose={() => !completingFlight && setShowCompleteFlightDialog(false)}
+              >
+                <DialogTitle>Complete Flight</DialogTitle>
+                <DialogContent>
+                  <Typography variant="body2" sx={{ pt: 1 }}>
+                    Mark <strong>{formatFlightNameForDisplay(flight.name)}</strong> as completed?
+                    All people with Active status on this flight will become Flown, and the flight
+                    will be marked completed.
+                  </Typography>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setShowCompleteFlightDialog(false)} disabled={completingFlight}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleConfirmCompleteFlight}
+                    disabled={completingFlight}
+                  >
+                    {completingFlight ? 'Completing…' : 'Complete Flight'}
+                  </Button>
+                </DialogActions>
+              </Dialog>
 
               {/* Dialog for Adding Veterans */}
               <Dialog open={showAddAssignmentDialog} onClose={() => !addingAssignments && setShowAddAssignmentDialog(false)}>
