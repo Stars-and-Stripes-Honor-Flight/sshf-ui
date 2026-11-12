@@ -1123,7 +1123,7 @@ function FlightDetailsPage() {
                             'aria-label': 'Crew',
                           }}
                         >
-                          <MenuItem value="all">All Positions</MenuItem>
+                          <MenuItem value="all">All Passengers</MenuItem>
                           <MenuItem value="any">Any crew</MenuItem>
                           {CREW_POSITION_OPTIONS.map((position) => (
                             <MenuItem key={position} value={position}>

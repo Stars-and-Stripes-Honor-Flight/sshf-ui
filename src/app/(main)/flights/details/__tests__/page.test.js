@@ -2102,14 +2102,14 @@ describe('Flight details roster — crew filter (issue #240)', () => {
     return matches[0];
   }
 
-  test('lists All Positions, Any crew, and each position immediately after the bus filter', async () => {
+  test('lists All Passengers, Any crew, and each position immediately after the bus filter', async () => {
     const user = userEvent.setup();
     render(<Page />);
 
     expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
 
     const crew = screen.getByRole('combobox', { name: 'Crew' });
-    expect(crew).toHaveTextContent('All Positions');
+    expect(crew).toHaveTextContent('All Passengers');
     const comboboxes = screen.getAllByRole('combobox');
     expect(comboboxes[comboboxes.indexOf(busCombobox()) + 1]).toBe(crew);
 
@@ -2119,7 +2119,7 @@ describe('Flight details roster — crew filter (issue #240)', () => {
       'any',
       ...CREW_POSITIONS,
     ]);
-    expect(screen.getByRole('option', { name: 'All Positions' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'All Passengers' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Any crew' })).toBeInTheDocument();
     CREW_POSITIONS.forEach((position) => {
       expect(screen.getByRole('option', { name: position })).toBeInTheDocument();
@@ -2203,7 +2203,7 @@ describe('Flight details roster — crew filter (issue #240)', () => {
 
     expect(await screen.findByRole('link', { name: 'Dana Plain' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Casey Crew' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Crew' })).toHaveTextContent('All Positions');
+    expect(screen.getByRole('combobox', { name: 'Crew' })).toHaveTextContent('All Passengers');
     await waitFor(() => {
       const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
       expect(saved.crewFilter).toBe('all');
