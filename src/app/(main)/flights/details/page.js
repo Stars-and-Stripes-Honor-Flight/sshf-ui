@@ -1116,12 +1116,14 @@ function FlightDetailsPage() {
                         <TextField
                           select
                           size="small"
-                          label="Crew"
                           value={crewFilter}
                           onChange={(e) => setCrewFilter(e.target.value)}
                           sx={{ minWidth: 140 }}
+                          inputProps={{
+                            'aria-label': 'Crew',
+                          }}
                         >
-                          <MenuItem value="all">All</MenuItem>
+                          <MenuItem value="all">All Positions</MenuItem>
                           <MenuItem value="any">Any crew</MenuItem>
                           {CREW_POSITION_OPTIONS.map((position) => (
                             <MenuItem key={position} value={position}>
