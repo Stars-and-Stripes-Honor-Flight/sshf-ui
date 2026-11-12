@@ -4,12 +4,24 @@
 
 export const ROSTER_CONTROLS_SCHEMA_VERSION = 1;
 
+export const CREW_POSITION_OPTIONS = [
+  'Bus Captain',
+  'Tour Lead',
+  'Medical Team',
+  'PR',
+  'Fly Ahead',
+  'Photographer',
+];
+
+const CREW_FILTER_VALUES = new Set(['all', 'any', ...CREW_POSITION_OPTIONS]);
+
 export const DEFAULT_ROSTER_CONTROLS = {
   nameFilter: '',
   statusFilter: 'all',
   busFilter: 'all',
   planeFilter: 'all',
   assignedCallerFilter: 'all',
+  crewFilter: 'all',
   sortBy: 'name',
   noGuardianOnly: false,
   trainingTypeFilter: [],
@@ -79,6 +91,14 @@ function normalizeStringArray(value) {
 }
 
 /**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeCrewFilter(value) {
+  return typeof value === 'string' && CREW_FILTER_VALUES.has(value) ? value : 'all';
+}
+
+/**
  * Load saved roster controls for a flight.
  * @param {string | null | undefined} flightId
  * @returns {typeof DEFAULT_ROSTER_CONTROLS}
@@ -116,6 +136,7 @@ export function loadFlightRosterControls(flightId) {
         parsed.assignedCallerFilter,
         DEFAULT_ROSTER_CONTROLS.assignedCallerFilter
       ),
+      crewFilter: normalizeCrewFilter(parsed.crewFilter),
       sortBy: normalizeEnum(parsed.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
       noGuardianOnly: normalizeBoolean(parsed.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
       trainingTypeFilter: normalizeStringArray(parsed.trainingTypeFilter),
@@ -159,6 +180,7 @@ export function saveFlightRosterControls(flightId, controls) {
       controls.assignedCallerFilter,
       DEFAULT_ROSTER_CONTROLS.assignedCallerFilter
     ),
+    crewFilter: normalizeCrewFilter(controls.crewFilter),
     sortBy: normalizeEnum(controls.sortBy, SORT_BY_VALUES, DEFAULT_ROSTER_CONTROLS.sortBy),
     noGuardianOnly: normalizeBoolean(controls.noGuardianOnly, DEFAULT_ROSTER_CONTROLS.noGuardianOnly),
     trainingTypeFilter: normalizeStringArray(controls.trainingTypeFilter),

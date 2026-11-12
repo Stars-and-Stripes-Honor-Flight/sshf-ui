@@ -25,6 +25,7 @@ import MuiLink from '@mui/material/Link';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import { Headset as HeadsetIcon } from '@phosphor-icons/react/dist/ssr/Headset';
 import { CaretDown as CaretDownIcon } from '@phosphor-icons/react/dist/ssr/CaretDown';
 import { CaretUp as CaretUpIcon } from '@phosphor-icons/react/dist/ssr/CaretUp';
 import { AirplaneTilt as AirplaneTiltIcon } from '@phosphor-icons/react/dist/ssr/AirplaneTilt';
@@ -76,6 +77,12 @@ function PersonDisplay({ person, type = 'Veteran' }) {
     ? paths.main.veterans.details(person.id)
     : paths.main.guardians.details(person.id);
 
+  const crewPosition =
+    type === 'Guardian' && typeof person.crew?.crew_position === 'string'
+      ? person.crew.crew_position
+      : '';
+  const showCrewHeadset = crewPosition.trim() !== '';
+
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
       {type === 'Veteran' ? (
@@ -107,6 +114,13 @@ function PersonDisplay({ person, type = 'Veteran' }) {
       >
         {person.name_first} {person.name_last}
       </MuiLink>
+      {showCrewHeadset ? (
+        <Tooltip title={crewPosition}>
+          <span style={{ display: 'flex' }}>
+            <HeadsetIcon size={16} weight="regular" />
+          </span>
+        </Tooltip>
+      ) : null}
       {!person.confirmed && (
         <Tooltip title="Not Confirmed - Needs to be called">
           <span style={{ display: 'flex' }}>

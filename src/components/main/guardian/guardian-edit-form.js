@@ -248,6 +248,10 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
       departure_flight: '',
       notes: '' 
     },
+    crew: {
+      crew_position: guardian.crew?.crew_position ?? '',
+      comms_username: guardian.crew?.comms_username ?? '',
+    },
     metadata: guardian.metadata || {
       created_at: '',
       created_by: '',
@@ -262,6 +266,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
     formState: { errors, isDirty },
     watch,
     setValue,
+    setError,
     reset,
   } = useForm({
     defaultValues,
@@ -307,6 +312,16 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
 
   const onSubmit = React.useCallback(
     async (data) => {
+      const crewPosition = String(data.crew?.crew_position ?? '').trim();
+      const commsUsername = String(data.crew?.comms_username ?? '').trim();
+      if (crewPosition && !commsUsername) {
+        setError('crew.comms_username', {
+          type: 'manual',
+          message: 'Comms username is required when a crew position is set',
+        });
+        return;
+      }
+
       try {
         setSaving(true);
         
@@ -335,8 +350,12 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
           }
         }
         
-        // Reset form state to mark as clean - this clears the dirty bit
-        reset(updatedGuardian);
+        // Reset form state to mark as clean - keep submitted values (including crew) with server rev
+        reset({
+          ...data,
+          _rev: updatedGuardian._rev ?? data._rev,
+          metadata: updatedGuardian.metadata ?? data.metadata,
+        });
         
         // Stay on the current screen after save
       } catch (err) {
@@ -346,7 +365,7 @@ export function GuardianEditForm({ guardian, onNavigationReady, onNavigate }) {
         setSaving(false);
       }
     },
-    [router, guardianRev, handleGoBack]
+    [guardianRev, reset, setError]
   );
 
   const handleCopy = React.useCallback(async () => {

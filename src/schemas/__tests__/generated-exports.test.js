@@ -30,6 +30,23 @@ describe('generated OpenAPI Zod schemas', () => {
     expect(typeof generated.Flight.safeParse).toBe('function');
   });
 
+  test('Guardian and flight detail schemas include crew from the API', () => {
+    const guardianCrew = generated.Guardian.shape.crew.unwrap();
+    expect(guardianCrew.shape.crew_position.safeParse('').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Bus Captain').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Tour Lead').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Medical Team').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('PR').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Fly Ahead').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Photographer').success).toBe(true);
+    expect(guardianCrew.shape.crew_position.safeParse('Pilot').success).toBe(false);
+    expect(guardianCrew.shape.comms_username.safeParse('radio.user').success).toBe(true);
+
+    const detailCrew = generated.FlightDetailPerson.shape.crew.unwrap();
+    expect(detailCrew.shape.crew_position.safeParse('Tour Lead').success).toBe(true);
+    expect(detailCrew.shape.comms_username.safeParse('lead1').success).toBe(true);
+  });
+
   test('form schema modules re-export API schemas without replacing form schemas', () => {
     expect(veteranApiSchema).toBe(generated.Veteran);
     expect(guardianApiSchema).toBe(generated.Guardian);

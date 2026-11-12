@@ -214,6 +214,60 @@ describe('EssentialInfoSection', () => {
     expect(screen.getByText('Food restriction is required')).toBeInTheDocument();
   });
 
+  test('renders a crew position select with a blank option and each crew role', () => {
+    const mockFlightOptions = [{ value: 'FL123', label: 'Flight 123', disabled: false }];
+
+    const { container } = render(
+      <TestWrapper defaultValues={{ crew: { crew_position: '', comms_username: '' } }}>
+        <EssentialInfoSection
+          errors={{}}
+          guardian={mockGuardian}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Crew Position')).toBeInTheDocument();
+    const input = container.querySelector('[name="crew.crew_position"]');
+    expect(input).toBeInTheDocument();
+
+    const selectDisplay = input.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+
+    expect(screen.getAllByRole('option').map((option) => option.getAttribute('data-value'))).toEqual([
+      '',
+      'Bus Captain',
+      'Tour Lead',
+      'Medical Team',
+      'PR',
+      'Fly Ahead',
+      'Photographer',
+    ]);
+  });
+
+  test('renders the comms username field and shows its field error', () => {
+    const mockFlightOptions = [{ value: 'FL123', label: 'Flight 123', disabled: false }];
+    const message = 'Comms username is required when a crew position is set';
+
+    const { container } = render(
+      <TestWrapper defaultValues={{ crew: { crew_position: 'PR', comms_username: 'press' } }}>
+        <EssentialInfoSection
+          errors={{ crew: { comms_username: { message } } }}
+          guardian={mockGuardian}
+          onOpenHistory={mockOnOpenHistory}
+          flightOptions={mockFlightOptions}
+        />
+      </TestWrapper>
+    );
+
+    const username = container.querySelector('input[name="crew.comms_username"]');
+    expect(screen.getByText('Comms Username')).toBeInTheDocument();
+    expect(username).toHaveValue('press');
+    expect(username).toHaveAttribute('aria-invalid', 'true');
+    expect(username.closest('.MuiFormControl-root')).toHaveTextContent(message);
+  });
+
   test('calls onOpenHistory when history button is clicked', async () => {
     const mockFlightOptions = [
       { value: 'FL123', label: 'Flight 123', disabled: false },

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.3
+ * OpenAPI spec version: 2.0.0
  */
 import * as zod from 'zod';
 
@@ -51,7 +51,11 @@ export const FlightDetailPerson = zod.object({
   "flight_waiver": zod.boolean().optional().describe('Flight waiver flag (Guardians only)'),
   "flight_training_see_doc": zod.boolean().optional().describe('Training see doctor flag (Guardians only)'),
   "flight_paid": zod.boolean().optional().describe('Flight paid flag (Guardians only)'),
-  "flight_books_ordered": zod.number().int().optional().describe('Number of books ordered (Guardians only)')
+  "flight_books_ordered": zod.number().int().optional().describe('Number of books ordered (Guardians only)'),
+  "crew": zod.object({
+  "crew_position": zod.string().optional().describe('Crew role on the flight'),
+  "comms_username": zod.string().optional().describe('Push-to-talk username')
+}).optional().describe('Crew position and comms username (Guardians only)')
 }).describe('An individual person (veteran or guardian) in the flight detail');
 
 export type FlightDetailPerson = zod.input<typeof FlightDetailPerson>;

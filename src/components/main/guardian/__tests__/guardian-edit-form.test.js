@@ -444,6 +444,104 @@ describe('GuardianEditForm - Update Functionality', () => {
       expect(payload.medical.level).toBe('A');
     });
   });
+
+  const commsUsernameRequired = 'Comms username is required when a crew position is set';
+
+  async function chooseCrewPosition(user, position) {
+    const input = document.querySelector('[name="crew.crew_position"]');
+    expect(input).toBeInTheDocument();
+    const selectDisplay = input.closest('.MuiFormControl-root').querySelector('.MuiSelect-select');
+    fireEvent.mouseDown(selectDisplay);
+    await user.click(screen.getByRole('option', { name: position }));
+  }
+
+  test('loads crew into the form and sends it on save', async () => {
+    const user = userEvent.setup();
+    render(
+      <GuardianEditForm
+        guardian={{
+          ...mockGuardian,
+          crew: { crew_position: 'Medical Team', comms_username: 'medic1' },
+        }}
+      />
+    );
+
+    expect(document.querySelector('[name="crew.crew_position"]')).toHaveValue('Medical Team');
+    expect(document.querySelector('input[name="crew.comms_username"]')).toHaveValue('medic1');
+
+    await chooseCrewPosition(user, 'Photographer');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(mockUpdateGuardian).toHaveBeenCalled();
+    });
+    expect(mockUpdateGuardian.mock.calls[0][1].crew).toEqual({
+      crew_position: 'Photographer',
+      comms_username: 'medic1',
+    });
+  });
+
+  test.each(['', '   '])(
+    'shows a comms username error and does not call the API when the position is set and the username is %j',
+    async (username) => {
+      const user = userEvent.setup();
+      render(<GuardianEditForm guardian={mockGuardian} />);
+
+      await chooseCrewPosition(user, 'Bus Captain');
+      const usernameInput = document.querySelector('input[name="crew.comms_username"]');
+      expect(usernameInput).toBeInTheDocument();
+      if (username) {
+        await user.type(usernameInput, username);
+      }
+
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(usernameInput).toHaveAttribute('aria-invalid', 'true');
+      });
+      expect(usernameInput.closest('.MuiFormControl-root')).toHaveTextContent(commsUsernameRequired);
+      expect(mockUpdateGuardian).not.toHaveBeenCalled();
+    }
+  );
+
+  test('allows a comms username when no crew position is selected', async () => {
+    const user = userEvent.setup();
+    render(<GuardianEditForm guardian={mockGuardian} />);
+
+    const username = document.querySelector('input[name="crew.comms_username"]');
+    expect(username).toBeInTheDocument();
+    await user.type(username, 'radio.user');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(mockUpdateGuardian).toHaveBeenCalled();
+    });
+    expect(mockUpdateGuardian.mock.calls[0][1].crew).toEqual({
+      crew_position: '',
+      comms_username: 'radio.user',
+    });
+    expect(screen.queryByText(commsUsernameRequired)).not.toBeInTheDocument();
+  });
+
+  test('loads an old guardian with no crew as empty crew values and sends them on save', async () => {
+    const user = userEvent.setup();
+    const guardianWithoutCrew = { ...mockGuardian };
+    delete guardianWithoutCrew.crew;
+    render(<GuardianEditForm guardian={guardianWithoutCrew} />);
+
+    expect(document.querySelector('[name="crew.crew_position"]')).toHaveValue('');
+    expect(document.querySelector('input[name="crew.comms_username"]')).toHaveValue('');
+
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(mockUpdateGuardian).toHaveBeenCalled();
+    });
+    expect(mockUpdateGuardian.mock.calls[0][1].crew).toEqual({
+      crew_position: '',
+      comms_username: '',
+    });
+  });
 });
 
 describe('GuardianEditForm - Flown/Deceased lock', () => {

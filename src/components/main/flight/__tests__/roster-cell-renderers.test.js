@@ -259,6 +259,58 @@ describe('renderMedLvlCell', () => {
   });
 });
 
+describe('crew column', () => {
+  function renderCrewColumn(person, personType) {
+    return render(<div>{renderActivityCell('crew', person, { people: [person] }, personType, {})}</div>);
+  }
+
+  test('shows the guardian crew position', () => {
+    renderCrewColumn({ type: 'Guardian', crew: { crew_position: 'Tour Lead', comms_username: 'lead1' } }, 'Guardian');
+
+    expect(screen.getByText('Tour Lead')).toBeInTheDocument();
+    expect(screen.queryByText('lead1')).not.toBeInTheDocument();
+  });
+
+  test('shows an em dash for veterans, non-crew guardians, and blank positions', () => {
+    const { rerender } = renderCrewColumn(
+      { type: 'Veteran', crew: { crew_position: 'PR', comms_username: 'vet' } },
+      'Veteran'
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText('PR')).not.toBeInTheDocument();
+
+    rerender(<div>{renderActivityCell('crew', { type: 'Guardian' }, { people: [] }, 'Guardian', {})}</div>);
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(
+      <div>
+        {renderActivityCell(
+          'crew',
+          { type: 'Guardian', crew: { crew_position: '   ', comms_username: 'radio' } },
+          { people: [] },
+          'Guardian',
+          {}
+        )}
+      </div>
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText('radio')).not.toBeInTheDocument();
+
+    rerender(
+      <div>
+        {renderActivityCell(
+          'crew',
+          { type: 'Guardian', crew: { crew_position: '', comms_username: 'radio' } },
+          { people: [] },
+          'Guardian',
+          {}
+        )}
+      </div>
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+});
+
 describe('renderGroupCell', () => {
   test('shows trimmed group for veteran', () => {
     render(renderGroupCell({ type: 'Veteran', group: '  Bravo  ' }, 'Veteran'));

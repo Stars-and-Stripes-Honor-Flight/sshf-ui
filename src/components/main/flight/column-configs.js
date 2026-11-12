@@ -28,7 +28,8 @@ export const COLUMN_CONFIGS = {
   [ACTIVITY_PRESETS.OPS]: [
     { id: 'seat', label: 'Seat', width: 112, minWidth: 112 },
     { id: 'bus', label: 'Bus', width: 140 },
-    { id: 'flt_grp_med_exp', label: 'Flt Grp / Med Exp', width: 160 },
+    { id: 'group', label: 'Flight Group', width: 120 },
+    { id: 'crew', label: 'Crew', width: 120 },
     { id: 'med_lvl', label: 'Med Lvl', width: 100 },
     { id: 'status', label: 'Status', width: 200 },
   ],

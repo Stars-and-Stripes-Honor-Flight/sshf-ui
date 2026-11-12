@@ -399,8 +399,19 @@ export function pairHasIssues(pair) {
  * @param {boolean} filters.noGuardianOnly - When true, keep only veterans with no guardian
  * @param {string[]} filters.trainingTypeFilter - Guardian training types to keep; empty means all
  * @param {boolean} filters.missingMailOnly - When true, keep only veterans without mail received
+ * @param {string} filters.crewFilter - Crew filter (all/any or a crew position)
  * @returns {Array} Filtered pairs
  */
+function getGuardianCrewPosition(pair) {
+  const guardian = pair.people.find((person) => person.type === 'Guardian');
+  if (!guardian) {
+    return '';
+  }
+
+  const position = guardian.crew?.crew_position;
+  return typeof position === 'string' ? position.trim() : '';
+}
+
 export function filterPairs(pairs, filters) {
   const {
     nameFilter = '',
@@ -408,6 +419,7 @@ export function filterPairs(pairs, filters) {
     busFilter = 'all',
     planeFilter = 'all',
     assignedCallerFilter = 'all',
+    crewFilter = 'all',
     noGuardianOnly = false,
     trainingTypeFilter = [],
     missingMailOnly = false,
@@ -457,6 +469,17 @@ export function filterPairs(pairs, filters) {
     if (busFilter !== 'all') {
       const pairBus = getPairSortBus(pair);
       if (pairBus !== busFilter) {
+        return false;
+      }
+    }
+
+    if (crewFilter !== 'all') {
+      const crewPosition = getGuardianCrewPosition(pair);
+      if (crewFilter === 'any') {
+        if (!crewPosition) {
+          return false;
+        }
+      } else if (crewPosition !== crewFilter) {
         return false;
       }
     }

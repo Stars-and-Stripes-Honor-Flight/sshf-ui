@@ -996,8 +996,14 @@ describe('Flight details roster — Med Exp. Ops column (issue #260)', () => {
           busMismatch: false,
           missingPairedPerson: false,
           people: [
-            veteran({ id: 'vet-a', name_first: 'Ann', name_last: 'Alpha' }),
-            guardian({ id: 'grd-a', name_first: 'Gina', name_last: 'Alpha', med_exprnc: 'Nurse' }),
+            veteran({ id: 'vet-a', name_first: 'Ann', name_last: 'Alpha', group: 'Alpha' }),
+            guardian({
+              id: 'grd-a',
+              name_first: 'Gina',
+              name_last: 'Alpha',
+              med_exprnc: 'Nurse',
+              crew: { crew_position: 'Bus Captain', comms_username: 'cap' },
+            }),
           ],
         },
         {
@@ -1016,17 +1022,32 @@ describe('Flight details roster — Med Exp. Ops column (issue #260)', () => {
     });
   });
 
-  test('shows combined Flt Grp / Med Exp column in Ops layout', async () => {
+  test('shows Flight Group and Crew columns instead of Flt Grp / Med Exp', async () => {
+    const user = userEvent.setup();
     render(<Page />);
 
     expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
-    expect(screen.getByText('Flt Grp / Med Exp')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Flight Group' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Crew' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Flt Grp / Med Exp' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Nurse')).not.toBeInTheDocument();
 
+    const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent.trim());
+    const groupIndex = headers.indexOf('Flight Group');
+    const crewIndex = headers.indexOf('Crew');
+    const annRow = screen.getByRole('link', { name: 'Ann Alpha' }).closest('tr');
     const ginaRow = screen.getByRole('link', { name: 'Gina Alpha' }).closest('tr');
-    expect(within(ginaRow).getByText('Nurse')).toBeInTheDocument();
-
     const glenRow = screen.getByRole('link', { name: 'Glen Beta' }).closest('tr');
-    expect(within(glenRow).getAllByText('—').length).toBeGreaterThanOrEqual(1);
+
+    expect(within(annRow).getAllByRole('cell')[groupIndex]).toHaveTextContent('Alpha');
+    expect(within(annRow).getAllByRole('cell')[crewIndex]).toHaveTextContent('—');
+    expect(within(ginaRow).getAllByRole('cell')[crewIndex]).toHaveTextContent('Bus Captain');
+    expect(within(ginaRow).getAllByRole('cell')[crewIndex]).not.toHaveTextContent('cap');
+    expect(within(glenRow).getAllByRole('cell')[crewIndex]).toHaveTextContent('—');
+
+    await user.click(within(annRow).getByRole('button', { name: 'expand row' }));
+    expect(screen.getByText('Med Exp.')).toBeInTheDocument();
+    expect(screen.getByText('Nurse')).toBeInTheDocument();
   });
 
   test('offers Med Exp. sort and persists the selection', async () => {
@@ -2021,5 +2042,171 @@ describe('Flight details roster — mail call layout (issue #284)', () => {
     expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Missing mail only' })).toHaveAttribute('aria-pressed', 'true');
     expect(JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214')).missingMailOnly).toBe(true);
+  });
+});
+
+const CREW_POSITIONS = ['Bus Captain', 'Tour Lead', 'Medical Team', 'PR', 'Fly Ahead', 'Photographer'];
+
+describe('Flight details roster — crew filter (issue #240)', () => {
+  function namedPair(id, veteranName, guardianName, position) {
+    const people = [];
+    if (veteranName) {
+      const [first, last] = veteranName.split(' ');
+      people.push(veteran({ id: `vet-${id}`, name_first: first, name_last: last }));
+    }
+    if (guardianName) {
+      const [first, last] = guardianName.split(' ');
+      people.push(
+        guardian({
+          id: `grd-${id}`,
+          name_first: first,
+          name_last: last,
+          ...(position ? { crew: { crew_position: position, comms_username: 'radio1' } } : {}),
+        })
+      );
+    }
+    return {
+      pairId: id,
+      busMismatch: false,
+      missingPairedPerson: false,
+      people,
+    };
+  }
+
+  beforeEach(() => {
+    mockCan.mockImplementation(() => true);
+    localStorage.clear();
+    api.getFlightDetails.mockResolvedValue({
+      flight: {
+        name: 'May 2026',
+        completed: false,
+        flight_date: '2026-05-01',
+        capacity: 40,
+      },
+      stats: { flight: {}, tours: {}, buses: {} },
+      pairs: [
+        namedPair('captain', 'Ann Alpha', 'Gina Alpha', 'Bus Captain'),
+        namedPair('lead', 'Bob Beta', 'Glen Beta', 'Tour Lead'),
+        namedPair('plain', 'Ned Plain', 'Dana Plain'),
+        namedPair('solo', null, 'Casey Crew', 'Photographer'),
+      ],
+    });
+    api.getFlightAssignments.mockResolvedValue({
+      counts: { veterans: 3, guardians: 4, remaining: 10 },
+    });
+  });
+
+  function busCombobox() {
+    const matches = screen.getAllByRole('combobox').filter((element) => element.textContent.includes('All Buses'));
+    expect(matches).toHaveLength(1);
+    return matches[0];
+  }
+
+  test('lists All Passengers, Any crew, and each position immediately after the bus filter', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Ann Alpha' })).toBeInTheDocument();
+
+    const crew = screen.getByRole('combobox', { name: 'Crew' });
+    expect(crew).toHaveTextContent('All Passengers');
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes[comboboxes.indexOf(busCombobox()) + 1]).toBe(crew);
+
+    await user.click(crew);
+    expect(screen.getAllByRole('option').map((option) => option.getAttribute('data-value'))).toEqual([
+      'all',
+      'any',
+      ...CREW_POSITIONS,
+    ]);
+    expect(screen.getByRole('option', { name: 'All Passengers' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Any crew' })).toBeInTheDocument();
+    CREW_POSITIONS.forEach((position) => {
+      expect(screen.getByRole('option', { name: position })).toBeInTheDocument();
+    });
+  });
+
+  test('filters the roster to any crew or one position and persists the choice', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Dana Plain' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Crew' }));
+    await user.click(await screen.findByRole('option', { name: 'Any crew' }));
+
+    expect(screen.getByRole('link', { name: 'Gina Alpha' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Glen Beta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Casey Crew' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Dana Plain' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ned Plain' })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.crewFilter).toBe('any');
+    });
+
+    await user.click(screen.getByRole('combobox', { name: 'Crew' }));
+    await user.click(await screen.findByRole('option', { name: 'Tour Lead' }));
+
+    expect(screen.getByRole('link', { name: 'Glen Beta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Bob Beta' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Gina Alpha' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Casey Crew' })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.crewFilter).toBe('Tour Lead');
+    });
+  });
+
+  test('hydrates the crew filter from storage so it survives a reload', async () => {
+    localStorage.setItem(
+      'sshf.flightRosterControls.v1.flight-214',
+      JSON.stringify({
+        version: 1,
+        crewFilter: 'Photographer',
+        nameFilter: '',
+        statusFilter: 'all',
+        busFilter: 'all',
+        planeFilter: 'all',
+        assignedCallerFilter: 'all',
+        sortBy: 'name',
+        noGuardianOnly: false,
+        trainingTypeFilter: [],
+        trainingGuardiansFocus: true,
+        missingMailOnly: false,
+      })
+    );
+
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Casey Crew' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Gina Alpha' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Glen Beta' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Dana Plain' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Crew' })).toHaveTextContent('Photographer');
+    expect(JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214')).crewFilter).toBe('Photographer');
+  });
+
+  test('reset clears the crew filter', async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+
+    expect(await screen.findByRole('link', { name: 'Dana Plain' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('combobox', { name: 'Crew' }));
+    await user.click(await screen.findByRole('option', { name: 'Bus Captain' }));
+    expect(screen.queryByRole('link', { name: 'Dana Plain' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }));
+
+    expect(await screen.findByRole('link', { name: 'Dana Plain' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Casey Crew' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Crew' })).toHaveTextContent('All Passengers');
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('sshf.flightRosterControls.v1.flight-214'));
+      expect(saved.crewFilter).toBe('all');
+    });
   });
 });

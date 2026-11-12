@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "SSHF API",
-    "version": "1.1.3",
+    "version": "2.0.0",
     "description": "API for managing veterans documents with Google authentication"
   },
   "servers": [
@@ -1475,6 +1475,39 @@
               }
             }
           },
+          "crew": {
+            "type": "object",
+            "description": "Crew position and comms username for roster and sync (#157).",
+            "properties": {
+              "crew_position": {
+                "type": "string",
+                "enum": [
+                  "",
+                  "Bus Captain",
+                  "Tour Lead",
+                  "Medical Team",
+                  "PR",
+                  "Fly Ahead",
+                  "Photographer"
+                ],
+                "default": "",
+                "description": "Crew role on the flight. Changes are recorded in flight.history.",
+                "x-historyTracked": {
+                  "historyArray": "flight.history",
+                  "displayName": "crew position"
+                }
+              },
+              "comms_username": {
+                "type": "string",
+                "default": "",
+                "description": "Push-to-talk username. Required when crew_position is set. Changes are recorded in flight.history.",
+                "x-historyTracked": {
+                  "historyArray": "flight.history",
+                  "displayName": "comms username"
+                }
+              }
+            }
+          },
           "metadata": {
             "type": "object",
             "properties": {
@@ -2535,6 +2568,20 @@
           "flight_books_ordered": {
             "type": "integer",
             "description": "Number of books ordered (Guardians only)"
+          },
+          "crew": {
+            "type": "object",
+            "description": "Crew position and comms username (Guardians only)",
+            "properties": {
+              "crew_position": {
+                "type": "string",
+                "description": "Crew role on the flight"
+              },
+              "comms_username": {
+                "type": "string",
+                "description": "Push-to-talk username"
+              }
+            }
           }
         }
       },

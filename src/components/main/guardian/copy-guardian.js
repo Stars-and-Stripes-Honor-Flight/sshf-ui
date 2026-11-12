@@ -86,5 +86,11 @@ export function buildCopiedGuardianPayload(source, { copiedBy = '', now = new Da
     notes: '',
   };
 
+  const commsUsername = copy.crew?.comms_username;
+  copy.crew =
+    commsUsername !== undefined
+      ? { crew_position: '', comms_username: commsUsername }
+      : { crew_position: '' };
+
   return copy;
 }
