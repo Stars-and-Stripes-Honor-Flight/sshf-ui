@@ -353,4 +353,43 @@ describe('flight-roster-controls-storage', () => {
       expect(loadFlightRosterControls('flight-1').missingMailOnly).toBe(false);
     });
   });
+  describe('crew filter (issue #240)', () => {
+    test('defaults crewFilter to all for a new flight and for legacy saved controls', () => {
+      expect(DEFAULT_ROSTER_CONTROLS.crewFilter).toBe('all');
+      expect(loadFlightRosterControls('flight-crew').crewFilter).toBe('all');
+
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('legacy-crew'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          nameFilter: 'smith',
+          busFilter: 'Alpha1',
+        })
+      );
+      expect(loadFlightRosterControls('legacy-crew').crewFilter).toBe('all');
+      expect(loadFlightRosterControls('legacy-crew').nameFilter).toBe('smith');
+    });
+
+    test('coerces an unknown crew filter to all', () => {
+      localStorage.setItem(
+        getFlightRosterControlsStorageKey('bad-crew'),
+        JSON.stringify({
+          version: ROSTER_CONTROLS_SCHEMA_VERSION,
+          crewFilter: 'Pilot',
+        })
+      );
+      expect(loadFlightRosterControls('bad-crew').crewFilter).toBe('all');
+    });
+
+    test('round-trips a crew position and reset clears it', () => {
+      saveFlightRosterControls('flight-1', {
+        ...DEFAULT_ROSTER_CONTROLS,
+        crewFilter: 'Tour Lead',
+      });
+      expect(loadFlightRosterControls('flight-1').crewFilter).toBe('Tour Lead');
+
+      expect(resetFlightRosterControls('flight-1').crewFilter).toBe('all');
+      expect(loadFlightRosterControls('flight-1').crewFilter).toBe('all');
+    });
+  });
 });

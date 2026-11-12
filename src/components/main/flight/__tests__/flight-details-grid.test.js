@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Headset } from '@phosphor-icons/react';
 
 import '@testing-library/jest-dom';
 
@@ -324,7 +325,9 @@ describe('FlightDetailsGrid - ops flight group column (issue #165)', () => {
     );
 
     expect(screen.getByText('Alpha Flight')).toBeInTheDocument();
-    expect(screen.getByText('Flt Grp / Med Exp')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Flight Group' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Crew' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Flt Grp / Med Exp' })).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('Karyn')).not.toBeInTheDocument();
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThanOrEqual(1);
@@ -356,7 +359,8 @@ describe('FlightDetailsGrid - Med Lvl column (issue #264)', () => {
       'Veteran/Guardian',
       'Seat',
       'Bus',
-      'Flt Grp / Med Exp',
+      'Flight Group',
+      'Crew',
       'Med Lvl',
       'Status',
     ]);
@@ -1520,5 +1524,139 @@ describe('FlightDetailsGrid - mail call preset (issue #284)', () => {
     expect(within(annRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
     expect(within(umaRow).queryByText('Vet Missing Mail')).not.toBeInTheDocument();
     expect(within(umaRow).getByText('No Guardian')).toBeInTheDocument();
+  });
+});
+
+const HEADSET_WEIGHTS = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone'];
+
+function svgPathSignature(svg) {
+  return [...svg.querySelectorAll('path')].map((path) => path.getAttribute('d')).join('\n');
+}
+
+function rosterPerson(type, first, last, position) {
+  return {
+    type,
+    id: `${type}-${first}`,
+    name_first: first,
+    name_last: last,
+    bus: 'Alpha1',
+    seat: '1A',
+    confirmed: true,
+    nofly: false,
+    medical_form: true,
+    ...(type === 'Guardian' ? { training_complete: true, training: 'Complete' } : { medical_level: 'Level 1' }),
+    ...(position ? { crew: { crew_position: position, comms_username: 'radio1' } } : {}),
+  };
+}
+
+describe('FlightDetailsGrid - crew marker (issue #240)', () => {
+  let headsetSignatures;
+
+  beforeAll(() => {
+    headsetSignatures = new Set(
+      HEADSET_WEIGHTS.map((weight) => {
+        const view = render(<Headset weight={weight} />);
+        const signature = svgPathSignature(view.container.querySelector('svg'));
+        view.unmount();
+        return signature;
+      })
+    );
+    expect([...headsetSignatures].every((signature) => signature.length > 20)).toBe(true);
+  });
+
+  function nameCell(personName) {
+    return screen.getByRole('link', { name: personName }).closest('td');
+  }
+
+  function headsetMarks(cell) {
+    return [...cell.querySelectorAll('svg')].filter((svg) => headsetSignatures.has(svgPathSignature(svg)));
+  }
+
+  function renderCrewRoster() {
+    render(
+      <FlightDetailsGrid
+        pairs={[
+          {
+            pairId: 'paired',
+            busMismatch: false,
+            missingPairedPerson: false,
+            people: [
+              rosterPerson('Veteran', 'Daniel', 'Schneider'),
+              rosterPerson('Guardian', 'Tracy', 'Stouffer', 'Bus Captain'),
+            ],
+          },
+          {
+            pairId: 'non-crew',
+            busMismatch: false,
+            missingPairedPerson: false,
+            people: [rosterPerson('Veteran', 'Vic', 'Veteran'), rosterPerson('Guardian', 'Nina', 'Neighbor')],
+          },
+          {
+            pairId: 'solo-crew',
+            busMismatch: false,
+            missingPairedPerson: false,
+            people: [rosterPerson('Guardian', 'Casey', 'Crew', 'Tour Lead')],
+          },
+        ]}
+        onUpdate={jest.fn()}
+        nameFilter=""
+        statusFilter="all"
+        busFilter="all"
+        flightId="flight-1"
+        flightName="Test Flight"
+        activityPreset={ACTIVITY_PRESETS.OPS}
+      />
+    );
+  }
+
+  function crewCell(personName) {
+    const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent.trim());
+    const crewIndex = headers.indexOf('Crew');
+    expect(crewIndex).toBeGreaterThan(-1);
+    return within(screen.getByRole('link', { name: personName }).closest('tr')).getAllByRole('cell')[crewIndex];
+  }
+
+  test('shows a Headset icon with the position tooltip next to a paired crew guardian', () => {
+    renderCrewRoster();
+
+    const guardianCell = nameCell('Tracy Stouffer');
+    const mark = within(guardianCell).getByLabelText('Bus Captain');
+    const svg = mark.matches('svg') ? mark : mark.querySelector('svg');
+    expect(headsetSignatures.has(svgPathSignature(svg))).toBe(true);
+    expect(headsetMarks(guardianCell)).toHaveLength(1);
+
+    const veteranCell = nameCell('Daniel Schneider');
+    expect(within(veteranCell).queryByLabelText('Bus Captain')).not.toBeInTheDocument();
+    expect(headsetMarks(veteranCell)).toHaveLength(0);
+  });
+
+  test('shows a Headset icon next to an unpaired crew guardian', () => {
+    renderCrewRoster();
+
+    const cell = nameCell('Casey Crew');
+    const mark = within(cell).getByLabelText('Tour Lead');
+    const svg = mark.matches('svg') ? mark : mark.querySelector('svg');
+    expect(headsetSignatures.has(svgPathSignature(svg))).toBe(true);
+    expect(headsetMarks(cell)).toHaveLength(1);
+  });
+
+  test('does not show a Headset icon for a guardian who is not crew', () => {
+    renderCrewRoster();
+
+    const cell = nameCell('Nina Neighbor');
+    expect(headsetMarks(cell)).toHaveLength(0);
+    expect(within(cell).queryByLabelText('Bus Captain')).not.toBeInTheDocument();
+    expect(within(cell).queryByLabelText('Tour Lead')).not.toBeInTheDocument();
+  });
+
+  test('shows the crew position or an em dash in the Crew column', () => {
+    renderCrewRoster();
+
+    expect(crewCell('Tracy Stouffer')).toHaveTextContent('Bus Captain');
+    expect(crewCell('Tracy Stouffer')).not.toHaveTextContent('radio1');
+    expect(crewCell('Casey Crew')).toHaveTextContent('Tour Lead');
+    expect(crewCell('Daniel Schneider')).toHaveTextContent('—');
+    expect(crewCell('Nina Neighbor')).toHaveTextContent('—');
+    expect(crewCell('Vic Veteran')).toHaveTextContent('—');
   });
 });

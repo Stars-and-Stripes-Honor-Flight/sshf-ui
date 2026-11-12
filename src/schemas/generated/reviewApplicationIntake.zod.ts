@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.3
+ * OpenAPI spec version: 2.0.0
  */
 import * as zod from 'zod';
 
@@ -39,7 +39,7 @@ export const ReviewApplicationIntake = zod.object({
   "Preferred-Guardian-Phone-Number": zod.string().optional().describe('Preferred guardian phone (VeteranApp only)'),
   "Preferred-Guardian-Email": zod.string().optional().describe('Preferred guardian email (VeteranApp only)'),
   "Veteran-Preference": zod.string().optional().describe('Veteran preference notes (GuardianApp only)')
-}).describe('Raw legacy form payload accepted by POST /review/applications. Field names match the online application form. Additional unknown keys are preserved in the stored CouchDB document. The keys `cburi`, `cbusr`, `cbpwd`, and `full_message` are stripped on intake and never stored.\n');
+}).passthrough().describe('Raw legacy form payload accepted by POST /review/applications. Field names match the online application form. Additional unknown keys are preserved in the stored CouchDB document. The keys `cburi`, `cbusr`, `cbpwd`, and `full_message` are stripped on intake and never stored.\n');
 
 export type ReviewApplicationIntake = zod.input<typeof ReviewApplicationIntake>;
 export type ReviewApplicationIntakeOutput = zod.output<typeof ReviewApplicationIntake>;

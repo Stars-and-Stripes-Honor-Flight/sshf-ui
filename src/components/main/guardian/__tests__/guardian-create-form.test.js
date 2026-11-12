@@ -86,6 +86,10 @@ describe('GuardianCreateForm', () => {
     expect(container.querySelector('input[name="address.phone_day"]')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: /create guardian/i })).toBeInTheDocument();
+    expect(screen.queryByText('Crew Position')).not.toBeInTheDocument();
+    expect(screen.queryByText('Comms Username')).not.toBeInTheDocument();
+    expect(container.querySelector('[name="crew.crew_position"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[name="crew.comms_username"]')).not.toBeInTheDocument();
   });
 
   test('submits valid data and creates a guardian', async () => {

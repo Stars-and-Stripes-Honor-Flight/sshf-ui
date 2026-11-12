@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.3
+ * OpenAPI spec version: 2.0.0
  */
 import * as zod from 'zod';
 
@@ -41,6 +41,8 @@ export const guardianMedicalFoodRestrictionDefault = `None`;
 export const guardianMedicalCanPushDefault = false;
 export const guardianMedicalCanLiftDefault = false;
 export const guardianShirtSizeDefault = `None`;
+export const guardianCrewCrewPositionDefault = ``;
+export const guardianCrewCommsUsernameDefault = ``;
 export const guardianWeightRegExp = new RegExp('^\\d{1,3}$');
 export const guardianEmergContactNameRegExp = new RegExp('^[a-zA-Z\'. -]{2,}$');
 export const guardianEmergContactAddressPhoneRegExp = new RegExp('^[0-9 -]{12,}$');
@@ -130,6 +132,10 @@ export const Guardian = zod.object({
   "shirt": zod.object({
   "size": zod.enum(['None', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL']).default(guardianShirtSizeDefault).describe('Shirt size')
 }).optional(),
+  "crew": zod.object({
+  "crew_position": zod.enum(['', 'Bus Captain', 'Tour Lead', 'Medical Team', 'PR', 'Fly Ahead', 'Photographer']).default(guardianCrewCrewPositionDefault).describe('Crew role on the flight. Changes are recorded in flight.history.'),
+  "comms_username": zod.string().default(guardianCrewCommsUsernameDefault).describe('Push-to-talk username. Required when crew_position is set. Changes are recorded in flight.history.')
+}).optional().describe('Crew position and comms username for roster and sync (#157).'),
   "metadata": zod.object({
   "created_at": zod.string().datetime({"offset":true}).optional().describe('Creation timestamp'),
   "created_by": zod.string().optional().describe('User who created the record'),

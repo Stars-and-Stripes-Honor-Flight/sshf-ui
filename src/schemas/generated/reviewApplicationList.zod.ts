@@ -3,7 +3,7 @@
  * Do not edit manually.
  * SSHF API
  * API for managing veterans documents with Google authentication
- * OpenAPI spec version: 1.1.3
+ * OpenAPI spec version: 2.0.0
  */
 import * as zod from 'zod';
 import { ReviewApplicationSummary } from './reviewApplicationSummary.zod';

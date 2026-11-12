@@ -35,22 +35,25 @@ describe('column-configs', () => {
   });
 
   describe('COLUMN_CONFIGS', () => {
-    test('ops preset places Med Lvl immediately left of Status', () => {
+    test('ops preset places Flight Group and Crew before Med Lvl, which stays immediately left of Status', () => {
       const opsColumns = COLUMN_CONFIGS[ACTIVITY_PRESETS.OPS];
       expect(opsColumns.map((column) => column.id)).toEqual([
         'seat',
         'bus',
-        'flt_grp_med_exp',
+        'group',
+        'crew',
         'med_lvl',
         'status',
       ]);
       expect(opsColumns.map((column) => column.label)).toEqual([
         'Seat',
         'Bus',
-        'Flt Grp / Med Exp',
+        'Flight Group',
+        'Crew',
         'Med Lvl',
         'Status',
       ]);
+      expect(opsColumns.map((column) => column.id)).not.toContain('flt_grp_med_exp');
       expect(opsColumns.map((column) => column.id)).not.toContain('medical_level');
     });
 

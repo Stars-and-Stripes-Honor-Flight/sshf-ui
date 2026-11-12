@@ -1707,4 +1707,106 @@ describe('roster-helpers', () => {
       ]);
     });
   });
+  describe('filterPairs - crew filter (issue #240)', () => {
+    function crewPair(pairId, people) {
+      return {
+        pairId,
+        busMismatch: false,
+        missingPairedPerson: false,
+        people,
+      };
+    }
+
+    function veteran(extra = {}) {
+      return {
+        type: 'Veteran',
+        name_first: 'Pat',
+        name_last: 'Veteran',
+        bus: 'Alpha1',
+        confirmed: true,
+        medical_form: true,
+        medical_level: 'Level 1',
+        nofly: false,
+        ...extra,
+      };
+    }
+
+    function guardian(extra = {}) {
+      return {
+        type: 'Guardian',
+        name_first: 'Gail',
+        name_last: 'Guardian',
+        bus: 'Alpha1',
+        confirmed: true,
+        medical_form: true,
+        training_complete: true,
+        training: 'Complete',
+        nofly: false,
+        ...extra,
+      };
+    }
+
+    const pairs = [
+      crewPair('captain', [
+        veteran({ name_last: 'CaptainVet' }),
+        guardian({ crew: { crew_position: 'Bus Captain', comms_username: '' } }),
+      ]),
+      crewPair('lead', [
+        veteran({ name_last: 'LeadVet', bus: 'Bravo1' }),
+        guardian({ bus: 'Bravo1', crew: { crew_position: 'Tour Lead', comms_username: 'lead1' } }),
+      ]),
+      crewPair('username-only', [
+        veteran({ name_last: 'RadioVet' }),
+        guardian({ crew: { crew_position: '', comms_username: 'radio.user' } }),
+      ]),
+      crewPair('blank-position', [
+        veteran({ name_last: 'BlankVet' }),
+        guardian({ crew: { crew_position: '   ', comms_username: 'spaces' } }),
+      ]),
+      crewPair('no-crew', [veteran({ name_last: 'PlainVet' }), guardian()]),
+      crewPair('solo', [
+        guardian({ name_last: 'Solo', crew: { crew_position: 'Photographer', comms_username: 'shutter' } }),
+      ]),
+      crewPair('veteran-only', [veteran({ name_last: 'Alone', crew: { crew_position: 'PR', comms_username: 'vet' } })]),
+    ];
+
+    function ids(result) {
+      return result.map((pair) => pair.pairId);
+    }
+
+    test('keeps every pair when the crew filter is all or omitted', () => {
+      expect(ids(filterPairs(pairs, { crewFilter: 'all' }))).toEqual([
+        'captain',
+        'lead',
+        'username-only',
+        'blank-position',
+        'no-crew',
+        'solo',
+        'veteran-only',
+      ]);
+      expect(ids(filterPairs(pairs, {}))).toEqual([
+        'captain',
+        'lead',
+        'username-only',
+        'blank-position',
+        'no-crew',
+        'solo',
+        'veteran-only',
+      ]);
+    });
+
+    test('keeps pairs whose guardian has any position, including unpaired guardians', () => {
+      expect(ids(filterPairs(pairs, { crewFilter: 'any' }))).toEqual(['captain', 'lead', 'solo']);
+    });
+
+    test('keeps only guardians in the selected position', () => {
+      expect(ids(filterPairs(pairs, { crewFilter: 'Bus Captain' }))).toEqual(['captain']);
+      expect(ids(filterPairs(pairs, { crewFilter: 'Photographer' }))).toEqual(['solo']);
+      expect(ids(filterPairs(pairs, { crewFilter: 'PR' }))).toEqual([]);
+    });
+
+    test('applies the crew filter together with the bus filter', () => {
+      expect(ids(filterPairs(pairs, { crewFilter: 'any', busFilter: 'Alpha1' }))).toEqual(['captain', 'solo']);
+    });
+  });
 });

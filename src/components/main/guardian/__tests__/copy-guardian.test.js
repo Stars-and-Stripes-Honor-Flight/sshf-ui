@@ -229,6 +229,32 @@ describe('buildCopiedGuardianPayload', () => {
     expect(payload.flight.history[0].change).not.toContain('old flight history');
   });
 
+  test('clears crew position and keeps the comms username', () => {
+    const source = savedGuardian();
+    source.crew = { crew_position: 'Photographer', comms_username: 'shutter' };
+
+    const payload = buildCopiedGuardianPayload(source, {
+      copiedBy: 'Ada Lovelace',
+      now: copiedAt,
+    });
+
+    expect(payload.crew).toEqual({ crew_position: '', comms_username: 'shutter' });
+    expect(source.crew).toEqual({ crew_position: 'Photographer', comms_username: 'shutter' });
+  });
+
+  test('clears crew position when the source guardian has no crew', () => {
+    const source = savedGuardian();
+    expect(source.crew).toBeUndefined();
+
+    const payload = buildCopiedGuardianPayload(source, {
+      copiedBy: 'Ada Lovelace',
+      now: copiedAt,
+    });
+
+    expect(payload.crew).toEqual({ crew_position: '' });
+    expect(source.crew).toBeUndefined();
+  });
+
   test('does not mutate the source guardian', () => {
     const source = savedGuardian();
     const snapshot = JSON.parse(JSON.stringify(source));
