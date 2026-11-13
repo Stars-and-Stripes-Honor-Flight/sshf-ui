@@ -74,7 +74,7 @@ describe('QueryCsvView', () => {
 
     const csv = screen.getByRole('textbox', { name: 'CSV' });
     expect(csv).toHaveProperty('readOnly', true);
-    expect(csv).toHaveValue(commaText);
+    expect(csv.value.replace(/\r\n/g, '\n')).toBe(commaText.replace(/\r\n/g, '\n'));
     expect(screen.getByText(/use fields for a fixed column list/i)).toBeInTheDocument();
   });
 

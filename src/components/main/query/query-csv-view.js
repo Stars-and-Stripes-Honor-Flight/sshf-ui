@@ -22,21 +22,6 @@ export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) 
     [docs, lockedColumns, delimiter]
   );
 
-  const csvRef = React.useRef(null);
-
-  React.useLayoutEffect(() => {
-    const el = csvRef.current;
-    if (!el) {
-      return;
-    }
-    Object.defineProperty(el, 'value', {
-      configurable: true,
-      get() {
-        return text;
-      },
-    });
-  }, [text]);
-
   React.useEffect(() => {
     if (lockedColumns == null && onColumnsLocked) {
       const { columns } = docsToCsv(docs, { delimiter: ',' });
@@ -106,7 +91,6 @@ export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) 
 
       <Box
         component="textarea"
-        ref={csvRef}
         readOnly
         aria-label="CSV"
         value={text}
