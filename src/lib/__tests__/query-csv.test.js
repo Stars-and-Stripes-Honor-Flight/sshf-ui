@@ -10,8 +10,9 @@
  *   columns, when passed, is used exactly (order included) and may contain _rev.
  *   Otherwise columns are first-seen flattened keys, with _id and type moved
  *   first when present, and _rev left out.
- *   header and body are RFC 4180 (quote a field that contains the delimiter,
- *   a double quote, CR, or LF; double embedded quotes). Rows use CRLF.
+ *   header and body are RFC 4180 (quote a field that contains the delimiter
+ *   or a double quote; embedded CR/LF in cell values become spaces before
+ *   quoting so row count matches the document count). Rows use CRLF.
  *   There is no trailing CRLF after the last row.
  *   text === header + '\r\n' + body, including when there are no documents.
  *   Do not prefix formula-like values (+, =, and similar). Staff data such as
@@ -116,9 +117,61 @@ describe('docsToCsv', () => {
     expectCsv(result, {
       columns: ['_id', 'type', 'comma', 'quote', 'both', 'cr', 'lf'],
       header: '_id,type,comma,quote,both,cr,lf',
-      body: '1,Note,"hello, world","say ""hi""","a,""b""","line1\rline2","line1\nline2"',
+      body: '1,Note,"hello, world","say ""hi""","a,""b""",line1 line2,line1 line2',
     });
     expect(result.text.endsWith('\r\n')).toBe(false);
+  });
+
+  it('replaces runs of line breaks inside a cell with a single space', () => {
+    expectCsv(docsToCsv([{ _id: '1', a: 'a\n\nb' }]), {
+      columns: ['_id', 'a'],
+      header: '_id,a',
+      body: '1,a b',
+    });
+
+    expectCsv(docsToCsv([{ _id: '2', a: 'a\r\nb' }]), {
+      columns: ['_id', 'a'],
+      header: '_id,a',
+      body: '2,a b',
+    });
+  });
+
+  it('keeps a multi-paragraph value with a comma on one data row', () => {
+    const notes = 'Paragraph one.\n\nParagraph two, with comma.';
+    const result = docsToCsv(
+      [{ _id: 'vet-1', type: 'Veteran', notes: { other: notes } }],
+      { columns: ['_id', 'type', 'notes.other'] }
+    );
+
+    expect(result.body.split('\r\n')).toHaveLength(1);
+    expect(result.body).toBe('vet-1,Veteran,"Paragraph one. Paragraph two, with comma."');
+  });
+
+  it('emits one body line per document when one doc has multi-paragraph notes', () => {
+    const docs = Array.from({ length: 10 }, (_, index) => ({
+      _id: `doc-${index}`,
+      type: 'Veteran',
+    }));
+    docs[3] = {
+      ...docs[3],
+      notes: { other: 'First paragraph.\n\nSecond paragraph.' },
+    };
+
+    const result = docsToCsv(docs);
+    expect(result.body.split('\r\n')).toHaveLength(10);
+  });
+
+  it('collapses line breaks inside cells for tab-delimited output', () => {
+    const result = docsToCsv(
+      [
+        { _id: '1', note: 'line1\nline2' },
+        { _id: '2', note: 'a\n\nb, tail' },
+      ],
+      { delimiter: '\t' }
+    );
+
+    expect(result.body.split('\r\n')).toHaveLength(2);
+    expect(result.body).toBe('1\tline1 line2\r\n2\ta b, tail');
   });
 
   it('quotes a header name that contains the delimiter', () => {

@@ -58,13 +58,20 @@ export function flattenDoc(doc) {
 }
 
 /**
+ * Collapse line breaks inside a cell so pasted sheets do not gain extra rows.
+ * @param {string} field
+ */
+function sanitizeCellValue(field) {
+  return field.replace(/[\r\n]+/g, ' ');
+}
+
+/**
  * @param {string} field
  * @param {string} delimiter
  */
 function escapeField(field, delimiter) {
-  const str = field;
-  const needsQuote =
-    str.includes(delimiter) || str.includes('"') || str.includes('\r') || str.includes('\n');
+  const str = sanitizeCellValue(field);
+  const needsQuote = str.includes(delimiter) || str.includes('"');
   if (needsQuote) {
     return `"${str.replace(/"/g, '""')}"`;
   }
