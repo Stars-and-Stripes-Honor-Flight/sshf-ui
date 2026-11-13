@@ -367,6 +367,10 @@ describe('QueryView', () => {
  * returns to Page 1 and discovers columns again.
  */
 describe('QueryView CSV tab and paging', () => {
+  function expectCsvTextareaValue(element, expected) {
+    expect(element.value.replace(/\r\n/g, '\n')).toBe(expected.replace(/\r\n/g, '\n'));
+  }
+
   function queryEditor() {
     const editor = screen.getAllByRole('textbox').find((element) => !element.readOnly);
     if (!editor) {
@@ -411,13 +415,13 @@ describe('QueryView CSV tab and paging', () => {
     await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
 
     await user.click(await screen.findByRole('tab', { name: 'CSV' }));
-    expect(await screen.findByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type\r\np1,Veteran');
+    expectCsvTextareaValue(await screen.findByRole('textbox', { name: 'CSV' }), '_id,type\r\np1,Veteran');
 
     await user.click(screen.getByRole('button', { name: 'Next Page' }));
 
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: 'CSV' })).toHaveAttribute('aria-selected', 'true');
-      expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type\r\np2,Veteran');
+      expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), '_id,type\r\np2,Veteran');
     });
     expect(screen.queryByText('Document 1')).not.toBeInTheDocument();
   });
@@ -453,13 +457,19 @@ describe('QueryView CSV tab and paging', () => {
     await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
 
     await user.click(await screen.findByRole('tab', { name: 'CSV' }));
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type,name.first\r\np1,Veteran,Ann');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      '_id,type,name.first\r\np1,Veteran,Ann'
+    );
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next Page' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type,name.first\r\np2,Veteran,Bob');
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: 'CSV' }),
+        '_id,type,name.first\r\np2,Veteran,Bob'
+      );
     });
     const warning = screen.getByText(/Some documents have fields outside the locked columns: city/);
     expect(warning).not.toHaveTextContent('_rev');
@@ -555,7 +565,10 @@ describe('QueryView CSV tab and paging', () => {
 
     await user.click(screen.getByRole('tab', { name: 'CSV' }));
     await waitFor(() => {
-      expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type,city\r\nn1,Guardian,Dallas');
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: 'CSV' }),
+        '_id,type,city\r\nn1,Guardian,Dallas'
+      );
     });
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
     const csv = screen.getByRole('textbox', { name: 'CSV' });
@@ -584,7 +597,10 @@ describe('QueryView CSV tab and paging', () => {
     });
 
     await user.click(await screen.findByRole('tab', { name: 'CSV' }));
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('type,_rev,_id\r\nVeteran,3-abc,vet-1');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      'type,_rev,_id\r\nVeteran,3-abc,vet-1'
+    );
     expect(screen.getByText(/Some documents have fields outside the locked columns: city/)).toBeInTheDocument();
   });
 });

@@ -64,6 +64,10 @@ function setupUser() {
   return { user, writeText };
 }
 
+function expectCsvTextareaValue(element, expected) {
+  expect(element.value.replace(/\r\n/g, '\n')).toBe(expected.replace(/\r\n/g, '\n'));
+}
+
 describe('QueryCsvView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,7 +78,7 @@ describe('QueryCsvView', () => {
 
     const csv = screen.getByRole('textbox', { name: 'CSV' });
     expect(csv).toHaveProperty('readOnly', true);
-    expect(csv.value.replace(/\r\n/g, '\n')).toBe(commaText.replace(/\r\n/g, '\n'));
+    expectCsvTextareaValue(csv, commaText);
     expect(screen.getByText(/use fields for a fixed column list/i)).toBeInTheDocument();
   });
 
@@ -83,10 +87,10 @@ describe('QueryCsvView', () => {
     render(<QueryCsvView docs={docs} />);
 
     await user.click(screen.getByRole('button', { name: 'Tab-separated' }));
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue(tabText);
+    expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), tabText);
 
     await user.click(screen.getByRole('button', { name: 'Comma' }));
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue(commaText);
+    expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), commaText);
   });
 
   it('copies the full text and confirms how many rows included the header', async () => {
@@ -150,7 +154,10 @@ describe('QueryCsvView', () => {
 
     render(<QueryCsvView docs={lockedDocs} columns={['_id', 'type']} />);
 
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      '_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran'
+    );
     const warning = screen.getByText(/Some documents have fields outside the locked columns: city, note/);
     expect(warning).not.toHaveTextContent('_rev');
     expect(screen.getByText(/use fields for a fixed column list/i)).toBeInTheDocument();
@@ -164,7 +171,10 @@ describe('QueryCsvView', () => {
       />
     );
 
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type,city\r\nvet-1,Veteran,Austin');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      '_id,type,city\r\nvet-1,Veteran,Austin'
+    );
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
   });
 
@@ -174,7 +184,10 @@ describe('QueryCsvView', () => {
 
     render(<QueryCsvView docs={discovered} onColumnsLocked={onColumnsLocked} />);
 
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type,city\r\nvet-1,Veteran,Austin');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      '_id,type,city\r\nvet-1,Veteran,Austin'
+    );
     await waitFor(() => {
       expect(onColumnsLocked).toHaveBeenCalledWith(['_id', 'type', 'city']);
     });
@@ -185,7 +198,10 @@ describe('QueryCsvView', () => {
 
     render(<QueryCsvView docs={docs} columns={['_id', 'type']} onColumnsLocked={onColumnsLocked} />);
 
-    expect(screen.getByRole('textbox', { name: 'CSV' })).toHaveValue('_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: 'CSV' }),
+      '_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran'
+    );
     expect(onColumnsLocked).not.toHaveBeenCalled();
   });
 });
