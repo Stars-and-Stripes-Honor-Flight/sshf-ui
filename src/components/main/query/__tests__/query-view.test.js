@@ -351,7 +351,8 @@ describe('QueryView', () => {
  * CSV tab and paging contract. QueryView keeps the selected tab across Next
  * Page, because the results panel unmounts while a page is loading.
  *
- * The CSV textbox accessible name is "CSV". Page text is exactly "Page N"
+ * The tabular text textbox accessible name is "Tabular Text". Page text is
+ * exactly "Page N"
  * and sits with "Showing N documents".
  *
  * Column lock: the first page's flattened columns (_id and type first, _rev
@@ -367,6 +368,8 @@ describe('QueryView', () => {
  * returns to Page 1 and discovers columns again.
  */
 describe('QueryView CSV tab and paging', () => {
+  const TABULAR_TEXT = 'Tabular Text';
+
   function expectCsvTextareaValue(element, expected) {
     expect(element.value.replace(/\r\n/g, '\n')).toBe(expected.replace(/\r\n/g, '\n'));
   }
@@ -384,7 +387,7 @@ describe('QueryView CSV tab and paging', () => {
     await user.click(screen.getByRole('button', { name: 'Run Query' }));
   }
 
-  it('shows a CSV tab beside Cards and Raw JSON', async () => {
+  it('shows a Tabular Text tab beside Cards and Raw JSON', async () => {
     const user = userEvent.setup();
     api.postQuery.mockResolvedValue({
       docs: [{ _id: 'vet-1', type: 'Veteran' }],
@@ -397,10 +400,10 @@ describe('QueryView CSV tab and paging', () => {
       expect(screen.getByRole('tab', { name: 'Cards' })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'Raw JSON' })).toBeInTheDocument();
     });
-    expect(screen.getByRole('tab', { name: 'CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: TABULAR_TEXT })).toBeInTheDocument();
   });
 
-  it('keeps the CSV tab selected after Next Page', async () => {
+  it('keeps the Tabular Text tab selected after Next Page', async () => {
     const user = userEvent.setup();
     api.postQuery
       .mockResolvedValueOnce({
@@ -414,16 +417,50 @@ describe('QueryView CSV tab and paging', () => {
     render(<QueryView />);
     await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
 
-    await user.click(await screen.findByRole('tab', { name: 'CSV' }));
-    expectCsvTextareaValue(await screen.findByRole('textbox', { name: 'CSV' }), '_id,type\r\np1,Veteran');
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    expectCsvTextareaValue(await screen.findByRole('textbox', { name: TABULAR_TEXT }), '_id,type\r\np1,Veteran');
 
     await user.click(screen.getByRole('button', { name: 'Next Page' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'CSV' })).toHaveAttribute('aria-selected', 'true');
-      expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), '_id,type\r\np2,Veteran');
+      expect(screen.getByRole('tab', { name: TABULAR_TEXT })).toHaveAttribute('aria-selected', 'true');
+      expectCsvTextareaValue(screen.getByRole('textbox', { name: TABULAR_TEXT }), '_id,type\r\np2,Veteran');
     });
     expect(screen.queryByText('Document 1')).not.toBeInTheDocument();
+  });
+
+  it('keeps Tab-separated selected after Next Page', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p1', type: 'Veteran', city: 'Austin, TX' }],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p2', type: 'Veteran', city: 'Dallas' }],
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    await user.click(screen.getByRole('button', { name: 'Tab-separated' }));
+
+    expect(screen.getByRole('button', { name: 'Tab-separated' })).toHaveAttribute('aria-pressed', 'true');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
+      '_id\ttype\tcity\r\np1\tVeteran\tAustin, TX'
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Tab-separated' })).toHaveAttribute('aria-pressed', 'true');
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
+        '_id\ttype\tcity\r\np2\tVeteran\tDallas'
+      );
+    });
   });
 
   it('reuses page 1 columns on page 2 and warns about new keys', async () => {
@@ -456,9 +493,9 @@ describe('QueryView CSV tab and paging', () => {
     render(<QueryView />);
     await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
 
-    await user.click(await screen.findByRole('tab', { name: 'CSV' }));
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       '_id,type,name.first\r\np1,Veteran,Ann'
     );
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
@@ -467,13 +504,13 @@ describe('QueryView CSV tab and paging', () => {
 
     await waitFor(() => {
       expectCsvTextareaValue(
-        screen.getByRole('textbox', { name: 'CSV' }),
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
         '_id,type,name.first\r\np2,Veteran,Bob'
       );
     });
     const warning = screen.getByText(/Some documents have fields outside the locked columns: city/);
     expect(warning).not.toHaveTextContent('_rev');
-    const csv = screen.getByRole('textbox', { name: 'CSV' });
+    const csv = screen.getByRole('textbox', { name: TABULAR_TEXT });
     expect(csv.value).not.toContain('Austin');
     expect(csv.value).not.toContain('_rev');
   });
@@ -550,7 +587,7 @@ describe('QueryView CSV tab and paging', () => {
     render(<QueryView />);
     await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
 
-    await user.click(await screen.findByRole('tab', { name: 'CSV' }));
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
     await user.click(await screen.findByRole('button', { name: 'Next Page' }));
     await waitFor(() => {
       expect(screen.getByText('Page 2')).toBeInTheDocument();
@@ -563,15 +600,15 @@ describe('QueryView CSV tab and paging', () => {
     });
     expect(screen.queryByText('Page 2')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'CSV' }));
+    await user.click(screen.getByRole('tab', { name: TABULAR_TEXT }));
     await waitFor(() => {
       expectCsvTextareaValue(
-        screen.getByRole('textbox', { name: 'CSV' }),
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
         '_id,type,city\r\nn1,Guardian,Dallas'
       );
     });
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
-    const csv = screen.getByRole('textbox', { name: 'CSV' });
+    const csv = screen.getByRole('textbox', { name: TABULAR_TEXT });
     expect(csv.value).not.toContain('name.first');
     expect(csv.value).not.toContain('_rev');
   });
@@ -596,9 +633,9 @@ describe('QueryView CSV tab and paging', () => {
       limit: 25,
     });
 
-    await user.click(await screen.findByRole('tab', { name: 'CSV' }));
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       'type,_rev,_id\r\nVeteran,3-abc,vet-1'
     );
     expect(screen.getByText(/Some documents have fields outside the locked columns: city/)).toBeInTheDocument();

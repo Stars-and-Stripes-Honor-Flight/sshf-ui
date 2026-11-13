@@ -14,9 +14,7 @@ import { copyText, docsToCsv, flattenDoc } from '@/lib/query-csv';
 /**
  * CSV view for a page of query documents.
  */
-export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) {
-  const [delimiter, setDelimiter] = React.useState(',');
-
+export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked, delimiter = ',', onDelimiterChange }) {
   const { text, body } = React.useMemo(
     () => docsToCsv(docs, { columns: lockedColumns ?? undefined, delimiter }),
     [docs, lockedColumns, delimiter]
@@ -74,15 +72,18 @@ export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) 
         size="small"
         value={delimiter === ',' ? 'comma' : 'tab'}
         onChange={(_e, value) => {
+          if (!onDelimiterChange) {
+            return;
+          }
           if (value === 'comma') {
-            setDelimiter(',');
+            onDelimiterChange(',');
           } else if (value === 'tab') {
-            setDelimiter('\t');
+            onDelimiterChange('\t');
           }
         }}
       >
-        <ToggleButton value="comma" aria-label="Comma">
-          Comma
+        <ToggleButton value="comma" aria-label="Comma-separated">
+          Comma-separated
         </ToggleButton>
         <ToggleButton value="tab" aria-label="Tab-separated">
           Tab-separated
@@ -92,7 +93,7 @@ export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) 
       <Box
         component="textarea"
         readOnly
-        aria-label="CSV"
+        aria-label="Tabular Text"
         value={text}
         sx={{
           width: '100%',
@@ -110,7 +111,7 @@ export function QueryCsvView({ docs, columns: lockedColumns, onColumnsLocked }) 
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         <Button variant="contained" onClick={handleCopyFull}>
-          Copy CSV
+          Copy rows and header
         </Button>
         <Button variant="outlined" onClick={handleCopyBody}>
           Copy rows only (no header)

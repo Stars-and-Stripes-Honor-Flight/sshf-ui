@@ -16,10 +16,10 @@
  *   `columns` is provided, so the parent lock is left alone.
  *
  * UI:
- * - Read-only textbox with accessible name "CSV". Its value is the docsToCsv
- *   `text` for the active delimiter (CRLF, no trailing CRLF).
- * - Toggle buttons named "Comma" (default) and "Tab-separated".
- * - Button "Copy CSV" copies the full text (header and body).
+ * - Read-only textbox with accessible name "Tabular Text". Its value is the
+ *   docsToCsv `text` for the active delimiter (CRLF, no trailing CRLF).
+ * - Toggle buttons named "Comma-separated" (default) and "Tab-separated".
+ * - Button "Copy rows and header" copies the full text (header and body).
  * - Button "Copy rows only (no header)" copies the body only.
  * - Success toasts from `@/components/core/toaster`:
  *   `Copied N rows with header` and `Copied N rows`, where N is docs.length.
@@ -31,6 +31,7 @@
  *   Keys are first-seen dot paths, separated by ", ". Do not mention `_rev`.
  */
 
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -39,6 +40,8 @@ import '@testing-library/jest-dom';
 import { toast } from '@/components/core/toaster';
 
 import { QueryCsvView } from '../query-csv-view';
+
+const TABULAR_TEXT = 'Tabular Text';
 
 jest.mock('@/components/core/toaster', () => ({
   toast: {
@@ -68,6 +71,14 @@ function expectCsvTextareaValue(element, expected) {
   expect(element.value.replace(/\r\n/g, '\n')).toBe(expected.replace(/\r\n/g, '\n'));
 }
 
+function renderQueryCsvView(props) {
+  function Harness() {
+    const [delimiter, setDelimiter] = React.useState(props.delimiter ?? ',');
+    return <QueryCsvView {...props} delimiter={delimiter} onDelimiterChange={setDelimiter} />;
+  }
+  return render(<Harness />);
+}
+
 describe('QueryCsvView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -76,7 +87,7 @@ describe('QueryCsvView', () => {
   it('renders a read-only text area with the CSV text and a fields hint', () => {
     render(<QueryCsvView docs={docs} />);
 
-    const csv = screen.getByRole('textbox', { name: 'CSV' });
+    const csv = screen.getByRole('textbox', { name: TABULAR_TEXT });
     expect(csv).toHaveProperty('readOnly', true);
     expectCsvTextareaValue(csv, commaText);
     expect(screen.getByText(/use fields for a fixed column list/i)).toBeInTheDocument();
@@ -84,20 +95,20 @@ describe('QueryCsvView', () => {
 
   it('switches between comma and tab delimiters', async () => {
     const { user } = setupUser();
-    render(<QueryCsvView docs={docs} />);
+    renderQueryCsvView({ docs });
 
     await user.click(screen.getByRole('button', { name: 'Tab-separated' }));
-    expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), tabText);
+    expectCsvTextareaValue(screen.getByRole('textbox', { name: TABULAR_TEXT }), tabText);
 
-    await user.click(screen.getByRole('button', { name: 'Comma' }));
-    expectCsvTextareaValue(screen.getByRole('textbox', { name: 'CSV' }), commaText);
+    await user.click(screen.getByRole('button', { name: 'Comma-separated' }));
+    expectCsvTextareaValue(screen.getByRole('textbox', { name: TABULAR_TEXT }), commaText);
   });
 
   it('copies the full text and confirms how many rows included the header', async () => {
     const { user, writeText } = setupUser();
     render(<QueryCsvView docs={docs} />);
 
-    await user.click(screen.getByRole('button', { name: 'Copy CSV' }));
+    await user.click(screen.getByRole('button', { name: 'Copy rows and header' }));
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(commaText);
@@ -108,10 +119,10 @@ describe('QueryCsvView', () => {
 
   it('copies the tab-separated text after the delimiter changes', async () => {
     const { user, writeText } = setupUser();
-    render(<QueryCsvView docs={docs} />);
+    renderQueryCsvView({ docs });
 
     await user.click(screen.getByRole('button', { name: 'Tab-separated' }));
-    await user.click(screen.getByRole('button', { name: 'Copy CSV' }));
+    await user.click(screen.getByRole('button', { name: 'Copy rows and header' }));
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(tabText);
@@ -138,7 +149,7 @@ describe('QueryCsvView', () => {
     navigator.clipboard.writeText = jest.fn().mockRejectedValue(new Error('denied'));
     render(<QueryCsvView docs={docs} />);
 
-    await user.click(screen.getByRole('button', { name: 'Copy CSV' }));
+    await user.click(screen.getByRole('button', { name: 'Copy rows and header' }));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Could not copy to the clipboard');
@@ -155,7 +166,7 @@ describe('QueryCsvView', () => {
     render(<QueryCsvView docs={lockedDocs} columns={['_id', 'type']} />);
 
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       '_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran'
     );
     const warning = screen.getByText(/Some documents have fields outside the locked columns: city, note/);
@@ -172,7 +183,7 @@ describe('QueryCsvView', () => {
     );
 
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       '_id,type,city\r\nvet-1,Veteran,Austin'
     );
     expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
@@ -185,7 +196,7 @@ describe('QueryCsvView', () => {
     render(<QueryCsvView docs={discovered} onColumnsLocked={onColumnsLocked} />);
 
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       '_id,type,city\r\nvet-1,Veteran,Austin'
     );
     await waitFor(() => {
@@ -199,7 +210,7 @@ describe('QueryCsvView', () => {
     render(<QueryCsvView docs={docs} columns={['_id', 'type']} onColumnsLocked={onColumnsLocked} />);
 
     expectCsvTextareaValue(
-      screen.getByRole('textbox', { name: 'CSV' }),
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
       '_id,type\r\nvet-1,Veteran\r\nvet-2,Veteran'
     );
     expect(onColumnsLocked).not.toHaveBeenCalled();

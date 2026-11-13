@@ -26,6 +26,8 @@ export function QueryResults({
   lockedColumns,
   onColumnsLocked,
   pageNumber,
+  csvDelimiter,
+  onCsvDelimiterChange,
 }) {
   if (!results) {
     return null;
@@ -49,7 +51,7 @@ export function QueryResults({
         <Tabs value={viewMode} onChange={(_e, newValue) => onViewModeChange(newValue)}>
           <Tab label="Cards" value="cards" />
           <Tab label="Raw JSON" value="json" />
-          <Tab label="CSV" value="csv" />
+          <Tab label="Tabular Text" value="csv" />
         </Tabs>
       </Box>
 
@@ -68,7 +70,13 @@ export function QueryResults({
       )}
 
       {viewMode === 'csv' && (
-        <QueryCsvView docs={docs} columns={lockedColumns} onColumnsLocked={onColumnsLocked} />
+        <QueryCsvView
+          docs={docs}
+          columns={lockedColumns}
+          onColumnsLocked={onColumnsLocked}
+          delimiter={csvDelimiter}
+          onDelimiterChange={onCsvDelimiterChange}
+        />
       )}
 
       {executionStats && (

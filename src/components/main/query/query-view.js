@@ -37,6 +37,7 @@ export function QueryView() {
   const [lastBookmark, setLastBookmark] = React.useState(null);
   const [lastSelector, setLastSelector] = React.useState(null);
   const [viewMode, setViewMode] = React.useState('cards');
+  const [csvDelimiter, setCsvDelimiter] = React.useState(',');
   const [pageNumber, setPageNumber] = React.useState(1);
   const [lockedColumns, setLockedColumns] = React.useState(null);
 
@@ -167,6 +168,8 @@ export function QueryView() {
               lockedColumns={lockedColumns}
               onColumnsLocked={handleColumnsLocked}
               pageNumber={pageNumber}
+              csvDelimiter={csvDelimiter}
+              onCsvDelimiterChange={setCsvDelimiter}
             />
           </CardContent>
         </Card>
