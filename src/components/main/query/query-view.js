@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -9,13 +9,13 @@ import Divider from '@mui/material/Divider';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { api } from '@/lib/api';
-import { 
-  getSavedQueries, 
-  saveQuery, 
-  deleteQuery, 
-  getLastQuery, 
+import {
+  getSavedQueries,
+  saveQuery,
+  deleteQuery,
+  getLastQuery,
   saveLastQuery,
-  initializeQueriesIfEmpty 
+  initializeQueriesIfEmpty,
 } from '@/lib/query-storage';
 import { QueryEditor } from './query-editor';
 import { QueryResults } from './query-results';
@@ -23,7 +23,7 @@ import { SavedQueries } from './saved-queries';
 
 const DEFAULT_QUERY = {
   selector: {},
-  limit: 25
+  limit: 25,
 };
 
 /**
@@ -36,6 +36,10 @@ export function QueryView() {
   const [savedQueries, setSavedQueries] = React.useState([]);
   const [lastBookmark, setLastBookmark] = React.useState(null);
   const [lastSelector, setLastSelector] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState('cards');
+  const [csvDelimiter, setCsvDelimiter] = React.useState(',');
+  const [pageNumber, setPageNumber] = React.useState(1);
+  const [lockedColumns, setLockedColumns] = React.useState(null);
 
   // Initialize saved queries and load last query on mount
   React.useEffect(() => {
@@ -59,7 +63,6 @@ export function QueryView() {
       setLastBookmark(response.bookmark);
       setLastSelector(queryBody.selector);
 
-      // Persist the query (not the results)
       saveLastQuery(queryBody);
     } catch (error) {
       console.error('Query execution failed:', error);
@@ -70,9 +73,10 @@ export function QueryView() {
   };
 
   const handleRunQuery = (queryBody) => {
-    // Reset pagination when running a new query
     setLastBookmark(null);
     setLastSelector(null);
+    setPageNumber(1);
+    setLockedColumns(Array.isArray(queryBody.fields) ? queryBody.fields : null);
     executeQuery(queryBody);
   };
 
@@ -81,15 +85,19 @@ export function QueryView() {
       return;
     }
 
-    // Use the same selector with the new bookmark
     const nextQuery = {
       ...currentQuery,
       selector: lastSelector,
-      bookmark: lastBookmark
+      bookmark: lastBookmark,
     };
 
+    setPageNumber((page) => page + 1);
     executeQuery(nextQuery);
   };
+
+  const handleColumnsLocked = React.useCallback((columns) => {
+    setLockedColumns((prev) => (prev == null ? columns : prev));
+  }, []);
 
   const handleSaveQuery = (name) => {
     saveQuery(name, currentQuery);
@@ -102,6 +110,8 @@ export function QueryView() {
     setResults(null);
     setLastBookmark(null);
     setLastSelector(null);
+    setPageNumber(1);
+    setLockedColumns(null);
   };
 
   const handleDeleteQuery = (name) => {
@@ -114,9 +124,10 @@ export function QueryView() {
     setCurrentQuery(parsedQuery);
   };
 
-  // Check if we have more pages (heuristic: if we got the full limit, there might be more)
-  const hasNext = results && results.docs && results.bookmark && 
-                  results.docs.length === (currentQuery.limit || 25);
+  const sentLimit = currentQuery.limit ?? 25;
+  const effectiveLimit = Math.min(sentLimit, 100);
+  const hasNext =
+    results && results.docs && results.bookmark && results.docs.length === effectiveLimit;
 
   return (
     <Stack spacing={3}>
@@ -133,12 +144,7 @@ export function QueryView() {
 
           <Divider sx={{ my: 2 }} />
 
-          <QueryEditor
-            value={currentQuery}
-            onChange={handleQueryChange}
-            onRun={handleRunQuery}
-            isLoading={isLoading}
-          />
+          <QueryEditor value={currentQuery} onChange={handleQueryChange} onRun={handleRunQuery} isLoading={isLoading} />
         </CardContent>
       </Card>
 
@@ -157,6 +163,13 @@ export function QueryView() {
               onNext={handleNextPage}
               hasNext={hasNext}
               executionStats={results.execution_stats}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              lockedColumns={lockedColumns}
+              onColumnsLocked={handleColumnsLocked}
+              pageNumber={pageNumber}
+              csvDelimiter={csvDelimiter}
+              onCsvDelimiterChange={setCsvDelimiter}
             />
           </CardContent>
         </Card>

@@ -346,3 +346,298 @@ describe('QueryView', () => {
     expect(screen.queryByText('Document 1')).not.toBeInTheDocument();
   });
 });
+
+/**
+ * CSV tab and paging contract. QueryView keeps the selected tab across Next
+ * Page, because the results panel unmounts while a page is loading.
+ *
+ * The tabular text textbox accessible name is "Tabular Text". Page text is
+ * exactly "Page N"
+ * and sits with "Showing N documents".
+ *
+ * Column lock: the first page's flattened columns (_id and type first, _rev
+ * omitted) are reused for later pages of that run. A later page that has
+ * other flattened keys shows
+ * "Some documents have fields outside the locked columns: <keys>".
+ * `_rev` is not one of those keys. A query `fields` array is the locked
+ * list from the first page, in that order, so `_rev` is included only when
+ * fields asks for it.
+ *
+ * Next Page compares the number of docs with the limit that was sent, capped
+ * at 100. The request still sends the limit the user wrote. A new Run Query
+ * returns to Page 1 and discovers columns again.
+ */
+describe('QueryView CSV tab and paging', () => {
+  const TABULAR_TEXT = 'Tabular Text';
+
+  function expectCsvTextareaValue(element, expected) {
+    expect(element.value.replace(/\r\n/g, '\n')).toBe(expected.replace(/\r\n/g, '\n'));
+  }
+
+  function queryEditor() {
+    const editor = screen.getAllByRole('textbox').find((element) => !element.readOnly);
+    if (!editor) {
+      throw new Error('Query editor textbox was not found');
+    }
+    return editor;
+  }
+
+  async function runQuery(user, query) {
+    fireEvent.change(queryEditor(), { target: { value: JSON.stringify(query) } });
+    await user.click(screen.getByRole('button', { name: 'Run Query' }));
+  }
+
+  it('shows a Tabular Text tab beside Cards and Raw JSON', async () => {
+    const user = userEvent.setup();
+    api.postQuery.mockResolvedValue({
+      docs: [{ _id: 'vet-1', type: 'Veteran' }],
+    });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 25 });
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: 'Cards' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Raw JSON' })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('tab', { name: TABULAR_TEXT })).toBeInTheDocument();
+  });
+
+  it('keeps the Tabular Text tab selected after Next Page', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p1', type: 'Veteran' }],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p2', type: 'Veteran' }],
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    expectCsvTextareaValue(await screen.findByRole('textbox', { name: TABULAR_TEXT }), '_id,type\r\np1,Veteran');
+
+    await user.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: TABULAR_TEXT })).toHaveAttribute('aria-selected', 'true');
+      expectCsvTextareaValue(screen.getByRole('textbox', { name: TABULAR_TEXT }), '_id,type\r\np2,Veteran');
+    });
+    expect(screen.queryByText('Document 1')).not.toBeInTheDocument();
+  });
+
+  it('keeps Tab-separated selected after Next Page', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p1', type: 'Veteran', city: 'Austin, TX' }],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p2', type: 'Veteran', city: 'Dallas' }],
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    await user.click(screen.getByRole('button', { name: 'Tab-separated' }));
+
+    expect(screen.getByRole('button', { name: 'Tab-separated' })).toHaveAttribute('aria-pressed', 'true');
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
+      '_id\ttype\tcity\r\np1\tVeteran\tAustin, TX'
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Tab-separated' })).toHaveAttribute('aria-pressed', 'true');
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
+        '_id\ttype\tcity\r\np2\tVeteran\tDallas'
+      );
+    });
+  });
+
+  it('reuses page 1 columns on page 2 and warns about new keys', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [
+          {
+            _id: 'p1',
+            _rev: '1-aaa',
+            type: 'Veteran',
+            name: { first: 'Ann' },
+          },
+        ],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [
+          {
+            _id: 'p2',
+            _rev: '2-bbb',
+            type: 'Veteran',
+            name: { first: 'Bob' },
+            city: 'Austin',
+          },
+        ],
+        bookmark: 'page-3',
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
+      '_id,type,name.first\r\np1,Veteran,Ann'
+    );
+    expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() => {
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
+        '_id,type,name.first\r\np2,Veteran,Bob'
+      );
+    });
+    const warning = screen.getByText(/Some documents have fields outside the locked columns: city/);
+    expect(warning).not.toHaveTextContent('_rev');
+    const csv = screen.getByRole('textbox', { name: TABULAR_TEXT });
+    expect(csv.value).not.toContain('Austin');
+    expect(csv.value).not.toContain('_rev');
+  });
+
+  it('shows a Page N indicator beside the document count', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p1', type: 'Veteran' }],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [
+          { _id: 'p2', type: 'Veteran' },
+          { _id: 'p3', type: 'Veteran' },
+        ],
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await waitFor(() => {
+      expect(screen.getByText('Showing 1 document')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Page 1')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next Page' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Page 2')).toBeInTheDocument();
+      expect(screen.getByText('Showing 2 documents')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Page 1')).not.toBeInTheDocument();
+  });
+
+  it('shows Next Page when the sent limit is over 100 and 100 docs return with a bookmark', async () => {
+    const user = userEvent.setup();
+    const docs = Array.from({ length: 100 }, (_, index) => ({
+      _id: `doc-${index}`,
+      type: 'Veteran',
+    }));
+    api.postQuery.mockResolvedValue({ docs, bookmark: 'more' });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 150 });
+
+    await waitFor(() => {
+      expect(screen.getByText('Showing 100 documents')).toBeInTheDocument();
+    }, { timeout: 10000 });
+    // The API clamps limits above 100. The UI still sends 150 and compares
+    // the row count with min(150, 100).
+    expect(api.postQuery).toHaveBeenCalledWith({
+      selector: { type: 'Veteran' },
+      limit: 150,
+    });
+    expect(screen.getByRole('button', { name: 'Next Page' })).toBeInTheDocument();
+  });
+
+  it('resets the page and locked columns when a new query runs', async () => {
+    const user = userEvent.setup();
+    api.postQuery
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p1', _rev: '1-aaa', type: 'Veteran', name: { first: 'Ann' } }],
+        bookmark: 'page-2',
+      })
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'p2', _rev: '2-bbb', type: 'Veteran', name: { first: 'Bob' }, city: 'Austin' }],
+        bookmark: 'page-3',
+      })
+      .mockResolvedValueOnce({
+        docs: [{ _id: 'n1', _rev: '9-zzz', type: 'Guardian', city: 'Dallas' }],
+      });
+
+    render(<QueryView />);
+    await runQuery(user, { selector: { type: 'Veteran' }, limit: 1 });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    await user.click(await screen.findByRole('button', { name: 'Next Page' }));
+    await waitFor(() => {
+      expect(screen.getByText('Page 2')).toBeInTheDocument();
+    });
+
+    await runQuery(user, { selector: { type: 'Guardian' }, limit: 1 });
+
+    await waitFor(() => {
+      expect(screen.getByText('Page 1')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Page 2')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: TABULAR_TEXT }));
+    await waitFor(() => {
+      expectCsvTextareaValue(
+        screen.getByRole('textbox', { name: TABULAR_TEXT }),
+        '_id,type,city\r\nn1,Guardian,Dallas'
+      );
+    });
+    expect(screen.queryByText(/outside the locked columns/i)).not.toBeInTheDocument();
+    const csv = screen.getByRole('textbox', { name: TABULAR_TEXT });
+    expect(csv.value).not.toContain('name.first');
+    expect(csv.value).not.toContain('_rev');
+  });
+
+  it('uses query fields as the locked columns and includes _rev when requested', async () => {
+    const user = userEvent.setup();
+    api.postQuery.mockResolvedValue({
+      docs: [
+        {
+          _id: 'vet-1',
+          _rev: '3-abc',
+          type: 'Veteran',
+          city: 'Austin',
+        },
+      ],
+    });
+
+    render(<QueryView />);
+    await runQuery(user, {
+      selector: { type: 'Veteran' },
+      fields: ['type', '_rev', '_id'],
+      limit: 25,
+    });
+
+    await user.click(await screen.findByRole('tab', { name: TABULAR_TEXT }));
+    expectCsvTextareaValue(
+      screen.getByRole('textbox', { name: TABULAR_TEXT }),
+      'type,_rev,_id\r\nVeteran,3-abc,vet-1'
+    );
+    expect(screen.getByText(/Some documents have fields outside the locked columns: city/)).toBeInTheDocument();
+  });
+});
