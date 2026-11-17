@@ -410,9 +410,12 @@ export function renderMiddleNameCell(person, personType, handlers) {
       value={person.name_middle || ''}
       onBlur={(newValue) => handleMiddleNameChange(newValue, person.id, personType)}
       placeholder="Middle"
-      maxWidth={140}
+      maxWidth={160}
       disabled={readOnly}
-      inputProps={{ 'aria-label': 'Middle name' }}
+      inputProps={{
+        'aria-label': 'Middle name',
+        title: person.name_middle || undefined,
+      }}
     />
   );
 }
