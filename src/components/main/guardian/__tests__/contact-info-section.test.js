@@ -1,8 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import '@testing-library/jest-dom';
+import { guardianSchema } from '@/schemas/guardian';
 import { ContactInfoSection } from '../contact-info-section';
 
 // Mock dependencies
@@ -143,3 +146,63 @@ describe('ContactInfoSection', () => {
   });
 });
 
+const FORMATTED = '414-555-1212';
+
+function MaskedPhoneForm({ schema, defaultValues, onSubmit, children }) {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ defaultValues, resolver: zodResolver(schema) });
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {children({ control, errors })}
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+
+describe('guardian ContactInfoSection emergency phone mask', () => {
+  const guardian = {
+    veteran: { pairings: [] },
+  };
+
+  test('typing 4145551212 in the emergency phone shows and saves 414-555-1212', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const fieldSchema = guardianSchema.shape.emerg_contact.shape.address.shape.phone;
+    const schema = z.object({
+      emerg_contact: z.object({
+        address: z.object({ phone: fieldSchema }),
+      }),
+    });
+
+    const { container } = render(
+      <MaskedPhoneForm
+        schema={schema}
+        defaultValues={{ emerg_contact: { address: { phone: '' } } }}
+        onSubmit={onSubmit}
+      >
+        {({ control, errors }) => (
+          <ContactInfoSection control={control} errors={errors} guardian={guardian} onManagePairing={jest.fn()} />
+        )}
+      </MaskedPhoneForm>
+    );
+
+    const input = container.querySelector('input[name="emerg_contact.address.phone"]');
+    expect(input).toBeTruthy();
+    await user.type(input, '4145551212');
+
+    expect(input).toHaveValue(FORMATTED);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    const saved = onSubmit.mock.calls[0][0];
+    expect(saved).toEqual({ emerg_contact: { address: { phone: FORMATTED } } });
+    expect(fieldSchema.safeParse(saved.emerg_contact.address.phone).success).toBe(true);
+  });
+});

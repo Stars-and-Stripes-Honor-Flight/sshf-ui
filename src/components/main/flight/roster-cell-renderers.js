@@ -9,9 +9,12 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Bus as BusIcon } from '@phosphor-icons/react/dist/ssr/Bus';
-import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
+import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { XCircle as XCircleIcon } from '@phosphor-icons/react/dist/ssr/XCircle';
+
+import { formatLegacyPhoneDisplay } from '@/lib/format-phone-number';
+import { RosterMobilePhoneField } from '@/components/main/shared/roster-mobile-phone-field';
 
 import { formatRosterBirthDate } from './roster-format';
 import { getAssignedTo, getPairStatusIssues, getVeteranGroup, normalizeMedExprnc } from './roster-helpers';
@@ -44,7 +47,7 @@ export function renderSeatCell(person, personType, handlers) {
  */
 export function renderBusCell(person, personType, handlers) {
   if (!person) return null;
-  
+
   if (personType === 'Veteran') {
     const { BusSelector, handleBusChange, readOnly } = handlers;
     return (
@@ -57,20 +60,20 @@ export function renderBusCell(person, personType, handlers) {
       />
     );
   }
-  
+
   const isNone = person.bus === 'None' || !person.bus;
   return (
-    <Stack 
-      direction="row" 
-      spacing={0.5} 
-      sx={{ 
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{
         alignItems: 'center',
         display: 'flex',
         backgroundColor: isNone ? '#FCE4EC' : '#c8e6c9',
         color: isNone ? '#C2185B' : '#1b5e20',
         padding: '4px 12px',
         borderRadius: '16px',
-        width: 'fit-content'
+        width: 'fit-content',
       }}
     >
       {isNone ? (
@@ -94,11 +97,11 @@ export function renderBusCell(person, personType, handlers) {
  */
 export function renderStatusCell(pair) {
   const issues = getPairStatusIssues(pair);
-  
+
   if (issues.length === 0) {
     return <Chip label="OK" size="small" color="success" variant="outlined" />;
   }
-  
+
   return (
     <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
       {issues.map((issue) => (
@@ -223,7 +226,7 @@ export function renderMedLvlCell(person, personType) {
  */
 export function renderAssignedToCell(person, pair, personType, handlers, localAssignedTo, hasCallMismatch) {
   if (!person) return null;
-  
+
   if (personType === 'Veteran') {
     const { EditableField, handleAssignedToCallChange, readOnly } = handlers;
     return (
@@ -236,10 +239,10 @@ export function renderAssignedToCell(person, pair, personType, handlers, localAs
       />
     );
   }
-  
+
   const displayAssignedTo = localAssignedTo !== null ? localAssignedTo : getAssignedTo(person);
   const { handleSyncCallAssignment } = handlers;
-  
+
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
       {displayAssignedTo && (
@@ -269,7 +272,7 @@ export function renderAssignedToCell(person, pair, personType, handlers, localAs
  */
 export function renderConfirmedCell(person) {
   if (!person) return null;
-  
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       {person.confirmed ? (
@@ -286,7 +289,9 @@ export function renderConfirmedCell(person) {
  */
 export function renderPhoneCell(person) {
   if (!person) return null;
-  return <Typography variant="body2">{person.phone_mbl || '—'}</Typography>;
+  const display =
+    person.phone_mbl != null && person.phone_mbl !== '' ? formatLegacyPhoneDisplay(person.phone_mbl) : '—';
+  return <Typography variant="body2">{display}</Typography>;
 }
 
 /**
@@ -302,11 +307,11 @@ export function renderFmNumberCell(person) {
  */
 export function renderMedicalLevelCell(person, personType) {
   if (!person) return null;
-  
+
   if (personType === 'Veteran') {
     return <Typography variant="body2">{person.medical_review || '—'}</Typography>;
   }
-  
+
   return <Typography variant="body2">{person.med_exprnc || '—'}</Typography>;
 }
 
@@ -315,7 +320,7 @@ export function renderMedicalLevelCell(person, personType) {
  */
 export function renderMedicalFormCell(person) {
   if (!person) return null;
-  
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       {person.medical_form ? (
@@ -332,7 +337,7 @@ export function renderMedicalFormCell(person) {
  */
 export function renderLimitationsCell(person, personType) {
   if (!person) return null;
-  
+
   return (
     <Stack spacing={0.5}>
       {personType === 'Veteran' && person.med_limits && (
@@ -340,9 +345,7 @@ export function renderLimitationsCell(person, personType) {
           {person.med_limits}
         </Typography>
       )}
-      {person.nofly && (
-        <Chip label="No Fly" size="small" color="error" variant="outlined" />
-      )}
+      {person.nofly && <Chip label="No Fly" size="small" color="error" variant="outlined" />}
     </Stack>
   );
 }
@@ -420,9 +423,9 @@ export function renderMiddleNameCell(person, personType, handlers) {
 export function renderMobilePhoneCell(person, personType, handlers) {
   if (!person) return null;
 
-  const { EditableField, handleMobilePhoneChange, readOnly } = handlers;
+  const { handleMobilePhoneChange, readOnly } = handlers;
   return (
-    <EditableField
+    <RosterMobilePhoneField
       value={person.phone_mbl || ''}
       onBlur={(newValue) => handleMobilePhoneChange(newValue, person.id, personType)}
       placeholder="Mobile"

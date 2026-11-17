@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Controller } from 'react-hook-form';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
@@ -12,19 +11,22 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Phone, Users } from '@phosphor-icons/react';
-import { AddressInformationCard } from '@/components/main/shared/address-information-card';
-import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
-import { FormSectionHeader } from '@/components/main/shared/form-section-header';
+import { Controller } from 'react-hook-form';
 
-export function ContactInfoSection({ 
-  control, 
-  errors, 
-  guardian, 
-  veteranPairingsRef, 
+import { AddressInformationCard } from '@/components/main/shared/address-information-card';
+import { FormSectionHeader } from '@/components/main/shared/form-section-header';
+import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
+import { PhoneOutlinedField } from '@/components/main/shared/phone-outlined-field';
+
+export function ContactInfoSection({
+  control,
+  errors,
+  guardian,
+  veteranPairingsRef,
   onManagePairing,
   onOpenHistory,
   watch,
-  disabled = false
+  disabled = false,
 }) {
   // Create entity object with form state for pairings
   const entityWithFormState = React.useMemo(() => {
@@ -33,40 +35,32 @@ export function ContactInfoSection({
       ...guardian,
       veteran: {
         ...guardian.veteran,
-        pairings: formPairings || guardian.veteran?.pairings || []
-      }
+        pairings: formPairings || guardian.veteran?.pairings || [],
+      },
     };
   }, [guardian, watch]);
 
   return (
     <Stack spacing={3}>
-      <Typography 
-        variant="h5" 
-        sx={{ 
+      <Typography
+        variant="h5"
+        sx={{
           fontWeight: 'bold',
           color: 'primary.main',
           px: 2,
-          pt: 2 
+          pt: 2,
         }}
       >
         Contact Information
       </Typography>
 
       {/* Address Information Card */}
-      <AddressInformationCard 
-        control={control} 
-        errors={errors}
-        emailGridProps={{ xs: 12 }}
-        disabled={disabled}
-      />
+      <AddressInformationCard control={control} errors={errors} emailGridProps={{ xs: 12 }} disabled={disabled} />
 
       {/* Emergency Contact Card */}
       <Card id="emergency-contact-section" elevation={2}>
         <CardContent>
-          <FormSectionHeader 
-            icon={Phone} 
-            title="Emergency Contact" 
-          />
+          <FormSectionHeader icon={Phone} title="Emergency Contact" />
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
               <Controller
@@ -89,7 +83,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.relation && <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>}
+                    {errors.emerg_contact?.relation && (
+                      <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -99,11 +95,13 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth disabled={disabled}>
-                    <InputLabel>Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.phone && <FormHelperText>{errors.emerg_contact.address.phone.message}</FormHelperText>}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Phone"
+                    error={errors.emerg_contact?.address?.phone}
+                    disabled={disabled}
+                    helperText={errors.emerg_contact?.address?.phone?.message}
+                  />
                 )}
               />
             </Grid>
@@ -115,7 +113,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.email && <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.email && (
+                      <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -144,4 +144,3 @@ export function ContactInfoSection({
     </Stack>
   );
 }
-

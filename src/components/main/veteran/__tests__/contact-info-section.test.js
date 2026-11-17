@@ -1,8 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import '@testing-library/jest-dom';
+import { veteranSchema } from '@/schemas/veteran';
 import { ContactInfoSection } from '../contact-info-section';
 
 // Mock dependencies
@@ -180,3 +183,133 @@ describe('ContactInfoSection', () => {
   });
 });
 
+const FORMATTED = '414-555-1212';
+
+// alt_contact and mail_call are not on veteranSchema. Filled values use the same
+// ###-###-#### rule as emerg_contact.address.phone. Empty optional values use the
+// '' union already used by veteranCreateSchema for optional phones.
+const formattedPhone = () => veteranSchema.shape.emerg_contact.shape.address.shape.phone;
+
+function MaskedPhoneForm({ schema, defaultValues, onSubmit, children }) {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ defaultValues, resolver: zodResolver(schema) });
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {children({ control, errors })}
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+
+function schemaFor(path) {
+  const keys = path.split('.');
+  const leaf = keys.pop();
+  return keys.reduceRight((inner, key) => z.object({ [key]: inner }), z.object({ [leaf]: formattedPhone() }));
+}
+
+function savedValue(saved, path) {
+  return path.split('.').reduce((current, key) => current[key], saved);
+}
+
+const veteranPhoneDefaults = {
+  emerg_contact: { address: { phone: '', phone_mbl: '' } },
+  alt_contact: { address: { phone: '', phone_mbl: '' } },
+  mail_call: { received: false, adopt: false, address: { phone: '', email: '' } },
+};
+
+describe('veteran ContactInfoSection phone mask', () => {
+  const veteran = {
+    guardian: { pref_notes: '' },
+  };
+
+  test.each([
+    'emerg_contact.address.phone',
+    'emerg_contact.address.phone_mbl',
+    'alt_contact.address.phone',
+    'alt_contact.address.phone_mbl',
+    'mail_call.address.phone',
+  ])('typing 4145551212 in %s shows and saves 414-555-1212', async (path) => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const fieldSchema = formattedPhone();
+
+    const { container } = render(
+      <MaskedPhoneForm schema={schemaFor(path)} defaultValues={veteranPhoneDefaults} onSubmit={onSubmit}>
+        {({ control, errors }) => (
+          <ContactInfoSection
+            control={control}
+            errors={errors}
+            veteran={veteran}
+            onOpenHistory={jest.fn()}
+            onManagePairing={jest.fn()}
+            watch={() => ''}
+          />
+        )}
+      </MaskedPhoneForm>
+    );
+
+    const input = container.querySelector(`input[name="${path}"]`);
+    expect(input).toBeTruthy();
+    await user.type(input, '4145551212');
+
+    expect(input).toHaveValue(FORMATTED);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    const saved = onSubmit.mock.calls[0][0];
+    expect(savedValue(saved, path)).toBe(FORMATTED);
+    expect(fieldSchema.safeParse(savedValue(saved, path)).success).toBe(true);
+  });
+
+  test('clearing the optional mail call phone saves an empty string', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const fieldSchema = z.union([z.literal(''), formattedPhone()]);
+    const schema = z.object({
+      mail_call: z.object({
+        address: z.object({ phone: fieldSchema }),
+      }),
+    });
+
+    const { container } = render(
+      <MaskedPhoneForm
+        schema={schema}
+        defaultValues={{
+          ...veteranPhoneDefaults,
+          mail_call: { received: false, adopt: false, address: { phone: FORMATTED, email: '' } },
+        }}
+        onSubmit={onSubmit}
+      >
+        {({ control, errors }) => (
+          <ContactInfoSection
+            control={control}
+            errors={errors}
+            veteran={veteran}
+            onOpenHistory={jest.fn()}
+            onManagePairing={jest.fn()}
+            watch={() => ''}
+          />
+        )}
+      </MaskedPhoneForm>
+    );
+
+    const input = container.querySelector('input[name="mail_call.address.phone"]');
+    await user.clear(input);
+    expect(input).toHaveValue('');
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    expect(onSubmit.mock.calls[0][0]).toEqual({ mail_call: { address: { phone: '' } } });
+    expect(fieldSchema.safeParse('').success).toBe(true);
+  });
+});

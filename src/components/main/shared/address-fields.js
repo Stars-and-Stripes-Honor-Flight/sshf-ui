@@ -1,16 +1,17 @@
 'use client';
 
 import * as React from 'react';
+
 import { FormTextField } from './form-text-field';
 
-export function AddressFields({ 
-  control, 
-  errors, 
+export function AddressFields({
+  control,
+  errors,
   prefix = 'address',
   showCounty = false,
   showPhoneEve = false,
   showPhoneMbl = true,
-  showEmail = true
+  showEmail = true,
 }) {
   return (
     <>
@@ -61,6 +62,7 @@ export function AddressFields({
         label="Day Phone"
         error={errors[prefix]?.phone_day}
         required
+        phone
         gridProps={{ xs: 12, md: showPhoneEve || showPhoneMbl ? 4 : 6 }}
       />
       {showPhoneEve && (
@@ -69,6 +71,7 @@ export function AddressFields({
           name={`${prefix}.phone_eve`}
           label="Evening Phone"
           error={errors[prefix]?.phone_eve}
+          phone
           gridProps={{ xs: 12, md: 4 }}
         />
       )}
@@ -78,6 +81,7 @@ export function AddressFields({
           name={`${prefix}.phone_mbl`}
           label="Mobile Phone"
           error={errors[prefix]?.phone_mbl}
+          phone
           gridProps={{ xs: 12, md: showPhoneEve ? 4 : 6 }}
         />
       )}
@@ -94,4 +98,3 @@ export function AddressFields({
     </>
   );
 }
-
