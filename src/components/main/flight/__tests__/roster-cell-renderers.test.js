@@ -332,9 +332,11 @@ describe('renderGroupCell', () => {
   });
 });
 
-function MockTrainingField({ value, onBlur, multiline, inputProps }) {
+function MockTrainingField({ value, onBlur, multiline, inputProps, maxWidth }) {
   const shared = {
     'aria-label': inputProps?.['aria-label'],
+    title: inputProps?.title,
+    'data-max-width': maxWidth,
     defaultValue: value,
     onBlur: (event) => onBlur(event.target.value),
   };
@@ -530,6 +532,21 @@ describe('training roster cells (issue #212)', () => {
     await user.tab();
 
     expect(trainingHandlers.handleMiddleNameChange).toHaveBeenCalledWith('Renee', 'grd-1', 'Guardian');
+  });
+
+  test('shows the full middle name in a tooltip and gives the field more width', () => {
+    render(
+      renderMiddleNameCell(
+        { id: 'vet-1', name_middle: 'Christopher' },
+        'Veteran',
+        trainingHandlers
+      )
+    );
+
+    const input = screen.getByRole('textbox', { name: 'Middle name' });
+    expect(input).toHaveValue('Christopher');
+    expect(input).toHaveAttribute('title', 'Christopher');
+    expect(input).toHaveAttribute('data-max-width', '160');
   });
 
   test('edits mobile phone for a veteran', async () => {
