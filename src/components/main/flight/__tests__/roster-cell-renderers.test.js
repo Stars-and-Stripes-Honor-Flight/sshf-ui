@@ -16,6 +16,7 @@ import {
   renderBirthDateCell,
   renderMiddleNameCell,
   renderMobilePhoneCell,
+  renderPhoneCell,
   renderTrainingCell,
   renderTrainingNotesCell,
   renderNotesCell,
@@ -902,5 +903,119 @@ describe('mail call roster cells (issue #284)', () => {
     expect(screen.getByRole('checkbox', { name: 'Mail call received' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: 'Mail call adoption' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Mail call notes' })).toBeDisabled();
+  });
+});
+
+describe('renderPhoneCell display formatting', () => {
+  test.each([
+    ['4145551212', '414-555-1212'],
+    ['0414555121', '041-455-5121'],
+    ['1414555121', '141-455-5121'],
+  ])('formats legacy 10-digit value %s as %s', (stored, shown) => {
+    render(renderPhoneCell({ phone_mbl: stored }));
+    expect(screen.getByText(shown)).toBeInTheDocument();
+  });
+
+  test('shows any other stored value unchanged', () => {
+    const unchanged = [
+      '414-555-1212',
+      '555-1234',
+      '(414) 555-1212',
+      '414.555.1212',
+      '414 555 1212',
+      '14145551212',
+      '414555121',
+      '41455512123',
+      ' 4145551212',
+      'abc',
+    ];
+
+    for (const stored of unchanged) {
+      const { container, unmount } = render(renderPhoneCell({ phone_mbl: stored }));
+      expect(container.textContent).toBe(stored);
+      unmount();
+    }
+  });
+
+  test('shows an em dash when the mobile number is empty', () => {
+    const { rerender } = render(renderPhoneCell({ phone_mbl: '' }));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderPhoneCell({}));
+    expect(screen.getByText('—')).toBeInTheDocument();
+
+    rerender(renderPhoneCell({ phone_mbl: null }));
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+});
+
+describe('renderMobilePhoneCell phone mask', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test.each(['Veteran', 'Guardian'])(
+    'formats digits typed for a %s and saves them via handleMobilePhoneChange',
+    async (personType) => {
+      const user = userEvent.setup();
+      const id = personType === 'Veteran' ? 'vet-1' : 'grd-1';
+
+      render(renderMobilePhoneCell({ id, phone_mbl: '' }, personType, trainingHandlers));
+
+      const input = screen.getByRole('textbox', { name: 'Mobile phone' });
+      await user.type(input, '4145551212');
+
+      expect(input).toHaveValue('414-555-1212');
+      await user.tab();
+      expect(trainingHandlers.handleMobilePhoneChange).toHaveBeenCalledWith('414-555-1212', id, personType);
+    }
+  );
+
+  test('pasting a punctuated number saves the formatted value', async () => {
+    const user = userEvent.setup();
+    render(renderMobilePhoneCell({ id: 'vet-1', phone_mbl: '' }, 'Veteran', trainingHandlers));
+
+    const input = screen.getByRole('textbox', { name: 'Mobile phone' });
+    await user.click(input);
+    await user.paste('(414) 555-1212');
+
+    expect(input).toHaveValue('414-555-1212');
+    await user.tab();
+    expect(trainingHandlers.handleMobilePhoneChange).toHaveBeenCalledWith('414-555-1212', 'vet-1', 'Veteran');
+  });
+
+  test('ignores digits beyond 10 when saving the roster cell', async () => {
+    const user = userEvent.setup();
+    render(renderMobilePhoneCell({ id: 'vet-1', phone_mbl: '' }, 'Veteran', trainingHandlers));
+
+    const input = screen.getByRole('textbox', { name: 'Mobile phone' });
+    await user.type(input, '41455512123');
+
+    expect(input).toHaveValue('414-555-1212');
+    await user.tab();
+    expect(trainingHandlers.handleMobilePhoneChange).toHaveBeenCalledWith('414-555-1212', 'vet-1', 'Veteran');
+  });
+
+  test('disables the mobile phone input when readOnly', () => {
+    render(
+      renderMobilePhoneCell({ id: 'vet-1', phone_mbl: '414-555-1212' }, 'Veteran', {
+        ...trainingHandlers,
+        readOnly: true,
+      })
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Mobile phone' })).toBeDisabled();
+  });
+
+  test('clearing the mobile phone saves an empty string', async () => {
+    const user = userEvent.setup();
+    render(renderMobilePhoneCell({ id: 'vet-1', phone_mbl: '414-555-1212' }, 'Veteran', trainingHandlers));
+
+    const input = screen.getByRole('textbox', { name: 'Mobile phone' });
+    expect(input).toHaveValue('414-555-1212');
+    await user.clear(input);
+    await user.tab();
+
+    expect(trainingHandlers.handleMobilePhoneChange).toHaveBeenCalledWith('', 'vet-1', 'Veteran');
   });
 });
