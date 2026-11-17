@@ -21,17 +21,51 @@ function caretForDigitCount(formatted, digitCount) {
   return formatted.length;
 }
 
+function assignRef(ref, node) {
+  if (typeof ref === 'function') {
+    ref(node);
+    return;
+  }
+  if (ref) {
+    ref.current = node;
+  }
+}
+
 /**
  * Masked phone input (issue #281). Controlled string: `onChange` and `onBlur` receive the formatted value.
+ * When used as MUI `inputComponent`, forwards `className`, `ref`, and other InputBase props to the native input.
  */
-export const PhoneNumberInput = React.forwardRef(function PhoneNumberInput(
-  { value = '', onChange, onBlur, name, disabled = false, placeholder, inputProps = {} },
-  ref
-) {
+export const PhoneNumberInput = React.forwardRef(function PhoneNumberInput(props, ref) {
+  const {
+    value = '',
+    onChange,
+    onBlur,
+    name,
+    disabled = false,
+    placeholder,
+    inputProps = {},
+    // MUI InputBase — not valid DOM attributes
+    ownerState,
+    slots,
+    slotProps,
+    className,
+    ...rest
+  } = props;
+
+  void ownerState;
+  void slots;
+  void slotProps;
+
   const inputRef = React.useRef(null);
   const pendingDigits = React.useRef(null);
 
-  React.useImperativeHandle(ref, () => inputRef.current);
+  const handleRef = React.useCallback(
+    (node) => {
+      inputRef.current = node;
+      assignRef(ref, node);
+    },
+    [ref]
+  );
 
   React.useLayoutEffect(() => {
     const digits = pendingDigits.current;
@@ -60,18 +94,21 @@ export const PhoneNumberInput = React.forwardRef(function PhoneNumberInput(
     onBlur?.(formatPhoneNumber(event.target.value));
   };
 
-  const { 'aria-label': ariaLabel, ...restInputProps } = inputProps;
+  const { 'aria-label': ariaLabel, className: nestedClassName, ...nestedRest } = inputProps;
+  const mergedClassName = [className, nestedClassName].filter(Boolean).join(' ') || undefined;
 
   return (
     <input
-      ref={inputRef}
+      {...rest}
+      {...nestedRest}
+      ref={handleRef}
+      className={mergedClassName}
       name={name}
       type="tel"
       inputMode="tel"
       disabled={disabled}
       placeholder={placeholder}
       aria-label={ariaLabel}
-      {...restInputProps}
       value={value ?? ''}
       onChange={handleChange}
       onBlur={handleBlur}

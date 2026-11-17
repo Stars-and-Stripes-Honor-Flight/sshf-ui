@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 import '@testing-library/jest-dom';
 
@@ -152,6 +153,23 @@ describe('PhoneNumberInput', () => {
     // 414-|551-212
     expect(input).toHaveValue('414-551-212');
     expectCaret(input, 4);
+  });
+
+  test('receives MuiInputBase-input class when used as OutlinedInput inputComponent', () => {
+    const { container } = render(
+      <OutlinedInput
+        value=""
+        onChange={() => {}}
+        inputComponent={PhoneNumberInput}
+        inputProps={{
+          value: '',
+          onChange: () => {},
+        }}
+      />
+    );
+
+    const input = container.querySelector('input');
+    expect(input).toHaveClass('MuiInputBase-input');
   });
 
   test('uses type tel and inputMode tel on the native input', () => {
