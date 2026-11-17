@@ -105,6 +105,7 @@ describe('column-configs', () => {
       ]);
       expect(trainingColumns.map((column) => column.id)).not.toContain('gender');
       expect(trainingColumns.map((column) => column.id)).not.toContain('bus');
+      expect(trainingColumns.find((column) => column.id === 'name_middle').width).toBe(140);
     });
   });
 
