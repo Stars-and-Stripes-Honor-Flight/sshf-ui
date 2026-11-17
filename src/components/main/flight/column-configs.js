@@ -50,7 +50,7 @@ export const COLUMN_CONFIGS = {
     { id: 'notes', label: 'Notes', width: 200 },
   ],
   [ACTIVITY_PRESETS.TRAINING]: [
-    { id: 'name_middle', label: 'Middle', width: 120 },
+    { id: 'name_middle', label: 'Middle', width: 140 },
     { id: 'phone_mbl', label: 'Mobile', width: 160 },
     { id: 'birth_date', label: 'DOB', width: 120 },
     { id: 'training', label: 'Training', width: 160 },
