@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Controller } from 'react-hook-form';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
@@ -10,21 +9,22 @@ import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { EnvelopeSimple } from '@phosphor-icons/react';
+import { Controller } from 'react-hook-form';
+
+import { PhoneNumberInput } from '@/components/main/shared/phone-number-input';
+
 import { FormSectionHeader } from './form-section-header';
 
-export function AddressInformationCard({ 
-  control, 
-  errors, 
+export function AddressInformationCard({
+  control,
+  errors,
   emailGridProps = { xs: 12, md: 4 }, // Default to veteran style, can override for guardian
-  disabled = false
+  disabled = false,
 }) {
   return (
     <Card id="address-section" elevation={2}>
       <CardContent>
-        <FormSectionHeader 
-          icon={EnvelopeSimple} 
-          title="Address Information" 
-        />
+        <FormSectionHeader icon={EnvelopeSimple} title="Address Information" />
         <Grid container spacing={3}>
           <Grid xs={12}>
             <Controller
@@ -98,7 +98,19 @@ export function AddressInformationCard({
               render={({ field }) => (
                 <FormControl error={Boolean(errors.address?.phone_day)} fullWidth disabled={disabled}>
                   <InputLabel required>Day Phone</InputLabel>
-                  <OutlinedInput {...field} />
+                  <OutlinedInput
+                    value={field.value ?? ''}
+                    onChange={() => {}}
+                    inputRef={field.ref}
+                    inputComponent={PhoneNumberInput}
+                    inputProps={{
+                      value: field.value ?? '',
+                      onChange: field.onChange,
+                      onBlur: field.onBlur,
+                      name: field.name,
+                      disabled,
+                    }}
+                  />
                   {errors.address?.phone_day && <FormHelperText>{errors.address.phone_day.message}</FormHelperText>}
                 </FormControl>
               )}
@@ -111,7 +123,19 @@ export function AddressInformationCard({
               render={({ field }) => (
                 <FormControl error={Boolean(errors.address?.phone_mbl)} fullWidth disabled={disabled}>
                   <InputLabel>Mobile Phone</InputLabel>
-                  <OutlinedInput {...field} />
+                  <OutlinedInput
+                    value={field.value ?? ''}
+                    onChange={() => {}}
+                    inputRef={field.ref}
+                    inputComponent={PhoneNumberInput}
+                    inputProps={{
+                      value: field.value ?? '',
+                      onChange: field.onChange,
+                      onBlur: field.onBlur,
+                      name: field.name,
+                      disabled,
+                    }}
+                  />
                   {errors.address?.phone_mbl && <FormHelperText>{errors.address.phone_mbl.message}</FormHelperText>}
                 </FormControl>
               )}
@@ -135,4 +159,3 @@ export function AddressInformationCard({
     </Card>
   );
 }
-

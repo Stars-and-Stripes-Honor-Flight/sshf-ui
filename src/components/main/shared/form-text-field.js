@@ -1,19 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { Controller } from 'react-hook-form';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
+import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import Grid from '@mui/material/Grid2';
+import { Controller } from 'react-hook-form';
 
-export function FormTextField({ 
-  control, 
-  name, 
-  label, 
-  error, 
-  required = false, 
+import { PhoneNumberInput } from '@/components/main/shared/phone-number-input';
+
+export function FormTextField({
+  control,
+  name,
+  label,
+  error,
+  required = false,
   fullWidth = true,
   type = 'text',
   multiline = false,
@@ -22,7 +24,8 @@ export function FormTextField({
   InputProps,
   gridProps = {},
   disabled = false,
-  ...other 
+  phone = false,
+  ...other
 }) {
   // Combine inputProps from component
   return (
@@ -38,14 +41,31 @@ export function FormTextField({
           return (
             <FormControl error={Boolean(error)} fullWidth={fullWidth} disabled={disabled}>
               <InputLabel required={required}>{label}</InputLabel>
-              <OutlinedInput 
-                {...fieldProps}
-                inputRef={ref}
-                type={type}
-                multiline={multiline}
-                rows={rows}
-                inputProps={mergedInputProps}
-              />
+              {phone ? (
+                <OutlinedInput
+                  value={field.value ?? ''}
+                  onChange={() => {}}
+                  inputRef={ref}
+                  inputComponent={PhoneNumberInput}
+                  inputProps={{
+                    value: field.value ?? '',
+                    onChange: field.onChange,
+                    onBlur: field.onBlur,
+                    name: field.name,
+                    disabled,
+                    inputProps: mergedInputProps,
+                  }}
+                />
+              ) : (
+                <OutlinedInput
+                  {...fieldProps}
+                  inputRef={ref}
+                  type={type}
+                  multiline={multiline}
+                  rows={rows}
+                  inputProps={mergedInputProps}
+                />
+              )}
               {error ? <FormHelperText>{error.message}</FormHelperText> : null}
             </FormControl>
           );
@@ -54,4 +74,3 @@ export function FormTextField({
     </Grid>
   );
 }
-

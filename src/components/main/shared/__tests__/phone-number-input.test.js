@@ -154,6 +154,14 @@ describe('PhoneNumberInput', () => {
     expectCaret(input, 4);
   });
 
+  test('uses type tel and inputMode tel on the native input', () => {
+    render(<PhoneHarness />);
+
+    const input = screen.getByRole('textbox', { name: 'Phone number' });
+    expect(input).toHaveAttribute('type', 'tel');
+    expect(input).toHaveAttribute('inputmode', 'tel');
+  });
+
   test('clearing the field yields an empty string', async () => {
     const user = userEvent.setup();
     const onBlur = jest.fn();

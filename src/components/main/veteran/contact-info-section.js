@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Controller } from 'react-hook-form';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -13,70 +13,70 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import { Phone, EnvelopeSimple, Users, MagnifyingGlass } from '@phosphor-icons/react';
+import { EnvelopeSimple, MagnifyingGlass, Phone, Users } from '@phosphor-icons/react';
+import { Controller } from 'react-hook-form';
+
 import { paths } from '@/paths';
 import { AddressInformationCard } from '@/components/main/shared/address-information-card';
-import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
-import { FormSectionHeader } from '@/components/main/shared/form-section-header';
 import { FormCheckboxField } from '@/components/main/shared/form-checkbox-field';
+import { FormSectionHeader } from '@/components/main/shared/form-section-header';
+import { PairingInformationCard } from '@/components/main/shared/pairing-information-card';
+import { PhoneOutlinedField } from '@/components/main/shared/phone-outlined-field';
 
-export function ContactInfoSection({ 
-  control, 
-  errors, 
-  veteran, 
-  onOpenHistory, 
-  guardianPairingRef, 
+export function ContactInfoSection({
+  control,
+  errors,
+  veteran,
+  onOpenHistory,
+  guardianPairingRef,
   onManagePairing,
   watch,
-  disabled = false
+  disabled = false,
 }) {
   const router = useRouter();
-  
+
   const handleSearchForGuardian = () => {
     // Get preference notes text and extract the last word (likely the last name)
-    const prefNotes = watch ? (watch('guardian.pref_notes') || '') : (veteran.guardian?.pref_notes || '');
+    const prefNotes = watch ? watch('guardian.pref_notes') || '' : veteran.guardian?.pref_notes || '';
     const trimmedNotes = prefNotes.trim();
-    
+
     // Split by space and take the last word as the search query
-    const words = trimmedNotes.split(/\s+/).filter(word => word.length > 0);
+    const words = trimmedNotes.split(/\s+/).filter((word) => word.length > 0);
     const searchQuery = words.length > 0 ? words[words.length - 1] : '';
-    
+
     // Store veteranId in session storage for pairing flow (instead of URL to avoid extra back button presses)
     if (typeof window !== 'undefined' && veteran._id) {
       sessionStorage.setItem('pairingVeteranId', veteran._id);
     }
-    
+
     // Navigate to search page with preference notes as search query
     const params = new URLSearchParams();
     if (searchQuery) {
       // Use the last word from preference notes as the lastName search parameter
       params.append('lastName', searchQuery);
     }
-    
-    const searchUrl = params.toString() 
-      ? `${paths.main.search.list}?${params.toString()}`
-      : paths.main.search.list;
+
+    const searchUrl = params.toString() ? `${paths.main.search.list}?${params.toString()}` : paths.main.search.list;
     router.push(searchUrl);
   };
 
   return (
     <Stack spacing={3}>
-      <Typography 
-        variant="h5" 
-        sx={{ 
+      <Typography
+        variant="h5"
+        sx={{
           fontWeight: 'bold',
           color: 'primary.main',
           px: 2,
-          pt: 2 
+          pt: 2,
         }}
       >
         Contact Information
       </Typography>
 
       {/* Address Information Card */}
-      <AddressInformationCard 
-        control={control} 
+      <AddressInformationCard
+        control={control}
         errors={errors}
         emailGridProps={{ xs: 12, md: 4 }}
         disabled={disabled}
@@ -85,10 +85,7 @@ export function ContactInfoSection({
       {/* Emergency Contact Card */}
       <Card id="emergency-contact-section" elevation={2}>
         <CardContent>
-          <FormSectionHeader 
-            icon={Phone} 
-            title="Emergency Contact" 
-          />
+          <FormSectionHeader icon={Phone} title="Emergency Contact" />
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
               <Controller
@@ -111,7 +108,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.relation && <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>}
+                    {errors.emerg_contact?.relation && (
+                      <FormHelperText>{errors.emerg_contact.relation.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -124,7 +123,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.street)} fullWidth disabled={disabled}>
                     <InputLabel>Street Address</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.street && <FormHelperText>{errors.emerg_contact.address.street.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.street && (
+                      <FormHelperText>{errors.emerg_contact.address.street.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -137,7 +138,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.city)} fullWidth disabled={disabled}>
                     <InputLabel>City</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.city && <FormHelperText>{errors.emerg_contact.address.city.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.city && (
+                      <FormHelperText>{errors.emerg_contact.address.city.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -150,7 +153,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.state)} fullWidth disabled={disabled}>
                     <InputLabel>State</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.state && <FormHelperText>{errors.emerg_contact.address.state.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.state && (
+                      <FormHelperText>{errors.emerg_contact.address.state.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -163,7 +168,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.zip)} fullWidth disabled={disabled}>
                     <InputLabel>ZIP Code</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.zip && <FormHelperText>{errors.emerg_contact.address.zip.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.zip && (
+                      <FormHelperText>{errors.emerg_contact.address.zip.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -173,11 +180,13 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone)} fullWidth disabled={disabled}>
-                    <InputLabel>Day Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.phone && <FormHelperText>{errors.emerg_contact.address.phone.message}</FormHelperText>}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Day Phone"
+                    error={errors.emerg_contact?.address?.phone}
+                    disabled={disabled}
+                    helperText={errors.emerg_contact?.address?.phone?.message}
+                  />
                 )}
               />
             </Grid>
@@ -186,11 +195,13 @@ export function ContactInfoSection({
                 control={control}
                 name="emerg_contact.address.phone_mbl"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.emerg_contact?.address?.phone_mbl)} fullWidth disabled={disabled}>
-                    <InputLabel>Mobile Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.emerg_contact?.address?.phone_mbl && <FormHelperText>{errors.emerg_contact.address.phone_mbl.message}</FormHelperText>}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Mobile Phone"
+                    error={errors.emerg_contact?.address?.phone_mbl}
+                    disabled={disabled}
+                    helperText={errors.emerg_contact?.address?.phone_mbl?.message}
+                  />
                 )}
               />
             </Grid>
@@ -202,7 +213,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.emerg_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
-                    {errors.emerg_contact?.address?.email && <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>}
+                    {errors.emerg_contact?.address?.email && (
+                      <FormHelperText>{errors.emerg_contact.address.email.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -214,10 +227,7 @@ export function ContactInfoSection({
       {/* Alternate Contact Card */}
       <Card elevation={2}>
         <CardContent>
-          <FormSectionHeader 
-            icon={Phone} 
-            title="Alternate Contact" 
-          />
+          <FormSectionHeader icon={Phone} title="Alternate Contact" />
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
               <Controller
@@ -240,7 +250,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.relation)} fullWidth disabled={disabled}>
                     <InputLabel>Relationship</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.alt_contact?.relation && <FormHelperText>{errors.alt_contact.relation.message}</FormHelperText>}
+                    {errors.alt_contact?.relation && (
+                      <FormHelperText>{errors.alt_contact.relation.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -253,7 +265,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.address?.street)} fullWidth disabled={disabled}>
                     <InputLabel>Street Address</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.street && <FormHelperText>{errors.alt_contact.address.street.message}</FormHelperText>}
+                    {errors.alt_contact?.address?.street && (
+                      <FormHelperText>{errors.alt_contact.address.street.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -266,7 +280,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.address?.city)} fullWidth disabled={disabled}>
                     <InputLabel>City</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.city && <FormHelperText>{errors.alt_contact.address.city.message}</FormHelperText>}
+                    {errors.alt_contact?.address?.city && (
+                      <FormHelperText>{errors.alt_contact.address.city.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -279,7 +295,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.address?.state)} fullWidth disabled={disabled}>
                     <InputLabel>State</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.state && <FormHelperText>{errors.alt_contact.address.state.message}</FormHelperText>}
+                    {errors.alt_contact?.address?.state && (
+                      <FormHelperText>{errors.alt_contact.address.state.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -292,7 +310,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.address?.zip)} fullWidth disabled={disabled}>
                     <InputLabel>ZIP Code</InputLabel>
                     <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.zip && <FormHelperText>{errors.alt_contact.address.zip.message}</FormHelperText>}
+                    {errors.alt_contact?.address?.zip && (
+                      <FormHelperText>{errors.alt_contact.address.zip.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -302,11 +322,13 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.phone)} fullWidth disabled={disabled}>
-                    <InputLabel>Day Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.phone && <FormHelperText>{errors.alt_contact.address.phone.message}</FormHelperText>}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Day Phone"
+                    error={errors.alt_contact?.address?.phone}
+                    disabled={disabled}
+                    helperText={errors.alt_contact?.address?.phone?.message}
+                  />
                 )}
               />
             </Grid>
@@ -315,11 +337,13 @@ export function ContactInfoSection({
                 control={control}
                 name="alt_contact.address.phone_mbl"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.alt_contact?.address?.phone_mbl)} fullWidth disabled={disabled}>
-                    <InputLabel>Mobile Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.alt_contact?.address?.phone_mbl && <FormHelperText>{errors.alt_contact.address.phone_mbl.message}</FormHelperText>}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Mobile Phone"
+                    error={errors.alt_contact?.address?.phone_mbl}
+                    disabled={disabled}
+                    helperText={errors.alt_contact?.address?.phone_mbl?.message}
+                  />
                 )}
               />
             </Grid>
@@ -331,7 +355,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.alt_contact?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
-                    {errors.alt_contact?.address?.email && <FormHelperText>{errors.alt_contact.address.email.message}</FormHelperText>}
+                    {errors.alt_contact?.address?.email && (
+                      <FormHelperText>{errors.alt_contact.address.email.message}</FormHelperText>
+                    )}
                   </FormControl>
                 )}
               />
@@ -369,7 +395,7 @@ export function ContactInfoSection({
                   borderRadius: 1,
                   textTransform: 'none',
                   fontWeight: 'medium',
-                  ml: 'auto'
+                  ml: 'auto',
                 }}
               >
                 Search for Guardian
@@ -382,10 +408,7 @@ export function ContactInfoSection({
       {/* Mail Call Information Card */}
       <Card elevation={2}>
         <CardContent>
-          <FormSectionHeader 
-            icon={EnvelopeSimple} 
-            title="Mail Call Information" 
-          />
+          <FormSectionHeader icon={EnvelopeSimple} title="Mail Call Information" />
           <Grid container spacing={3}>
             <Grid xs={12} md={6}>
               <Controller
@@ -431,11 +454,13 @@ export function ContactInfoSection({
                 control={control}
                 name="mail_call.address.phone"
                 render={({ field }) => (
-                  <FormControl error={Boolean(errors.mail_call?.address?.phone)} fullWidth disabled={disabled}>
-                    <InputLabel>Mail Call Phone</InputLabel>
-                    <OutlinedInput {...field} />
-                    {errors.mail_call?.address?.phone ? <FormHelperText>{errors.mail_call.address.phone.message}</FormHelperText> : null}
-                  </FormControl>
+                  <PhoneOutlinedField
+                    field={field}
+                    label="Mail Call Phone"
+                    error={errors.mail_call?.address?.phone}
+                    disabled={disabled}
+                    helperText={errors.mail_call?.address?.phone?.message}
+                  />
                 )}
               />
             </Grid>
@@ -447,7 +472,9 @@ export function ContactInfoSection({
                   <FormControl error={Boolean(errors.mail_call?.address?.email)} fullWidth disabled={disabled}>
                     <InputLabel>Mail Call Email</InputLabel>
                     <OutlinedInput {...field} type="email" />
-                    {errors.mail_call?.address?.email ? <FormHelperText>{errors.mail_call.address.email.message}</FormHelperText> : null}
+                    {errors.mail_call?.address?.email ? (
+                      <FormHelperText>{errors.mail_call.address.email.message}</FormHelperText>
+                    ) : null}
                   </FormControl>
                 )}
               />
@@ -474,4 +501,3 @@ export function ContactInfoSection({
     </Stack>
   );
 }
-
